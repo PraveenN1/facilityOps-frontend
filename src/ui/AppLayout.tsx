@@ -34,10 +34,12 @@ export function AppLayout() {
         </div>
       </header>
       <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[280px_1fr] lg:px-8">
-        <aside>
-          <IdentitySwitcher />
-        </aside>
-        <main>
+        {import.meta.env.DEV ? (
+          <aside>
+            <IdentitySwitcher />
+          </aside>
+        ) : null}
+        <main className={import.meta.env.DEV ? undefined : "lg:col-span-2"}>
           <Outlet />
         </main>
       </div>

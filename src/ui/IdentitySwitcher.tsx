@@ -1,12 +1,15 @@
 import type { FormEvent } from "react";
 import { useState } from "react";
 
+import { demoIdentityOptions } from "../config/demoIdentities";
 import type { DemoIdentity, DemoRole } from "../state/IdentityContext";
 import { useIdentity } from "../state/IdentityContext";
 
 export function IdentitySwitcher() {
   const { identity, setIdentity } = useIdentity();
   const [draft, setDraft] = useState<DemoIdentity>(identity);
+
+  if (!import.meta.env.DEV) return null;
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -20,6 +23,21 @@ export function IdentitySwitcher() {
         <p className="mt-1 text-xs leading-5 text-amber-900">
           These trusted headers are for local development only and are not production authentication.
         </p>
+      </div>
+      <div className="grid gap-2">
+        {demoIdentityOptions.map((option) => (
+          <button
+            key={option.label}
+            type="button"
+            className="secondary-button w-full text-left text-xs"
+            onClick={() => {
+              setDraft(option.identity);
+              setIdentity(option.identity);
+            }}
+          >
+            Use demo {option.label.toLowerCase()}
+          </button>
+        ))}
       </div>
       <label className="field-label">
         User ID

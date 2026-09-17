@@ -17,8 +17,14 @@ interface IdentityContextValue {
 const storageKey = "facilityops.demoIdentity";
 
 const defaultIdentity: DemoIdentity = {
-  userId: "",
+  userId: "10000000-0000-0000-0000-000000000010",
   role: "facility_manager",
+  buildingId: "10000000-0000-0000-0000-000000000001",
+};
+
+const productionIdentity: DemoIdentity = {
+  userId: "",
+  role: "",
   buildingId: "",
 };
 
@@ -26,6 +32,7 @@ const IdentityContext = createContext<IdentityContextValue | undefined>(undefine
 
 export function IdentityProvider({ children }: { children: React.ReactNode }) {
   const [identity, setIdentityState] = useState<DemoIdentity>(() => {
+    if (!import.meta.env.DEV) return productionIdentity;
     const stored = window.localStorage.getItem(storageKey);
     if (!stored) return defaultIdentity;
     try {
@@ -36,12 +43,14 @@ export function IdentityProvider({ children }: { children: React.ReactNode }) {
   });
 
   const setIdentity = (nextIdentity: DemoIdentity) => {
+    if (!import.meta.env.DEV) return;
     setIdentityState(nextIdentity);
     window.localStorage.setItem(storageKey, JSON.stringify(nextIdentity));
   };
 
   const headers = useMemo(() => {
     const nextHeaders: Record<string, string> = {};
+    if (!import.meta.env.DEV) return nextHeaders;
     if (identity.userId.trim()) nextHeaders["X-Dev-User-Id"] = identity.userId.trim();
     if (identity.role.trim()) nextHeaders["X-Dev-Role"] = identity.role.trim();
     if (identity.buildingId.trim()) nextHeaders["X-Dev-Building-Id"] = identity.buildingId.trim();

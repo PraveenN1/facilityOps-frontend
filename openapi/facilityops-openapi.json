@@ -1072,6 +1072,43 @@
   },
   "components": {
     "schemas": {
+      "ActiveAssignmentSummary": {
+        "properties": {
+          "assignment_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Assignment Id"
+          },
+          "technician_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Technician Id"
+          },
+          "technician_display_name": {
+            "type": "string",
+            "title": "Technician Display Name"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ASSIGNED",
+              "IN_PROGRESS",
+              "COMPLETED",
+              "CANCELLED",
+              "DECLINED"
+            ],
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "assignment_id",
+          "technician_id",
+          "technician_display_name",
+          "status"
+        ],
+        "title": "ActiveAssignmentSummary"
+      },
       "AssignmentCreateRequest": {
         "properties": {
           "technician_id": {
@@ -1470,6 +1507,16 @@
                 "type": "null"
               }
             ]
+          },
+          "active_assignment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ActiveAssignmentSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -1825,6 +1872,11 @@
             "format": "uuid",
             "title": "Id"
           },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          },
           "display_name": {
             "type": "string",
             "title": "Display Name"
@@ -1864,6 +1916,7 @@
         "type": "object",
         "required": [
           "id",
+          "user_id",
           "display_name",
           "skills",
           "status",

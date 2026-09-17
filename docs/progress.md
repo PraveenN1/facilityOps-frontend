@@ -2,54 +2,49 @@
 
 ## Current Status
 
-Task 011B frontend setup has been implemented against the backend OpenAPI contract.
+Task 012A.2 frontend API contract synchronization has been implemented against the updated backend OpenAPI contract.
 
 ## Completed
 
-- Read backend engineering instructions and architecture documentation.
-- Inspected FastAPI routes and Pydantic schemas.
-- Exported backend OpenAPI to `openapi/facilityops-openapi.json`.
-- Generated TypeScript API types with `openapi-typescript`.
-- Created Vite React TypeScript project structure.
-- Added Tailwind CSS configuration.
-- Added React Router routes.
-- Added TanStack Query.
-- Added centralized API client and API configuration.
-- Added local-demo identity switcher for development-only headers.
-- Implemented incident dashboard.
-- Implemented complaint creation.
-- Implemented AI triage review and manager confirmation.
-- Implemented technician assignment.
-- Implemented incident lifecycle actions.
-- Added frontend component/API tests.
-- Added README and frontend AGENTS instructions.
+- Read frontend engineering instructions, README, and progress documentation.
+- Read the relevant backend README and inspected the updated backend OpenAPI schemas.
+- Exported the updated backend OpenAPI contract to `openapi/facilityops-openapi.json`.
+- Regenerated TypeScript API types with `openapi-typescript`.
+- Verified generated `TechnicianListItem.user_id` and `IncidentDetailResponse.active_assignment` fields.
+- Updated the local-demo identity provider to use the stable seeded backend demo IDs in local development.
+- Kept local-demo identity headers disabled for production builds.
+- Added local-demo identity presets for reporter, facility manager, and technician.
+- Updated incident detail to display the current active assignment when present.
+- Added an explicit null active assignment state that does not imply no historical assignment exists.
+- Updated technician assignment UI to show technician profile ID separately from technician user ID.
+- Added local-demo switching to the assigned technician's actual backend `user_id` before start/resolve actions.
+- Kept manager close as a manager identity action.
+- Added conflict messaging that requires review/refetch before manually retrying.
+- Invalidated incident, incident-list, and technician query caches after workflow mutations.
+- Added mocked tests for generated contract fields, technician user ID mapping, active assignment display, null active assignment display, demo role switching, and lifecycle technician identity handling.
 
-## Missing Backend Contracts Identified
+## Backend Contracts Consumed
 
-- No building list API.
-- No user or identity list API.
-- No production authentication contract.
-- Technician list does not expose technician `user_id`, although start and resolve require the technician user's identity.
-- Incident detail does not expose active assignment or assigned technician.
-- No API exists to trigger or inspect the AI worker directly.
-
-The frontend works around these gaps with explicitly labeled local-demo UUID entry and documentation.
+- `GET /api/v1/technicians` now exposes `TechnicianListItem.user_id`.
+- `GET /api/v1/incidents/{incident_id}` now exposes `IncidentDetailResponse.active_assignment`.
+- `active_assignment` includes assignment ID, technician profile ID, technician display name, and assignment status.
+- `active_assignment: null` means there is no current active assignment; it is not treated as proof that no historical assignment existed.
 
 ## Verification Log
 
-- `npm install` succeeded. npm reported 7 audit findings in transitive dependencies.
-- `npm run generate:api` succeeded.
-- Initial `npm test` failed because one assertion matched both a filter option and a status badge; the test was corrected.
-- `npm test` passed: 2 files, 4 tests.
-- Initial `npm run build` failed on strict TypeScript issues; Vite/test typings and frontend type aliases were corrected.
+- `npm run generate:api` passed and regenerated `src/api/generated.ts` from `openapi/facilityops-openapi.json`.
+- `npm run typecheck` passed.
+- `npm test` passed: 5 files, 8 tests. React Router emitted future-flag warnings from the test environment.
 - `npm run build` passed.
-- Final `npm run typecheck` passed.
-- Final `npm test` passed: 2 files, 4 tests. React Router emitted future-flag warnings from the test environment.
-- Final `npm run build` passed.
-- A temporary local backend process was started from the backend repository for smoke testing.
-- `npm run smoke:backend` passed with `Backend health check passed.`
+- Initial `npm run smoke:backend` failed because no backend was listening on `localhost:8000` (`ECONNREFUSED`).
+- A temporary backend process was started from `D:\Praveen\Development\facilityOps-ai` for the real-backend health check.
+- `npm run smoke:backend` then passed with `Backend health check passed.`
+- The temporary backend smoke process was stopped.
+- `rg -n "10000000-0000-0000|Local-demo identity|Use demo" dist` found no seeded demo IDs or identity-switcher copy in the production build output.
 
 ## Remaining
 
-- Add richer tests around mutation flows when backend fixtures or mocked route harnesses are available.
-- Replace development identity headers when the backend production auth contract exists.
+- Full end-to-end workflow validation still requires a running backend database with migrations applied, local demo seed data, and any desired AI worker/Groq configuration.
+- No production authentication contract exists yet.
+- No backend building/user listing APIs exist; the frontend uses documented local-demo seed IDs for development only.
+- Notification, SLA, reassignment, cancellation, and production deployment flows remain outside this task.

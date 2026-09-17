@@ -218,6 +218,26 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** ActiveAssignmentSummary */
+        ActiveAssignmentSummary: {
+            /**
+             * Assignment Id
+             * Format: uuid
+             */
+            assignment_id: string;
+            /**
+             * Technician Id
+             * Format: uuid
+             */
+            technician_id: string;
+            /** Technician Display Name */
+            technician_display_name: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ASSIGNED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED" | "DECLINED";
+        };
         /** AssignmentCreateRequest */
         AssignmentCreateRequest: {
             /**
@@ -407,6 +427,7 @@ export interface components {
             /** Ai Triage Status */
             ai_triage_status?: string | null;
             latest_triage_result?: components["schemas"]["LatestTriageResultResponse"] | null;
+            active_assignment?: components["schemas"]["ActiveAssignmentSummary"] | null;
         };
         /** IncidentLifecycleRequest */
         IncidentLifecycleRequest: {
@@ -539,6 +560,11 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
             /** Display Name */
             display_name: string;
             /** Skills */

@@ -12,3 +12,4 @@ export type AssignmentResponse = components["schemas"]["AssignmentResponse"];
 export type IncidentLifecycleRequest = components["schemas"]["IncidentLifecycleRequest"];
 export type IncidentResolveRequest = components["schemas"]["IncidentResolveRequest"];
 export type TechnicianListResponse = components["schemas"]["TechnicianListResponse"];
+export type TechnicianListItem = components["schemas"]["TechnicianListItem"];
