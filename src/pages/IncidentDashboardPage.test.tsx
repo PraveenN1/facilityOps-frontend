@@ -4,43 +4,45 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { IncidentDashboardPage } from "./IncidentDashboardPage";
 import { renderWithProviders } from "../test/test-utils";
 
+const buildingId = "10000000-0000-0000-0000-000000000001";
+
+function jsonResponse(body: unknown, status = 200) {
+  return Promise.resolve(new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } }));
+}
+
+function mockManagerFetch(incidentBody: unknown) {
+  return vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
+    const url = String(input);
+    if (url.includes("/api/v1/auth/me")) return jsonResponse({ id: "manager-id", email: "manager.demo@facilityops.local", role: "FACILITY_MANAGER", buildings: [{ id: buildingId, name: "Demo Tower" }] });
+    if (url.includes("/api/v1/buildings")) return jsonResponse({ items: [{ id: buildingId, name: "Demo Tower" }] });
+    if (url.includes("/api/v1/incidents")) return jsonResponse(incidentBody);
+    return jsonResponse({ detail: "unexpected request" }, 500);
+  });
+}
+
 describe("IncidentDashboardPage", () => {
   beforeEach(() => {
-    window.localStorage.setItem(
-      "facilityops.demoIdentity",
-      JSON.stringify({
-        userId: "00000000-0000-0000-0000-000000000001",
-        role: "facility_manager",
-        buildingId: "00000000-0000-0000-0000-000000000002",
-      }),
-    );
+    vi.restoreAllMocks();
+    window.localStorage.clear();
   });
 
   it("renders incident rows returned by the API", async () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          total: 1,
-          limit: 10,
-          offset: 0,
-          items: [
-            {
-              id: "00000000-0000-0000-0000-000000000010",
-              complaint_id: "00000000-0000-0000-0000-000000000011",
-              building_id: "00000000-0000-0000-0000-000000000002",
-              complaint_description: "Power failure in lobby",
-              category: "ELECTRICAL",
-              priority: "HIGH",
-              status: "ASSIGNED",
-              created_at: "2026-09-17T10:00:00Z",
-              ai_triage_status: "SUCCEEDED",
-              latest_triage_result: null,
-            },
-          ],
-        }),
-        { status: 200, headers: { "Content-Type": "application/json" } },
-      ),
-    );
+    mockManagerFetch({
+      total: 1,
+      limit: 10,
+      offset: 0,
+      items: [{
+        id: "00000000-0000-0000-0000-000000000010",
+        complaint_id: "00000000-0000-0000-0000-000000000011",
+        building_id: buildingId,
+        complaint_description: "Power failure in lobby",
+        category: "ELECTRICAL",
+        priority: "HIGH",
+        status: "ASSIGNED",
+        created_at: "2026-09-17T10:00:00Z",
+        ai_triage_status: "SUCCEEDED",
+      }],
+    });
 
     renderWithProviders(<IncidentDashboardPage />);
 
@@ -50,12 +52,7 @@ describe("IncidentDashboardPage", () => {
   });
 
   it("renders an empty state", async () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response(JSON.stringify({ total: 0, limit: 10, offset: 0, items: [] }), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      }),
-    );
+    mockManagerFetch({ total: 0, limit: 10, offset: 0, items: [] });
 
     renderWithProviders(<IncidentDashboardPage />);
 

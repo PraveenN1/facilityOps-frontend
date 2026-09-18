@@ -21,17 +21,18 @@
 - Backend base path is proxied through `/api` during local development.
 - The Vite dev server runs at `http://localhost:5173`.
 - The backend runs at `http://localhost:8000`.
-- Use development-only identity headers:
-  - `X-Dev-User-Id`
-  - `X-Dev-Role`
-  - `X-Dev-Building-Id`
-- Never describe these headers as production authentication.
-- Do not expose this frontend publicly while development identity headers are enabled.
+- Authentication is backend-owned cookie authentication.
+- `POST /api/v1/auth/login` returns the authenticated user and CSRF token while the backend sets HttpOnly auth cookies.
+- The frontend stores only the CSRF token needed for state-changing requests and sends it as `X-CSRF-Token`.
+- Do not read JWTs in the browser, store access tokens in localStorage/sessionStorage, or send `Authorization` headers unless the backend contract changes.
+- Do not use the retired `X-Dev-*` identity headers.
+- Do not expose local development authentication or seeded demo credentials publicly.
 
 ## Code Quality
 
 - Keep API access centralized.
 - Prefer generated OpenAPI types over hand-written backend schema copies.
+- Do not manually edit `src/api/generated.ts`; regenerate it with `npm run generate:api`.
 - Use accessible forms and explicit loading, empty, and error states.
 - Keep dependencies minimal.
 - Run type checking, tests, and production build before completion.

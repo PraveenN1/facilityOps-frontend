@@ -3,10 +3,10 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { IncidentDetailPage } from "./IncidentDetailPage";
+import { csrfStorageKey } from "../api/config";
 import { renderWithProviders } from "../test/test-utils";
 
 const buildingId = "10000000-0000-0000-0000-000000000001";
-const managerUserId = "10000000-0000-0000-0000-000000000010";
 const technicianUserId = "10000000-0000-0000-0000-000000000012";
 const technicianId = "10000000-0000-0000-0000-000000000020";
 const incidentId = "20000000-0000-0000-0000-000000000001";
@@ -39,98 +39,77 @@ function incident(overrides: Record<string, unknown> = {}) {
 }
 
 function technicians() {
-  return {
-    items: [
-      {
-        id: technicianId,
-        user_id: technicianUserId,
-        display_name: "technician.demo@facilityops.local",
-        skills: ["ELECTRICAL"],
-        status: "ACTIVE",
-        available: false,
-        active_assignment_id: assignmentId,
-      },
-    ],
-  };
+  return { items: [{ id: technicianId, user_id: technicianUserId, display_name: "technician.demo@facilityops.local", skills: ["ELECTRICAL"], status: "ACTIVE", available: false, active_assignment_id: assignmentId }] };
 }
 
 function jsonResponse(body: unknown, status = 200) {
-  return Promise.resolve(
-    new Response(JSON.stringify(body), {
-      status,
-      headers: { "Content-Type": "application/json" },
-    }),
-  );
+  return Promise.resolve(new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } }));
+}
+
+function mockSession(role: "FACILITY_MANAGER" | "TECHNICIAN") {
+  return { id: role === "TECHNICIAN" ? technicianUserId : "manager-id", email: role === "TECHNICIAN" ? "technician.demo@facilityops.local" : "manager.demo@facilityops.local", role, buildings: [{ id: buildingId, name: "Demo Tower" }] };
 }
 
 describe("IncidentDetailPage", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
-    window.localStorage.setItem(
-      "facilityops.demoIdentity",
-      JSON.stringify({ userId: managerUserId, role: "facility_manager", buildingId }),
-    );
+    window.localStorage.clear();
+    window.localStorage.setItem(csrfStorageKey, "csrf-token");
   });
 
-  it("displays active assignment and uses technician user_id for lifecycle actions", async () => {
-    let startUserId: string | null = null;
+  it("displays active assignment and technician user_id for managers", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
+      const url = String(input);
+      if (url.includes("/api/v1/auth/me")) return jsonResponse(mockSession("FACILITY_MANAGER"));
+      if (url.includes("/api/v1/buildings")) return jsonResponse({ items: [{ id: buildingId, name: "Demo Tower" }] });
+      if (url.includes("/api/v1/technicians")) return jsonResponse(technicians());
+      if (url.includes(`/api/v1/incidents/${incidentId}`)) return jsonResponse(incident());
+      return jsonResponse({ detail: "unexpected request" }, 500);
+    });
+
+    renderWithProviders(<IncidentDetailPage />, { initialEntries: [`/incidents/${incidentId}`], routePath: "/incidents/:incidentId" });
+
+    await waitFor(() => expect(screen.getByText("Current active assignment")).toBeInTheDocument());
+    expect(screen.getAllByText("technician.demo@facilityops.local").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText(assignmentId)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText(/user 10000000\.\.\.0012/i)).toBeInTheDocument());
+  });
+
+  it("uses authenticated technician session and CSRF for lifecycle actions", async () => {
+    let csrfHeader: string | null = null;
     vi.spyOn(globalThis, "fetch").mockImplementation((input, init) => {
       const url = String(input);
-      if (url.includes("/api/v1/technicians")) return jsonResponse(technicians());
+      if (url.includes("/api/v1/auth/me")) return jsonResponse(mockSession("TECHNICIAN"));
+      if (url.includes("/api/v1/buildings")) return jsonResponse({ items: [{ id: buildingId, name: "Demo Tower" }] });
       if (url.includes(`/api/v1/incidents/${incidentId}/start`)) {
-        const headers = new Headers(init?.headers);
-        startUserId = headers.get("X-Dev-User-Id");
+        csrfHeader = new Headers(init?.headers).get("X-CSRF-Token");
         return jsonResponse(incident({ status: "IN_PROGRESS", version: 3, active_assignment: { ...incident().active_assignment, status: "IN_PROGRESS" } }));
       }
       if (url.includes(`/api/v1/incidents/${incidentId}`)) return jsonResponse(incident());
       return jsonResponse({ detail: "unexpected request" }, 500);
     });
 
-    renderWithProviders(<IncidentDetailPage />, {
-      initialEntries: [`/incidents/${incidentId}`],
-      routePath: "/incidents/:incidentId",
-    });
+    renderWithProviders(<IncidentDetailPage />, { initialEntries: [`/incidents/${incidentId}`], routePath: "/incidents/:incidentId" });
 
-    await waitFor(() => expect(screen.getByText("Current active assignment")).toBeInTheDocument());
-    expect(screen.getAllByText("technician.demo@facilityops.local").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText(assignmentId)).toBeInTheDocument();
-    expect(screen.getByText(`Technician user: ${technicianUserId}`)).toBeInTheDocument();
-
-    await userEvent.click(screen.getByRole("button", { name: /switch to assigned technician identity/i }));
-    await waitFor(() =>
-      expect(JSON.parse(window.localStorage.getItem("facilityops.demoIdentity") ?? "{}")).toMatchObject({
-        userId: technicianUserId,
-        role: "technician",
-      }),
-    );
+    await waitFor(() => expect(screen.getByRole("button", { name: /start work/i })).toBeEnabled());
     await userEvent.click(screen.getByRole("button", { name: /start work/i }));
 
-    await waitFor(() => expect(startUserId).toBe(technicianUserId));
+    await waitFor(() => expect(csrfHeader).toBe("csrf-token"));
   });
 
   it("renders a null active assignment empty state without erasing history", async () => {
     vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
       const url = String(input);
+      if (url.includes("/api/v1/auth/me")) return jsonResponse(mockSession("FACILITY_MANAGER"));
+      if (url.includes("/api/v1/buildings")) return jsonResponse({ items: [{ id: buildingId, name: "Demo Tower" }] });
       if (url.includes("/api/v1/technicians")) return jsonResponse({ items: [] });
-      if (url.includes(`/api/v1/incidents/${incidentId}`)) {
-        return jsonResponse(
-          incident({
-            status: "RESOLVED",
-            version: 4,
-            active_assignment: null,
-          }),
-        );
-      }
+      if (url.includes(`/api/v1/incidents/${incidentId}`)) return jsonResponse(incident({ status: "RESOLVED", version: 4, active_assignment: null }));
       return jsonResponse({ detail: "unexpected request" }, 500);
     });
 
-    renderWithProviders(<IncidentDetailPage />, {
-      initialEntries: [`/incidents/${incidentId}`],
-      routePath: "/incidents/:incidentId",
-    });
+    renderWithProviders(<IncidentDetailPage />, { initialEntries: [`/incidents/${incidentId}`], routePath: "/incidents/:incidentId" });
 
-    await waitFor(() => expect(screen.getByText("No active assignment")).toBeInTheDocument());
-    expect(screen.getByText(/does not prove there was never a historical assignment/i)).toBeInTheDocument();
-    expect(screen.getByText("No active assignment for lifecycle work")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getAllByText("No active assignment").length).toBeGreaterThanOrEqual(1));
+    expect(screen.getByText(/historical assignments may still exist/i)).toBeInTheDocument();
   });
 });

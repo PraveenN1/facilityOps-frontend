@@ -3,7 +3,8 @@ import type { ReactElement } from "react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { render } from "@testing-library/react";
 
-import { IdentityProvider } from "../state/IdentityContext";
+import { AuthProvider } from "../state/AuthContext";
+import { BuildingProvider } from "../state/BuildingContext";
 
 interface RenderOptions {
   initialEntries?: string[];
@@ -17,19 +18,15 @@ export function renderWithProviders(ui: ReactElement, options: RenderOptions = {
       mutations: { retry: false },
     },
   });
-  const routeContent = options.routePath ? (
-    <Routes>
-      <Route path={options.routePath} element={ui} />
-    </Routes>
-  ) : (
-    ui
-  );
+  const routeContent = options.routePath ? <Routes><Route path={options.routePath} element={ui} /></Routes> : ui;
 
   return render(
     <QueryClientProvider client={queryClient}>
-      <IdentityProvider>
-        <MemoryRouter initialEntries={options.initialEntries}>{routeContent}</MemoryRouter>
-      </IdentityProvider>
+      <AuthProvider>
+        <BuildingProvider>
+          <MemoryRouter initialEntries={options.initialEntries}>{routeContent}</MemoryRouter>
+        </BuildingProvider>
+      </AuthProvider>
     </QueryClientProvider>,
   );
 }

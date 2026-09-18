@@ -2,59 +2,49 @@
 
 ## Current Status
 
-Task 012A.2 frontend API contract synchronization has been implemented against the updated backend OpenAPI contract.
+Task 012P.4 operations console redesign has been implemented in the frontend repository against the current backend OpenAPI contract.
 
 ## Completed
 
-- Read frontend engineering instructions, README, and progress documentation.
-- Read the relevant backend README and inspected the updated backend OpenAPI schemas.
-- Exported the updated backend OpenAPI contract to `openapi/facilityops-openapi.json`.
+- Read frontend engineering instructions, README, progress documentation, and relevant backend README/architecture/decision context.
+- Exported the current backend OpenAPI contract to `openapi/facilityops-openapi.json`.
 - Regenerated TypeScript API types with `openapi-typescript`.
-- Verified generated `TechnicianListItem.user_id` and `IncidentDetailResponse.active_assignment` fields.
-- Updated the local-demo identity provider to use the stable seeded backend demo IDs in local development.
-- Kept local-demo identity headers disabled for production builds.
-- Added local-demo identity presets for reporter, facility manager, and technician.
-- Updated incident detail to display the current active assignment when present.
-- Added an explicit null active assignment state that does not imply no historical assignment exists.
-- Updated technician assignment UI to show technician profile ID separately from technician user ID.
-- Added local-demo switching to the assigned technician's actual backend `user_id` before start/resolve actions.
-- Kept manager close as a manager identity action.
-- Added conflict messaging that requires review/refetch before manually retrying.
-- Invalidated incident, incident-list, and technician query caches after workflow mutations.
-- Added mocked tests for generated contract fields, technician user ID mapping, active assignment display, null active assignment display, demo role switching, and lifecycle technician identity handling.
+- Verified the generated contract includes authentication, building discovery, complaint, incident, technician, lifecycle, and metrics APIs used by the console.
+- Replaced the old `X-Dev-*` identity header flow with backend cookie login, `/auth/me` session restore, logout, and CSRF headers for state-changing requests.
+- Removed obsolete local-demo identity source files.
+- Added protected routing and role-based workspaces for facility managers, technicians, and reporters.
+- Added building discovery and selection. One authorized building is auto-selected; multiple buildings allow explicit selection or all-authorized scope.
+- Implemented manager overview metrics using operations and AI metrics endpoints.
+- Updated incident queue with pagination, status filtering, stable navigation, AI triage status, and empty/loading/error states.
+- Updated incident detail with active assignment display, AI triage review, manager manual triage, technician assignment, and role-gated lifecycle controls.
+- Added technician workspace for active assigned work.
+- Added reporter workspace for submitted complaints and complaint creation with stable idempotency key handling.
+- Updated the design system to an industrial operations-console style with light/dark theme support, compact radii, neutral statuses, priority edges, and AI violet accents.
+- Updated tests for generated contract usage, cookie credentials, CSRF/idempotency behavior, active assignment display, null active assignment display, role navigation, and technician lifecycle identity handling.
 
-## Backend Contracts Consumed
+## API Contract Notes
 
-- `GET /api/v1/technicians` now exposes `TechnicianListItem.user_id`.
-- `GET /api/v1/incidents/{incident_id}` now exposes `IncidentDetailResponse.active_assignment`.
-- `active_assignment` includes assignment ID, technician profile ID, technician display name, and assignment status.
-- `active_assignment: null` means there is no current active assignment; it is not treated as proof that no historical assignment existed.
+- Authenticated identity comes from backend-owned session cookies and `/api/v1/auth/me`.
+- The frontend stores only the CSRF token returned by login.
+- `TechnicianListItem.user_id` is displayed separately from `TechnicianListItem.id`.
+- `IncidentDetailResponse.active_assignment` is displayed when present; `null` is treated only as no current active assignment.
+- Metrics support optional `building_id`; incident and technician list contracts do not currently expose a building filter, so those views rely on backend authorization scoping.
 
 ## Verification Log
 
 - `npm run generate:api` passed and regenerated `src/api/generated.ts` from `openapi/facilityops-openapi.json`.
-- `npm run typecheck` passed.
-- `npm test` passed: 5 files, 8 tests. React Router emitted future-flag warnings from the test environment.
-- `npm run build` passed.
-- Initial `npm run smoke:backend` failed because no backend was listening on `localhost:8000` (`ECONNREFUSED`).
-- A temporary backend process was started from `D:\Praveen\Development\facilityOps-ai` for the real-backend health check.
-- `npm run smoke:backend` then passed with `Backend health check passed.`
-- The temporary backend smoke process was stopped.
-- `rg -n "10000000-0000-0000|Local-demo identity|Use demo" dist` found no seeded demo IDs or identity-switcher copy in the production build output.
+- `npm run typecheck` passed after the auth/routing/page updates.
+- `npm test` passed: 5 files, 11 tests. React Router emitted future-flag warnings from the test environment.
+- `npm run build` passed after correcting the AI recommendation location field to match the generated schema.
+- `npm run smoke:backend` passed: `Backend health check passed.`
+- Real backend login/session restore passed for `manager.demo@facilityops.local`: login returned a CSRF token and `/api/v1/auth/me` returned role `FACILITY_MANAGER`.
+- Real backend discovery/metrics read check against the currently running `localhost:8000` returned 404 for `/api/v1/buildings` and `/api/v1/metrics/operations`; the live process appears older than the OpenAPI contract exported from the backend source tree.
+- `git diff --check` passed with Git CRLF conversion warnings only.
 
 ## Remaining
 
-- Full end-to-end workflow validation still requires a running backend database with migrations applied, local demo seed data, and any desired AI worker/Groq configuration.
-- No production authentication contract exists yet.
-- No backend building/user listing APIs exist; the frontend uses documented local-demo seed IDs for development only.
-- Notification, SLA, reassignment, cancellation, and production deployment flows remain outside this task.
-## Task 012B End-to-End Verification
+- Full browser-level workflow verification has not yet been completed in this task.
+- Backend incident and technician list APIs do not expose explicit building filter query parameters.
+- SLA risk, latency trend, AI accuracy, assignment history, and resolution history are not available from the current backend contract.
+- Production authentication hardening such as SSO/OAuth remains outside the current backend contract.
 
-- Participated in full project E2E verification with the backend API, PostgreSQL, worker, and React dev server running locally.
-- `npm run typecheck` passed.
-- `npm test` passed: 5 files, 8 tests. React Router future-flag warnings were emitted.
-- `npm run build` passed.
-- `npm run smoke:backend` passed against the live backend API.
-- React dev server root returned HTTP 200 during live verification.
-- Browser-level UI automation was attempted through CUA, but no browser surfaces were available; browser interaction is recorded as blocked rather than passed.
-- The project-level E2E report is recorded in the backend repository at `docs/e2e-verification.md`.

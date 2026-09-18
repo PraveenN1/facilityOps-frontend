@@ -5,6 +5,131 @@
     "version": "0.1.0"
   },
   "paths": {
+    "/api/v1/auth/login": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Login",
+        "operationId": "login_api_v1_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Logout",
+        "operationId": "logout_api_v1_auth_logout_post",
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Csrf-Token"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Read Me",
+        "operationId": "read_me_api_v1_auth_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedUserResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/buildings": {
+      "get": {
+        "tags": [
+          "buildings"
+        ],
+        "summary": "List Buildings",
+        "operationId": "list_buildings_api_v1_buildings_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BuildingListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/complaints": {
       "post": {
         "tags": [
@@ -23,24 +148,7 @@
             }
           },
           {
-            "name": "X-Dev-User-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Dev-User-Id"
-            }
-          },
-          {
-            "name": "X-Dev-Role",
+            "name": "X-CSRF-Token",
             "in": "header",
             "required": false,
             "schema": {
@@ -52,24 +160,7 @@
                   "type": "null"
                 }
               ],
-              "title": "X-Dev-Role"
-            }
-          },
-          {
-            "name": "X-Dev-Building-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Dev-Building-Id"
+              "title": "X-Csrf-Token"
             }
           }
         ],
@@ -105,6 +196,60 @@
             }
           }
         }
+      },
+      "get": {
+        "tags": [
+          "complaints"
+        ],
+        "summary": "List My Complaints",
+        "operationId": "list_my_complaints_api_v1_complaints_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReporterComplaintListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/complaints/{complaint_id}": {
@@ -123,56 +268,6 @@
               "type": "string",
               "format": "uuid",
               "title": "Complaint Id"
-            }
-          },
-          {
-            "name": "X-Dev-User-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Dev-User-Id"
-            }
-          },
-          {
-            "name": "X-Dev-Role",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Dev-Role"
-            }
-          },
-          {
-            "name": "X-Dev-Building-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Dev-Building-Id"
             }
           }
         ],
@@ -256,56 +351,6 @@
               ],
               "title": "Status"
             }
-          },
-          {
-            "name": "X-Dev-User-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Dev-User-Id"
-            }
-          },
-          {
-            "name": "X-Dev-Role",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Dev-Role"
-            }
-          },
-          {
-            "name": "X-Dev-Building-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Dev-Building-Id"
-            }
           }
         ],
         "responses": {
@@ -332,6 +377,27 @@
         }
       }
     },
+    "/api/v1/incidents/my-work": {
+      "get": {
+        "tags": [
+          "incidents"
+        ],
+        "summary": "List My Work",
+        "operationId": "list_my_work_api_v1_incidents_my_work_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TechnicianWorkListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/incidents/{incident_id}": {
       "get": {
         "tags": [
@@ -348,56 +414,6 @@
               "type": "string",
               "format": "uuid",
               "title": "Incident Id"
-            }
-          },
-          {
-            "name": "X-Dev-User-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Dev-User-Id"
-            }
-          },
-          {
-            "name": "X-Dev-Role",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Dev-Role"
-            }
-          },
-          {
-            "name": "X-Dev-Building-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Dev-Building-Id"
             }
           }
         ],
@@ -444,24 +460,7 @@
             }
           },
           {
-            "name": "X-Dev-User-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Dev-User-Id"
-            }
-          },
-          {
-            "name": "X-Dev-Role",
+            "name": "X-CSRF-Token",
             "in": "header",
             "required": false,
             "schema": {
@@ -473,24 +472,7 @@
                   "type": "null"
                 }
               ],
-              "title": "X-Dev-Role"
-            }
-          },
-          {
-            "name": "X-Dev-Building-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Dev-Building-Id"
+              "title": "X-Csrf-Token"
             }
           }
         ],
@@ -547,24 +529,7 @@
             }
           },
           {
-            "name": "X-Dev-User-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Dev-User-Id"
-            }
-          },
-          {
-            "name": "X-Dev-Role",
+            "name": "X-CSRF-Token",
             "in": "header",
             "required": false,
             "schema": {
@@ -576,24 +541,7 @@
                   "type": "null"
                 }
               ],
-              "title": "X-Dev-Role"
-            }
-          },
-          {
-            "name": "X-Dev-Building-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Dev-Building-Id"
+              "title": "X-Csrf-Token"
             }
           }
         ],
@@ -650,24 +598,7 @@
             }
           },
           {
-            "name": "X-Dev-User-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Dev-User-Id"
-            }
-          },
-          {
-            "name": "X-Dev-Role",
+            "name": "X-CSRF-Token",
             "in": "header",
             "required": false,
             "schema": {
@@ -679,24 +610,7 @@
                   "type": "null"
                 }
               ],
-              "title": "X-Dev-Role"
-            }
-          },
-          {
-            "name": "X-Dev-Building-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Dev-Building-Id"
+              "title": "X-Csrf-Token"
             }
           }
         ],
@@ -753,24 +667,7 @@
             }
           },
           {
-            "name": "X-Dev-User-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Dev-User-Id"
-            }
-          },
-          {
-            "name": "X-Dev-Role",
+            "name": "X-CSRF-Token",
             "in": "header",
             "required": false,
             "schema": {
@@ -782,24 +679,7 @@
                   "type": "null"
                 }
               ],
-              "title": "X-Dev-Role"
-            }
-          },
-          {
-            "name": "X-Dev-Building-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Dev-Building-Id"
+              "title": "X-Csrf-Token"
             }
           }
         ],
@@ -856,24 +736,7 @@
             }
           },
           {
-            "name": "X-Dev-User-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Dev-User-Id"
-            }
-          },
-          {
-            "name": "X-Dev-Role",
+            "name": "X-CSRF-Token",
             "in": "header",
             "required": false,
             "schema": {
@@ -885,24 +748,7 @@
                   "type": "null"
                 }
               ],
-              "title": "X-Dev-Role"
-            }
-          },
-          {
-            "name": "X-Dev-Building-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Dev-Building-Id"
+              "title": "X-Csrf-Token"
             }
           }
         ],
@@ -940,17 +786,17 @@
         }
       }
     },
-    "/api/v1/technicians": {
+    "/api/v1/metrics/operations": {
       "get": {
         "tags": [
-          "technicians"
+          "metrics"
         ],
-        "summary": "List Technicians",
-        "operationId": "list_technicians_api_v1_technicians_get",
+        "summary": "Read Operations Metrics",
+        "operationId": "read_operations_metrics_api_v1_metrics_operations_get",
         "parameters": [
           {
-            "name": "X-Dev-User-Id",
-            "in": "header",
+            "name": "building_id",
+            "in": "query",
             "required": false,
             "schema": {
               "anyOf": [
@@ -962,40 +808,7 @@
                   "type": "null"
                 }
               ],
-              "title": "X-Dev-User-Id"
-            }
-          },
-          {
-            "name": "X-Dev-Role",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Dev-Role"
-            }
-          },
-          {
-            "name": "X-Dev-Building-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Dev-Building-Id"
+              "title": "Building Id"
             }
           }
         ],
@@ -1005,7 +818,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TechnicianListResponse"
+                  "$ref": "#/components/schemas/OperationsMetricsResponse"
                 }
               }
             }
@@ -1016,6 +829,77 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/metrics/ai": {
+      "get": {
+        "tags": [
+          "metrics"
+        ],
+        "summary": "Read Ai Metrics",
+        "operationId": "read_ai_metrics_api_v1_metrics_ai_get",
+        "parameters": [
+          {
+            "name": "building_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Building Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiMetricsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/technicians": {
+      "get": {
+        "tags": [
+          "technicians"
+        ],
+        "summary": "List Technicians",
+        "operationId": "list_technicians_api_v1_technicians_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TechnicianListResponse"
                 }
               }
             }
@@ -1109,6 +993,63 @@
         ],
         "title": "ActiveAssignmentSummary"
       },
+      "AiMetricsResponse": {
+        "properties": {
+          "scope": {
+            "$ref": "#/components/schemas/MetricsScope"
+          },
+          "triage_requests": {
+            "type": "integer",
+            "title": "Triage Requests"
+          },
+          "successfully_processed_requests": {
+            "type": "integer",
+            "title": "Successfully Processed Requests"
+          },
+          "pending_requests": {
+            "type": "integer",
+            "title": "Pending Requests"
+          },
+          "failed_requests": {
+            "type": "integer",
+            "title": "Failed Requests"
+          },
+          "total_retry_attempts": {
+            "type": "integer",
+            "title": "Total Retry Attempts"
+          },
+          "requests_with_retries": {
+            "type": "integer",
+            "title": "Requests With Retries"
+          },
+          "persisted_successful_triage_results": {
+            "type": "integer",
+            "title": "Persisted Successful Triage Results"
+          },
+          "persisted_failed_triage_results": {
+            "type": "integer",
+            "title": "Persisted Failed Triage Results"
+          },
+          "incidents_awaiting_human_review": {
+            "type": "integer",
+            "title": "Incidents Awaiting Human Review"
+          }
+        },
+        "type": "object",
+        "required": [
+          "scope",
+          "triage_requests",
+          "successfully_processed_requests",
+          "pending_requests",
+          "failed_requests",
+          "total_retry_attempts",
+          "requests_with_retries",
+          "persisted_successful_triage_results",
+          "persisted_failed_triage_results",
+          "incidents_awaiting_human_review"
+        ],
+        "title": "AiMetricsResponse"
+      },
       "AssignmentCreateRequest": {
         "properties": {
           "technician_id": {
@@ -1186,6 +1127,135 @@
           "incident_version"
         ],
         "title": "AssignmentResponse"
+      },
+      "AuthenticatedUserBuilding": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "timezone": {
+            "type": "string",
+            "title": "Timezone"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "address",
+          "timezone"
+        ],
+        "title": "AuthenticatedUserBuilding"
+      },
+      "AuthenticatedUserResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role"
+          },
+          "building_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Building Ids"
+          },
+          "buildings": {
+            "items": {
+              "$ref": "#/components/schemas/AuthenticatedUserBuilding"
+            },
+            "type": "array",
+            "title": "Buildings"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "email",
+          "role",
+          "building_ids",
+          "buildings"
+        ],
+        "title": "AuthenticatedUserResponse"
+      },
+      "BuildingListItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "timezone": {
+            "type": "string",
+            "title": "Timezone"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "address",
+          "timezone"
+        ],
+        "title": "BuildingListItem"
+      },
+      "BuildingListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BuildingListItem"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "BuildingListResponse"
       },
       "ComplaintCreateRequest": {
         "properties": {
@@ -1816,6 +1886,56 @@
         ],
         "title": "LatestTriageResultResponse"
       },
+      "LoginRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "maxLength": 320,
+            "minLength": 3,
+            "title": "Email"
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 1024,
+            "minLength": 1,
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "LoginRequest"
+      },
+      "LoginResponse": {
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/AuthenticatedUserResponse"
+          },
+          "csrf_token": {
+            "type": "string",
+            "title": "Csrf Token"
+          },
+          "token_type": {
+            "type": "string",
+            "title": "Token Type",
+            "default": "cookie"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user",
+          "csrf_token",
+          "expires_at"
+        ],
+        "title": "LoginResponse"
+      },
       "ManualTriageRequest": {
         "properties": {
           "category": {
@@ -1864,6 +1984,214 @@
           "expected_version"
         ],
         "title": "ManualTriageRequest"
+      },
+      "MetricsScope": {
+        "properties": {
+          "building_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Building Id"
+          },
+          "building_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Building Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "building_id",
+          "building_ids"
+        ],
+        "title": "MetricsScope"
+      },
+      "OperationsMetricsResponse": {
+        "properties": {
+          "scope": {
+            "$ref": "#/components/schemas/MetricsScope"
+          },
+          "total_incidents": {
+            "type": "integer",
+            "title": "Total Incidents"
+          },
+          "open_incidents": {
+            "type": "integer",
+            "title": "Open Incidents"
+          },
+          "pending_triage": {
+            "type": "integer",
+            "title": "Pending Triage"
+          },
+          "awaiting_assignment": {
+            "type": "integer",
+            "title": "Awaiting Assignment"
+          },
+          "assigned": {
+            "type": "integer",
+            "title": "Assigned"
+          },
+          "in_progress": {
+            "type": "integer",
+            "title": "In Progress"
+          },
+          "resolved": {
+            "type": "integer",
+            "title": "Resolved"
+          },
+          "closed": {
+            "type": "integer",
+            "title": "Closed"
+          },
+          "active_technician_assignments": {
+            "type": "integer",
+            "title": "Active Technician Assignments"
+          },
+          "available_technicians": {
+            "type": "integer",
+            "title": "Available Technicians"
+          }
+        },
+        "type": "object",
+        "required": [
+          "scope",
+          "total_incidents",
+          "open_incidents",
+          "pending_triage",
+          "awaiting_assignment",
+          "assigned",
+          "in_progress",
+          "resolved",
+          "closed",
+          "active_technician_assignments",
+          "available_technicians"
+        ],
+        "title": "OperationsMetricsResponse"
+      },
+      "ReporterComplaintListItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "building_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Building Id"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING_TRIAGE",
+              "MANUAL_REVIEW",
+              "CLOSED"
+            ],
+            "title": "Status"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "incident_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Incident Id"
+          },
+          "incident_status": {
+            "type": "string",
+            "enum": [
+              "PENDING_TRIAGE",
+              "AWAITING_ASSIGNMENT",
+              "AWAITING_APPROVAL",
+              "ASSIGNED",
+              "IN_PROGRESS",
+              "RESOLVED",
+              "CLOSED",
+              "MANUAL_REVIEW"
+            ],
+            "title": "Incident Status"
+          },
+          "incident_category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Incident Category"
+          },
+          "incident_priority": {
+            "type": "string",
+            "enum": [
+              "LOW",
+              "MEDIUM",
+              "HIGH",
+              "CRITICAL"
+            ],
+            "title": "Incident Priority"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "building_id",
+          "description",
+          "status",
+          "created_at",
+          "incident_id",
+          "incident_status",
+          "incident_category",
+          "incident_priority"
+        ],
+        "title": "ReporterComplaintListItem"
+      },
+      "ReporterComplaintListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ReporterComplaintListItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "ReporterComplaintListResponse"
       },
       "TechnicianListItem": {
         "properties": {
@@ -1939,6 +2267,120 @@
           "items"
         ],
         "title": "TechnicianListResponse"
+      },
+      "TechnicianWorkItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "complaint_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Complaint Id"
+          },
+          "building_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Building Id"
+          },
+          "complaint_description": {
+            "type": "string",
+            "title": "Complaint Description"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "LOW",
+              "MEDIUM",
+              "HIGH",
+              "CRITICAL"
+            ],
+            "title": "Priority"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING_TRIAGE",
+              "AWAITING_ASSIGNMENT",
+              "AWAITING_APPROVAL",
+              "ASSIGNED",
+              "IN_PROGRESS",
+              "RESOLVED",
+              "CLOSED",
+              "MANUAL_REVIEW"
+            ],
+            "title": "Status"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "assignment_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Assignment Id"
+          },
+          "assignment_status": {
+            "type": "string",
+            "enum": [
+              "ASSIGNED",
+              "IN_PROGRESS",
+              "COMPLETED",
+              "CANCELLED",
+              "DECLINED"
+            ],
+            "title": "Assignment Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "complaint_id",
+          "building_id",
+          "complaint_description",
+          "category",
+          "priority",
+          "status",
+          "version",
+          "created_at",
+          "assignment_id",
+          "assignment_status"
+        ],
+        "title": "TechnicianWorkItem"
+      },
+      "TechnicianWorkListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/TechnicianWorkItem"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "TechnicianWorkListResponse"
       },
       "ValidationError": {
         "properties": {

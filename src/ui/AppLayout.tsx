@@ -1,48 +1,93 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 
-import { IdentitySwitcher } from "./IdentitySwitcher";
+import { useAuth } from "../state/AuthContext";
+import { BuildingProvider, useBuildingSelection } from "../state/BuildingContext";
+import { compactUuid } from "../utils/format";
 
-const navItems = [
-  { to: "/", label: "Incidents" },
-  { to: "/complaints/new", label: "New complaint" },
-];
+const navByRole = {
+  FACILITY_MANAGER: [
+    { to: "/", label: "Overview" },
+    { to: "/incidents", label: "Incident queue" },
+  ],
+  TECHNICIAN: [{ to: "/", label: "My work" }],
+  REPORTER: [
+    { to: "/", label: "My complaints" },
+    { to: "/complaints/new", label: "New complaint" },
+  ],
+};
 
 export function AppLayout() {
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
-          <div>
-            <h1 className="text-xl font-semibold text-slate-950">FacilityOps AI</h1>
-            <p className="text-sm text-slate-500">Operations dashboard for local backend validation</p>
+    <BuildingProvider>
+      <AppChrome />
+    </BuildingProvider>
+  );
+}
+
+function AppChrome() {
+  const auth = useAuth();
+  const navigate = useNavigate();
+  const building = useBuildingSelection();
+  const role = auth.role ?? "REPORTER";
+  const navItems = navByRole[role] ?? [];
+
+  const handleLogout = async () => {
+    await auth.logout();
+    navigate("/login", { replace: true });
+  };
+
+  return (
+    <div className="app-shell">
+      <header className="topbar">
+        <div>
+          <p className="eyebrow">FacilityOps AI</p>
+          <h1>Operations console</h1>
+        </div>
+        <div className="topbar-actions">
+          <BuildingSelector />
+          <div className="user-chip">
+            <span>{auth.user?.email}</span>
+            <strong>{auth.role?.replaceAll("_", " ")}</strong>
           </div>
-          <nav className="flex gap-2" aria-label="Primary">
+          <button className="secondary-button" type="button" onClick={handleLogout}>Logout</button>
+        </div>
+      </header>
+      <div className="workspace-grid">
+        <aside className="side-rail">
+          <nav aria-label="Workspace">
             {navItems.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                className={({ isActive }) =>
-                  `rounded-md px-3 py-2 text-sm font-medium ${
-                    isActive ? "bg-cyan-700 text-white" : "text-slate-700 hover:bg-slate-100"
-                  }`
-                }
-              >
+              <NavLink key={item.to} to={item.to} end={item.to === "/"} className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}>
                 {item.label}
               </NavLink>
             ))}
           </nav>
-        </div>
-      </header>
-      <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[280px_1fr] lg:px-8">
-        {import.meta.env.DEV ? (
-          <aside>
-            <IdentitySwitcher />
-          </aside>
-        ) : null}
-        <main className={import.meta.env.DEV ? undefined : "lg:col-span-2"}>
+          <div className="scope-box">
+            <span>Building scope</span>
+            <strong>{building.selectedBuilding?.name ?? "All authorized buildings"}</strong>
+            <code>{building.selectedBuildingId ? compactUuid(building.selectedBuildingId) : "ALL"}</code>
+          </div>
+        </aside>
+        <main className="workspace-main">
           <Outlet />
         </main>
       </div>
     </div>
+  );
+}
+
+function BuildingSelector() {
+  const { buildings, selectedBuildingId, setSelectedBuildingId, isLoading } = useBuildingSelection();
+  if (isLoading) return <span className="muted-copy">Loading buildings</span>;
+  if (buildings.length <= 1) return <span className="building-pill">{buildings[0]?.name ?? "No building"}</span>;
+  return (
+    <label className="building-select">
+      Building
+      <select value={selectedBuildingId ?? ""} onChange={(event) => setSelectedBuildingId(event.target.value || null)}>
+        <option value="">All authorized buildings</option>
+        {buildings.map((building) => (
+          <option key={building.id} value={building.id}>{building.name}</option>
+        ))}
+      </select>
+    </label>
   );
 }

@@ -12,3 +12,5 @@ export const incidentStatuses = [
 ] as const;
 
 export const incidentPriorities = ["LOW", "MEDIUM", "HIGH", "CRITICAL"] as const;
+
+export const csrfStorageKey = "facilityops.csrfToken";

@@ -4,14 +4,40 @@
 
 :root {
   color-scheme: light;
-  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-  background: #f7f8fb;
-  color: #172033;
+  --bg: #edf0f3;
+  --panel: #ffffff;
+  --ink: #0f1b24;
+  --muted: #5d6b76;
+  --line: #cfd6dd;
+  --blue: #1f5fd0;
+  --blue-dark: #184ca8;
+  --violet: #6b4fd8;
+  --danger: #b42318;
+  --warning: #9a6700;
+  --ok: #157347;
+  font-family: Archivo, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --bg: #0f1b24;
+    --panel: #172532;
+    --ink: #edf0f3;
+    --muted: #a9b5bf;
+    --line: #334655;
+    --blue: #75a2f5;
+    --blue-dark: #9abaf8;
+  }
 }
 
 body {
   margin: 0;
   min-width: 320px;
+  min-height: 100vh;
+  background: var(--bg);
 }
 
 button,
@@ -21,24 +47,99 @@ textarea {
   font: inherit;
 }
 
+button,
+a,
+select,
+input,
+textarea {
+  min-height: 40px;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+code,
+.mono-cell,
+.mono-link,
+.tech-value {
+  font-family: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+}
+
 @layer components {
-  .field-label {
-    @apply block text-sm font-medium text-slate-700;
-  }
-
-  .field-input {
-    @apply mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 shadow-sm outline-none transition focus:border-cyan-600 focus:ring-2 focus:ring-cyan-100;
-  }
-
-  .primary-button {
-    @apply inline-flex items-center justify-center rounded-md bg-cyan-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-cyan-800 disabled:cursor-not-allowed disabled:bg-slate-300;
-  }
-
-  .secondary-button {
-    @apply inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-400;
-  }
-
-  .danger-note {
-    @apply rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900;
-  }
+  .app-shell { @apply min-h-screen; background: var(--bg); color: var(--ink); }
+  .topbar { @apply flex flex-col gap-4 border-b px-5 py-4 lg:flex-row lg:items-center lg:justify-between; background: var(--panel); border-color: var(--line); }
+  .topbar h1 { @apply text-2xl font-semibold; letter-spacing: 0; }
+  .topbar-actions { @apply flex flex-wrap items-center gap-3; }
+  .workspace-grid { @apply grid min-h-[calc(100vh-88px)] lg:grid-cols-[260px_minmax(0,1fr)]; }
+  .side-rail { @apply border-r p-4; background: var(--panel); border-color: var(--line); }
+  .workspace-main { @apply min-w-0 p-4 lg:p-6; }
+  .nav-item { @apply mb-2 flex items-center rounded-[3px] px-3 py-2 text-sm font-semibold no-underline; color: var(--muted); }
+  .nav-item.active, .nav-item:hover { background: color-mix(in srgb, var(--blue) 12%, transparent); color: var(--blue); }
+  .scope-box { @apply mt-6 rounded-md border p-3 text-sm; border-color: var(--line); }
+  .scope-box span, .eyebrow { @apply block text-xs font-bold uppercase; color: var(--muted); letter-spacing: 0; }
+  .scope-box strong { @apply mt-1 block; }
+  .scope-box code { @apply mt-2 block text-xs; color: var(--muted); }
+  .user-chip, .building-pill { @apply rounded-[3px] border px-3 py-2 text-sm; background: var(--panel); border-color: var(--line); }
+  .user-chip { @apply flex flex-col; }
+  .user-chip strong { @apply text-xs uppercase; color: var(--muted); }
+  .building-select { @apply flex items-center gap-2 text-sm font-semibold; color: var(--muted); }
+  .building-select select { @apply rounded-[3px] border px-3 py-2; background: var(--panel); color: var(--ink); border-color: var(--line); }
+  .panel { @apply rounded-md border p-4 shadow-sm; background: var(--panel); border-color: var(--line); }
+  .ai-panel { border-left: 3px solid var(--violet); }
+  .stack { @apply flex flex-col gap-4; }
+  .stack-sm { @apply flex flex-col gap-2; }
+  .stack-lg { @apply flex flex-col gap-6; }
+  .section-heading { @apply flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between; }
+  .section-heading.compact { @apply gap-2; }
+  .section-heading h2 { @apply text-2xl font-semibold; letter-spacing: 0; }
+  .section-heading h3, .panel h3 { @apply text-lg font-semibold; letter-spacing: 0; }
+  .muted-copy { color: var(--muted); @apply text-sm; }
+  .body-copy { @apply text-sm leading-6; color: var(--ink); }
+  .field-label { @apply block text-sm font-semibold; color: var(--muted); }
+  .field-input { @apply mt-1 w-full rounded-[3px] border px-3 py-2 text-sm outline-none transition; background: var(--panel); color: var(--ink); border-color: var(--line); }
+  .field-input:focus { border-color: var(--blue); box-shadow: 0 0 0 2px color-mix(in srgb, var(--blue) 18%, transparent); }
+  .primary-button { @apply inline-flex min-h-10 items-center justify-center rounded-[3px] px-4 py-2 text-sm font-semibold text-white transition disabled:opacity-50; background: var(--blue); }
+  .primary-button:hover:not(:disabled) { background: var(--blue-dark); }
+  .secondary-button { @apply inline-flex min-h-10 items-center justify-center rounded-[3px] border px-4 py-2 text-sm font-semibold transition disabled:opacity-50; background: var(--panel); color: var(--ink); border-color: var(--line); }
+  .secondary-button:hover:not(:disabled) { background: color-mix(in srgb, var(--blue) 8%, var(--panel)); }
+  .fit { @apply w-fit; }
+  .danger-note { @apply rounded-[3px] border px-3 py-2 text-sm; background: color-mix(in srgb, var(--warning) 12%, var(--panel)); border-color: color-mix(in srgb, var(--warning) 35%, var(--line)); color: var(--ink); }
+  .info-note { @apply rounded-[3px] border px-3 py-2 text-sm; background: color-mix(in srgb, var(--blue) 8%, var(--panel)); border-color: color-mix(in srgb, var(--blue) 20%, var(--line)); color: var(--ink); }
+  .text-link, .mono-link { @apply text-sm font-semibold no-underline; color: var(--blue); }
+  .definition-grid { @apply grid gap-3 text-sm md:grid-cols-2; }
+  .definition-grid dt { color: var(--muted); }
+  .definition-grid dd { @apply mt-1 font-semibold; color: var(--ink); }
+  .definition-grid .wide { @apply md:col-span-2; }
+  .subsection { @apply border-t pt-4; border-color: var(--line); }
+  .form-grid { @apply grid gap-3 md:grid-cols-2; }
+  .check-row { @apply flex min-h-10 items-center gap-2 text-sm font-semibold; color: var(--muted); }
+  .detail-grid { @apply grid gap-4 xl:grid-cols-[minmax(0,1fr)_380px]; }
+  .metric-grid { @apply grid gap-3 sm:grid-cols-2 xl:grid-cols-4; }
+  .metric-card { @apply rounded-md border p-4; background: var(--panel); border-color: var(--line); }
+  .metric-card strong { @apply mt-2 block text-3xl; }
+  .table-wrap { @apply overflow-x-auto rounded-md border; border-color: var(--line); background: var(--panel); }
+  .data-table { @apply min-w-full border-collapse text-left text-sm; }
+  .data-table th { @apply border-b px-3 py-2 text-xs uppercase; color: var(--muted); border-color: var(--line); letter-spacing: 0; }
+  .data-table td { @apply border-b px-3 py-3 align-top; border-color: var(--line); }
+  .data-table tr:last-child td { @apply border-b-0; }
+  .priority-edge { border-left: 3px solid var(--line); }
+  .priority-low { border-left-color: var(--ok); }
+  .priority-medium { border-left-color: var(--blue); }
+  .priority-high { border-left-color: var(--warning); }
+  .priority-critical { border-left-color: var(--danger); }
+  .filter-row, .action-row { @apply flex flex-wrap items-center gap-3; }
+  .pager { @apply flex items-center justify-between gap-3; }
+  .tech-list, .work-list, .complaint-list { @apply flex flex-col gap-3; }
+  .tech-card, .work-card, .complaint-row { @apply rounded-md border p-3 text-sm no-underline; background: var(--panel); color: var(--ink); border-color: var(--line); }
+  .tech-card { @apply grid gap-2; }
+  .tech-card span, .complaint-row span { @apply mt-1 block; color: var(--muted); }
+  .work-card-head, .complaint-row { @apply flex items-start justify-between gap-3; }
+  .narrow-page { @apply mx-auto max-w-2xl; }
+  .login-page { @apply flex min-h-screen items-center justify-center p-4; background: var(--bg); }
+  .login-card { @apply w-full max-w-md rounded-md border p-6 shadow-sm; background: var(--panel); border-color: var(--line); }
 }

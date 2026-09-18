@@ -1,10 +1,20 @@
 import type { components } from "./generated";
 import type { incidentStatuses } from "./config";
 
+export type LoginRequest = components["schemas"]["LoginRequest"];
+export type LoginResponse = components["schemas"]["LoginResponse"];
+export type AuthenticatedUserResponse = components["schemas"]["AuthenticatedUserResponse"];
+export type AuthenticatedUserBuilding = components["schemas"]["AuthenticatedUserBuilding"];
+export type BuildingListResponse = components["schemas"]["BuildingListResponse"];
+export type BuildingListItem = components["schemas"]["BuildingListItem"];
 export type ComplaintCreateRequest = components["schemas"]["ComplaintCreateRequest"];
 export type ComplaintCreateResponse = components["schemas"]["ComplaintCreateResponse"];
+export type ComplaintDetailResponse = components["schemas"]["ComplaintDetailResponse"];
+export type ReporterComplaintListResponse = components["schemas"]["ReporterComplaintListResponse"];
+export type ReporterComplaintListItem = components["schemas"]["ReporterComplaintListItem"];
 export type IncidentDetailResponse = components["schemas"]["IncidentDetailResponse"];
 export type IncidentListResponse = components["schemas"]["IncidentListResponse"];
+export type IncidentListItem = components["schemas"]["IncidentListItem"];
 export type IncidentStatusValue = (typeof incidentStatuses)[number];
 export type ManualTriageRequest = components["schemas"]["ManualTriageRequest"];
 export type AssignmentCreateRequest = components["schemas"]["AssignmentCreateRequest"];
@@ -13,3 +23,9 @@ export type IncidentLifecycleRequest = components["schemas"]["IncidentLifecycleR
 export type IncidentResolveRequest = components["schemas"]["IncidentResolveRequest"];
 export type TechnicianListResponse = components["schemas"]["TechnicianListResponse"];
 export type TechnicianListItem = components["schemas"]["TechnicianListItem"];
+export type TechnicianWorkListResponse = components["schemas"]["TechnicianWorkListResponse"];
+export type TechnicianWorkItem = components["schemas"]["TechnicianWorkItem"];
+export type OperationsMetricsResponse = components["schemas"]["OperationsMetricsResponse"];
+export type AiMetricsResponse = components["schemas"]["AiMetricsResponse"];
+
+export type UserRole = "FACILITY_MANAGER" | "TECHNICIAN" | "REPORTER";

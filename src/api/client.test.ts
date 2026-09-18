@@ -1,57 +1,53 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { createComplaint, listIncidents } from "./client";
+import { createComplaint, listIncidents, login, storeCsrfToken } from "./client";
+
+function jsonResponse(body: unknown, status = 200) {
+  return Promise.resolve(new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } }));
+}
 
 describe("API client", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    window.localStorage.clear();
   });
 
-  it("sends development identity headers on incident listing", async () => {
-    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response(JSON.stringify({ items: [], total: 0, limit: 10, offset: 0 }), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      }),
-    );
+  it("uses cookie credentials without development identity headers", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({ items: [], total: 0, limit: 10, offset: 0 }), { status: 200, headers: { "Content-Type": "application/json" } }));
 
-    await listIncidents(
-      {
-        "X-Dev-User-Id": "manager-id",
-        "X-Dev-Role": "facility_manager",
-        "X-Dev-Building-Id": "building-id",
-      },
-      { limit: 10, offset: 0, status: "" },
-    );
+    await listIncidents({ limit: 10, offset: 0, status: "" });
 
-    const headers = fetchMock.mock.calls[0][1]?.headers as Headers;
-    expect(headers.get("X-Dev-User-Id")).toBe("manager-id");
-    expect(headers.get("X-Dev-Role")).toBe("facility_manager");
-    expect(headers.get("X-Dev-Building-Id")).toBe("building-id");
+    const init = fetchMock.mock.calls[0][1];
+    const headers = init?.headers as Headers;
+    expect(init?.credentials).toBe("include");
+    expect(headers.get("X-Dev-User-Id")).toBeNull();
+    expect(String(fetchMock.mock.calls[0][0])).toContain("/api/v1/incidents?limit=10&offset=0");
   });
 
-  it("sends a stable idempotency key when creating a complaint", async () => {
-    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          complaint_id: "00000000-0000-0000-0000-000000000001",
-          incident_id: "00000000-0000-0000-0000-000000000002",
-          status: "PENDING_TRIAGE",
-        }),
-        { status: 202, headers: { "Content-Type": "application/json" } },
-      ),
-    );
+  it("stores CSRF from login and sends it with idempotent complaint creation", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
+      const url = String(input);
+      if (url.includes("/api/v1/auth/login")) return jsonResponse({ csrf_token: "csrf-login", user: { id: "user-id", email: "reporter@example.com", role: "REPORTER", buildings: [] } });
+      return jsonResponse({ complaint_id: "00000000-0000-0000-0000-000000000001", incident_id: "00000000-0000-0000-0000-000000000002", status: "PENDING_TRIAGE" }, 202);
+    });
 
-    await createComplaint(
-      { "X-Dev-User-Id": "reporter-id" },
-      {
-        building_id: "00000000-0000-0000-0000-000000000003",
-        description: "Power failure in lobby",
-      },
-      "stable-key",
-    );
+    await login({ email: "reporter@example.com", password: "password123" });
+    await createComplaint({ building_id: "00000000-0000-0000-0000-000000000003", description: "Power failure in lobby" }, "stable-key");
 
-    const headers = fetchMock.mock.calls[0][1]?.headers as Headers;
+    const createInit = fetchMock.mock.calls[1][1];
+    const headers = createInit?.headers as Headers;
+    expect(createInit?.credentials).toBe("include");
     expect(headers.get("Idempotency-Key")).toBe("stable-key");
+    expect(headers.get("X-CSRF-Token")).toBe("csrf-login");
+  });
+
+  it("can send a stored CSRF token for state-changing requests", async () => {
+    storeCsrfToken("stored-csrf");
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({ complaint_id: "c", incident_id: "i", status: "PENDING_TRIAGE" }), { status: 202, headers: { "Content-Type": "application/json" } }));
+
+    await createComplaint({ building_id: "building-id", description: "Leak" }, "retry-safe-key");
+
+    const headers = fetchMock.mock.calls[0][1]?.headers as Headers;
+    expect(headers.get("X-CSRF-Token")).toBe("stored-csrf");
   });
 });

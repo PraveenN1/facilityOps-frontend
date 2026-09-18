@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-    "/api/v1/complaints": {
+    "/api/v1/auth/login": {
         parameters: {
             query?: never;
             header?: never;
@@ -12,6 +12,75 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
+        put?: never;
+        /** Login */
+        post: operations["login_api_v1_auth_login_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Logout */
+        post: operations["logout_api_v1_auth_logout_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Me */
+        get: operations["read_me_api_v1_auth_me_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/buildings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Buildings */
+        get: operations["list_buildings_api_v1_buildings_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/complaints": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List My Complaints */
+        get: operations["list_my_complaints_api_v1_complaints_get"];
         put?: never;
         /** Submit Complaint */
         post: operations["submit_complaint_api_v1_complaints_post"];
@@ -47,6 +116,23 @@ export interface paths {
         };
         /** List Incidents */
         get: operations["list_incidents_api_v1_incidents_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/incidents/my-work": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List My Work */
+        get: operations["list_my_work_api_v1_incidents_my_work_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -157,6 +243,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/metrics/operations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Operations Metrics */
+        get: operations["read_operations_metrics_api_v1_metrics_operations_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/metrics/ai": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Ai Metrics */
+        get: operations["read_ai_metrics_api_v1_metrics_ai_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/technicians": {
         parameters: {
             query?: never;
@@ -238,6 +358,28 @@ export interface components {
              */
             status: "ASSIGNED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED" | "DECLINED";
         };
+        /** AiMetricsResponse */
+        AiMetricsResponse: {
+            scope: components["schemas"]["MetricsScope"];
+            /** Triage Requests */
+            triage_requests: number;
+            /** Successfully Processed Requests */
+            successfully_processed_requests: number;
+            /** Pending Requests */
+            pending_requests: number;
+            /** Failed Requests */
+            failed_requests: number;
+            /** Total Retry Attempts */
+            total_retry_attempts: number;
+            /** Requests With Retries */
+            requests_with_retries: number;
+            /** Persisted Successful Triage Results */
+            persisted_successful_triage_results: number;
+            /** Persisted Failed Triage Results */
+            persisted_failed_triage_results: number;
+            /** Incidents Awaiting Human Review */
+            incidents_awaiting_human_review: number;
+        };
         /** AssignmentCreateRequest */
         AssignmentCreateRequest: {
             /**
@@ -277,6 +419,55 @@ export interface components {
             incident_status: "PENDING_TRIAGE" | "AWAITING_ASSIGNMENT" | "AWAITING_APPROVAL" | "ASSIGNED" | "IN_PROGRESS" | "RESOLVED" | "CLOSED" | "MANUAL_REVIEW";
             /** Incident Version */
             incident_version: number;
+        };
+        /** AuthenticatedUserBuilding */
+        AuthenticatedUserBuilding: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Address */
+            address: string | null;
+            /** Timezone */
+            timezone: string;
+        };
+        /** AuthenticatedUserResponse */
+        AuthenticatedUserResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Email */
+            email: string;
+            /** Role */
+            role: string;
+            /** Building Ids */
+            building_ids: string[];
+            /** Buildings */
+            buildings: components["schemas"]["AuthenticatedUserBuilding"][];
+        };
+        /** BuildingListItem */
+        BuildingListItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Address */
+            address: string | null;
+            /** Timezone */
+            timezone: string;
+        };
+        /** BuildingListResponse */
+        BuildingListResponse: {
+            /** Items */
+            items: components["schemas"]["BuildingListItem"][];
         };
         /** ComplaintCreateRequest */
         ComplaintCreateRequest: {
@@ -534,6 +725,29 @@ export interface components {
              */
             created_at: string;
         };
+        /** LoginRequest */
+        LoginRequest: {
+            /** Email */
+            email: string;
+            /** Password */
+            password: string;
+        };
+        /** LoginResponse */
+        LoginResponse: {
+            user: components["schemas"]["AuthenticatedUserResponse"];
+            /** Csrf Token */
+            csrf_token: string;
+            /**
+             * Token Type
+             * @default cookie
+             */
+            token_type: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+        };
         /** ManualTriageRequest */
         ManualTriageRequest: {
             /** Category */
@@ -552,6 +766,90 @@ export interface components {
             suspected_hazard: boolean;
             /** Notes */
             notes?: string | null;
+        };
+        /** MetricsScope */
+        MetricsScope: {
+            /** Building Id */
+            building_id: string | null;
+            /** Building Ids */
+            building_ids: string[];
+        };
+        /** OperationsMetricsResponse */
+        OperationsMetricsResponse: {
+            scope: components["schemas"]["MetricsScope"];
+            /** Total Incidents */
+            total_incidents: number;
+            /** Open Incidents */
+            open_incidents: number;
+            /** Pending Triage */
+            pending_triage: number;
+            /** Awaiting Assignment */
+            awaiting_assignment: number;
+            /** Assigned */
+            assigned: number;
+            /** In Progress */
+            in_progress: number;
+            /** Resolved */
+            resolved: number;
+            /** Closed */
+            closed: number;
+            /** Active Technician Assignments */
+            active_technician_assignments: number;
+            /** Available Technicians */
+            available_technicians: number;
+        };
+        /** ReporterComplaintListItem */
+        ReporterComplaintListItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Building Id
+             * Format: uuid
+             */
+            building_id: string;
+            /** Description */
+            description: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "PENDING_TRIAGE" | "MANUAL_REVIEW" | "CLOSED";
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Incident Id
+             * Format: uuid
+             */
+            incident_id: string;
+            /**
+             * Incident Status
+             * @enum {string}
+             */
+            incident_status: "PENDING_TRIAGE" | "AWAITING_ASSIGNMENT" | "AWAITING_APPROVAL" | "ASSIGNED" | "IN_PROGRESS" | "RESOLVED" | "CLOSED" | "MANUAL_REVIEW";
+            /** Incident Category */
+            incident_category: string | null;
+            /**
+             * Incident Priority
+             * @enum {string}
+             */
+            incident_priority: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+        };
+        /** ReporterComplaintListResponse */
+        ReporterComplaintListResponse: {
+            /** Items */
+            items: components["schemas"]["ReporterComplaintListItem"][];
+            /** Total */
+            total: number;
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
         };
         /** TechnicianListItem */
         TechnicianListItem: {
@@ -584,6 +882,60 @@ export interface components {
             /** Items */
             items: components["schemas"]["TechnicianListItem"][];
         };
+        /** TechnicianWorkItem */
+        TechnicianWorkItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Complaint Id
+             * Format: uuid
+             */
+            complaint_id: string;
+            /**
+             * Building Id
+             * Format: uuid
+             */
+            building_id: string;
+            /** Complaint Description */
+            complaint_description: string;
+            /** Category */
+            category: string | null;
+            /**
+             * Priority
+             * @enum {string}
+             */
+            priority: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "PENDING_TRIAGE" | "AWAITING_ASSIGNMENT" | "AWAITING_APPROVAL" | "ASSIGNED" | "IN_PROGRESS" | "RESOLVED" | "CLOSED" | "MANUAL_REVIEW";
+            /** Version */
+            version: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Assignment Id
+             * Format: uuid
+             */
+            assignment_id: string;
+            /**
+             * Assignment Status
+             * @enum {string}
+             */
+            assignment_status: "ASSIGNED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED" | "DECLINED";
+        };
+        /** TechnicianWorkListResponse */
+        TechnicianWorkListResponse: {
+            /** Items */
+            items: components["schemas"]["TechnicianWorkItem"][];
+        };
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -606,14 +958,146 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    login_api_v1_auth_login_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoginResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    logout_api_v1_auth_logout_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-CSRF-Token"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_me_api_v1_auth_me_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthenticatedUserResponse"];
+                };
+            };
+        };
+    };
+    list_buildings_api_v1_buildings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BuildingListResponse"];
+                };
+            };
+        };
+    };
+    list_my_complaints_api_v1_complaints_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReporterComplaintListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     submit_complaint_api_v1_complaints_post: {
         parameters: {
             query?: never;
             header: {
                 "Idempotency-Key": string;
-                "X-Dev-User-Id"?: string | null;
-                "X-Dev-Role"?: string | null;
-                "X-Dev-Building-Id"?: string | null;
+                "X-CSRF-Token"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -647,11 +1131,7 @@ export interface operations {
     read_complaint_api_v1_complaints__complaint_id__get: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Dev-User-Id"?: string | null;
-                "X-Dev-Role"?: string | null;
-                "X-Dev-Building-Id"?: string | null;
-            };
+            header?: never;
             path: {
                 complaint_id: string;
             };
@@ -686,11 +1166,7 @@ export interface operations {
                 offset?: number;
                 status?: ("PENDING_TRIAGE" | "AWAITING_ASSIGNMENT" | "AWAITING_APPROVAL" | "ASSIGNED" | "IN_PROGRESS" | "RESOLVED" | "CLOSED" | "MANUAL_REVIEW") | null;
             };
-            header?: {
-                "X-Dev-User-Id"?: string | null;
-                "X-Dev-Role"?: string | null;
-                "X-Dev-Building-Id"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -716,14 +1192,30 @@ export interface operations {
             };
         };
     };
+    list_my_work_api_v1_incidents_my_work_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TechnicianWorkListResponse"];
+                };
+            };
+        };
+    };
     read_incident_api_v1_incidents__incident_id__get: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Dev-User-Id"?: string | null;
-                "X-Dev-Role"?: string | null;
-                "X-Dev-Building-Id"?: string | null;
-            };
+            header?: never;
             path: {
                 incident_id: string;
             };
@@ -755,9 +1247,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Dev-User-Id"?: string | null;
-                "X-Dev-Role"?: string | null;
-                "X-Dev-Building-Id"?: string | null;
+                "X-CSRF-Token"?: string | null;
             };
             path: {
                 incident_id: string;
@@ -794,9 +1284,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Dev-User-Id"?: string | null;
-                "X-Dev-Role"?: string | null;
-                "X-Dev-Building-Id"?: string | null;
+                "X-CSRF-Token"?: string | null;
             };
             path: {
                 incident_id: string;
@@ -833,9 +1321,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Dev-User-Id"?: string | null;
-                "X-Dev-Role"?: string | null;
-                "X-Dev-Building-Id"?: string | null;
+                "X-CSRF-Token"?: string | null;
             };
             path: {
                 incident_id: string;
@@ -872,9 +1358,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Dev-User-Id"?: string | null;
-                "X-Dev-Role"?: string | null;
-                "X-Dev-Building-Id"?: string | null;
+                "X-CSRF-Token"?: string | null;
             };
             path: {
                 incident_id: string;
@@ -911,9 +1395,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Dev-User-Id"?: string | null;
-                "X-Dev-Role"?: string | null;
-                "X-Dev-Building-Id"?: string | null;
+                "X-CSRF-Token"?: string | null;
             };
             path: {
                 incident_id: string;
@@ -946,14 +1428,72 @@ export interface operations {
             };
         };
     };
+    read_operations_metrics_api_v1_metrics_operations_get: {
+        parameters: {
+            query?: {
+                building_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperationsMetricsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_ai_metrics_api_v1_metrics_ai_get: {
+        parameters: {
+            query?: {
+                building_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiMetricsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_technicians_api_v1_technicians_get: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Dev-User-Id"?: string | null;
-                "X-Dev-Role"?: string | null;
-                "X-Dev-Building-Id"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -966,15 +1506,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TechnicianListResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

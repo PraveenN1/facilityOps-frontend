@@ -1,13 +1,18 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { Navigate, createBrowserRouter, RouterProvider } from "react-router-dom";
 
 import { AppLayout } from "./ui/AppLayout";
-import { IdentityProvider } from "./state/IdentityContext";
+import { AuthProvider, useAuth } from "./state/AuthContext";
+import { ProtectedRoute } from "./ui/ProtectedRoute";
 import { ComplaintCreatePage } from "./pages/ComplaintCreatePage";
 import { IncidentDashboardPage } from "./pages/IncidentDashboardPage";
 import { IncidentDetailPage } from "./pages/IncidentDetailPage";
+import { LoginPage } from "./pages/LoginPage";
+import { ManagerWorkspacePage } from "./pages/ManagerWorkspacePage";
+import { ReporterWorkspacePage } from "./pages/ReporterWorkspacePage";
+import { TechnicianWorkspacePage } from "./pages/TechnicianWorkspacePage";
 import "./styles.css";
 
 const queryClient = new QueryClient({
@@ -16,17 +21,45 @@ const queryClient = new QueryClient({
       staleTime: 15_000,
       retry: 1,
     },
+    mutations: {
+      retry: false,
+    },
   },
 });
 
+function RoleHome() {
+  const { role } = useAuth();
+  if (role === "FACILITY_MANAGER") return <ManagerWorkspacePage />;
+  if (role === "TECHNICIAN") return <TechnicianWorkspacePage />;
+  if (role === "REPORTER") return <ReporterWorkspacePage />;
+  return <Navigate to="/login" replace />;
+}
+
+function ManagerOnly({ children }: { children: React.ReactElement }) {
+  const { role } = useAuth();
+  return role === "FACILITY_MANAGER" ? children : <Navigate to="/" replace />;
+}
+
+function ReporterOnly({ children }: { children: React.ReactElement }) {
+  const { role } = useAuth();
+  return role === "REPORTER" ? children : <Navigate to="/" replace />;
+}
+
 const router = createBrowserRouter([
+  { path: "/login", element: <LoginPage /> },
   {
-    path: "/",
-    element: <AppLayout />,
+    element: <ProtectedRoute />,
     children: [
-      { index: true, element: <IncidentDashboardPage /> },
-      { path: "complaints/new", element: <ComplaintCreatePage /> },
-      { path: "incidents/:incidentId", element: <IncidentDetailPage /> },
+      {
+        path: "/",
+        element: <AppLayout />,
+        children: [
+          { index: true, element: <RoleHome /> },
+          { path: "incidents", element: <ManagerOnly><IncidentDashboardPage /></ManagerOnly> },
+          { path: "incidents/:incidentId", element: <IncidentDetailPage /> },
+          { path: "complaints/new", element: <ReporterOnly><ComplaintCreatePage /></ReporterOnly> },
+        ],
+      },
     ],
   },
 ]);
@@ -34,9 +67,9 @@ const router = createBrowserRouter([
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
-      <IdentityProvider>
+      <AuthProvider>
         <RouterProvider router={router} />
-      </IdentityProvider>
+      </AuthProvider>
     </QueryClientProvider>
   </React.StrictMode>,
 );

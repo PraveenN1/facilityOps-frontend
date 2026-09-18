@@ -15,44 +15,45 @@ import {
 } from "../api/client";
 import { incidentPriorities } from "../api/config";
 import type { IncidentDetailResponse, TechnicianListItem } from "../api/types";
-import { useIdentity } from "../state/IdentityContext";
+import { useAuth } from "../state/AuthContext";
 import { EmptyState, ErrorState, LoadingState } from "../ui/AsyncState";
 import { StatusBadge } from "../ui/StatusBadge";
 import { compactUuid, formatDateTime } from "../utils/format";
 
 export function IncidentDetailPage() {
   const { incidentId } = useParams<{ incidentId: string }>();
-  const { headers } = useIdentity();
+  const { role } = useAuth();
   const queryClient = useQueryClient();
 
   const incidentQuery = useQuery({
-    queryKey: ["incident", headers, incidentId],
-    queryFn: () => getIncident(headers, incidentId!),
+    queryKey: ["incident", incidentId],
+    queryFn: () => getIncident(incidentId!),
     enabled: Boolean(incidentId),
   });
 
   const techniciansQuery = useQuery({
-    queryKey: ["technicians", headers],
-    queryFn: () => listTechnicians(headers),
-    enabled: headers["X-Dev-Role"] === "facility_manager" && Boolean(headers["X-Dev-Building-Id"]),
+    queryKey: ["technicians"],
+    queryFn: listTechnicians,
+    enabled: role === "FACILITY_MANAGER",
   });
 
   const refreshWorkflow = () => {
-    void queryClient.invalidateQueries({ queryKey: ["incident"] });
+    void queryClient.invalidateQueries({ queryKey: ["incident", incidentId] });
     void queryClient.invalidateQueries({ queryKey: ["incidents"] });
     void queryClient.invalidateQueries({ queryKey: ["technicians"] });
+    void queryClient.invalidateQueries({ queryKey: ["technician", "my-work"] });
+    void queryClient.invalidateQueries({ queryKey: ["complaints"] });
+    void queryClient.invalidateQueries({ queryKey: ["metrics"] });
   };
 
   if (!incidentId) return <ErrorState detail="Incident ID is missing from the route." />;
 
   return (
-    <section className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <section className="stack-lg">
+      <div className="section-heading">
         <div>
-          <Link to="/" className="text-sm font-medium text-cyan-800 hover:text-cyan-950">
-            Back to dashboard
-          </Link>
-          <h2 className="mt-2 text-2xl font-semibold text-slate-950">Incident {compactUuid(incidentId)}</h2>
+          <Link to="/" className="text-link">Back to workspace</Link>
+          <h2>Incident {compactUuid(incidentId)}</h2>
         </div>
         {incidentQuery.data ? <StatusBadge status={incidentQuery.data.status} /> : null}
       </div>
@@ -61,25 +62,23 @@ export function IncidentDetailPage() {
       {incidentQuery.isError ? <ErrorState detail={incidentQuery.error.message} /> : null}
 
       {incidentQuery.data ? (
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
-          <div className="space-y-4">
+        <div className="detail-grid">
+          <div className="stack">
             <IncidentSummary incident={incidentQuery.data} />
-            <AiTriageReview incident={incidentQuery.data} onChanged={refreshWorkflow} />
+            <AiTriageReview incident={incidentQuery.data} canReview={role === "FACILITY_MANAGER"} onChanged={refreshWorkflow} />
           </div>
-          <div className="space-y-4">
-            <TechnicianAssignment
-              incident={incidentQuery.data}
-              technicians={techniciansQuery.data?.items ?? []}
-              isLoading={techniciansQuery.isLoading}
-              error={techniciansQuery.error}
-              isSuccess={techniciansQuery.isSuccess}
-              onChanged={refreshWorkflow}
-            />
-            <IncidentLifecycle
-              incident={incidentQuery.data}
-              technicians={techniciansQuery.data?.items ?? []}
-              onChanged={refreshWorkflow}
-            />
+          <div className="stack">
+            {role === "FACILITY_MANAGER" ? (
+              <TechnicianAssignment
+                incident={incidentQuery.data}
+                technicians={techniciansQuery.data?.items ?? []}
+                isLoading={techniciansQuery.isLoading}
+                error={techniciansQuery.error}
+                isSuccess={techniciansQuery.isSuccess}
+                onChanged={refreshWorkflow}
+              />
+            ) : null}
+            <IncidentLifecycle incident={incidentQuery.data} role={role} onChanged={refreshWorkflow} />
           </div>
         </div>
       ) : null}
@@ -89,86 +88,53 @@ export function IncidentDetailPage() {
 
 function IncidentSummary({ incident }: { incident: IncidentDetailResponse }) {
   return (
-    <div className="rounded-md border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="grid gap-4 md:grid-cols-2">
+    <article className="panel stack priority-edge priority-medium">
+      <div className="section-heading compact">
         <div>
-          <h3 className="text-base font-semibold text-slate-950">Original complaint</h3>
-          <p className="mt-2 text-sm leading-6 text-slate-700">{incident.complaint_description}</p>
+          <p className="eyebrow">Original complaint</p>
+          <h3>{incident.category ?? "Uncategorized incident"}</h3>
         </div>
-        <dl className="grid grid-cols-2 gap-3 text-sm">
-          <div>
-            <dt className="text-slate-500">Priority</dt>
-            <dd className="mt-1 font-semibold text-slate-900">{incident.priority}</dd>
-          </div>
-          <div>
-            <dt className="text-slate-500">Category</dt>
-            <dd className="mt-1 font-semibold text-slate-900">{incident.category ?? "Uncategorized"}</dd>
-          </div>
-          <div>
-            <dt className="text-slate-500">Version</dt>
-            <dd className="mt-1 font-semibold text-slate-900">{incident.version}</dd>
-          </div>
-          <div>
-            <dt className="text-slate-500">Created</dt>
-            <dd className="mt-1 font-semibold text-slate-900">{formatDateTime(incident.created_at)}</dd>
-          </div>
-        </dl>
+        <span className="mono-cell">v{incident.version}</span>
       </div>
+      <p className="body-copy">{incident.complaint_description}</p>
+      <dl className="definition-grid">
+        <div><dt>Priority</dt><dd>{incident.priority}</dd></div>
+        <div><dt>Building</dt><dd className="mono-cell">{compactUuid(incident.building_id)}</dd></div>
+        <div><dt>Created</dt><dd>{formatDateTime(incident.created_at)}</dd></div>
+        <div><dt>Updated</dt><dd>{formatDateTime(incident.updated_at)}</dd></div>
+      </dl>
       <ActiveAssignment incident={incident} />
-    </div>
+    </article>
   );
 }
 
 function ActiveAssignment({ incident }: { incident: IncidentDetailResponse }) {
   const assignment = incident.active_assignment;
   return (
-    <div className="mt-4 border-t border-slate-200 pt-4">
-      <h3 className="text-base font-semibold text-slate-950">Current active assignment</h3>
+    <div className="subsection">
+      <h3>Current active assignment</h3>
       {assignment ? (
-        <dl className="mt-3 grid gap-3 text-sm md:grid-cols-2">
-          <div>
-            <dt className="text-slate-500">Technician</dt>
-            <dd className="mt-1 font-semibold text-slate-900">{assignment.technician_display_name}</dd>
-          </div>
-          <div>
-            <dt className="text-slate-500">Assignment status</dt>
-            <dd className="mt-1 font-semibold text-slate-900">{assignment.status}</dd>
-          </div>
-          <div>
-            <dt className="text-slate-500">Assignment ID</dt>
-            <dd className="mt-1 font-mono text-xs text-slate-900">{assignment.assignment_id}</dd>
-          </div>
-          <div>
-            <dt className="text-slate-500">Technician profile ID</dt>
-            <dd className="mt-1 font-mono text-xs text-slate-900">{assignment.technician_id}</dd>
-          </div>
+        <dl className="definition-grid">
+          <div><dt>Technician</dt><dd>{assignment.technician_display_name}</dd></div>
+          <div><dt>Status</dt><dd>{assignment.status}</dd></div>
+          <div><dt>Assignment ID</dt><dd className="mono-cell">{assignment.assignment_id}</dd></div>
+          <div><dt>Technician profile</dt><dd className="mono-cell">{assignment.technician_id}</dd></div>
         </dl>
       ) : (
-        <EmptyState
-          title="No active assignment"
-          detail="Resolved incidents release capacity, so this does not prove there was never a historical assignment."
-        />
+        <EmptyState title="No active assignment" detail="Resolved incidents release capacity; historical assignments may still exist." />
       )}
     </div>
   );
 }
 
-function AiTriageReview({ incident, onChanged }: { incident: IncidentDetailResponse; onChanged: () => void }) {
-  const { headers } = useIdentity();
+function AiTriageReview({ incident, canReview, onChanged }: { incident: IncidentDetailResponse; canReview: boolean; onChanged: () => void }) {
   const [category, setCategory] = useState(incident.latest_triage_result?.validated_result?.category ?? incident.category ?? "");
   const [priority, setPriority] = useState(incident.latest_triage_result?.validated_result?.suggested_priority ?? incident.priority);
   const [suspectedHazard, setSuspectedHazard] = useState(false);
   const [notes, setNotes] = useState("");
 
   const mutation = useMutation({
-    mutationFn: () =>
-      manualTriage(headers, incident.id, {
-        category,
-        priority,
-        expected_version: incident.version,
-        suspected_hazard: suspectedHazard,
-        notes: notes.trim() || null,
-      }),
+    mutationFn: () => manualTriage(incident.id, { category, priority, expected_version: incident.version, suspected_hazard: suspectedHazard, notes: notes.trim() || null }),
     onSuccess: onChanged,
   });
 
@@ -177,282 +143,96 @@ function AiTriageReview({ incident, onChanged }: { incident: IncidentDetailRespo
   const isFailed = ["FAILED", "INVALID_OUTPUT", "TIMEOUT"].includes(incident.ai_triage_status ?? "");
 
   return (
-    <div className="rounded-md border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h3 className="text-base font-semibold text-slate-950">AI triage review</h3>
-          <p className="mt-1 text-sm text-slate-500">AI output is advisory and requires deterministic backend checks.</p>
-        </div>
-        <StatusBadge status={incident.ai_triage_status} />
+    <article className="panel stack ai-panel">
+      <div className="section-heading compact">
+        <div><p className="eyebrow">AI triage review</p><h3>Recommendation</h3></div>
+        <StatusBadge status={incident.ai_triage_status} ai />
       </div>
-
-      {!incident.ai_triage_status ? (
-        <EmptyState title="No AI status yet" detail="The triage event may not have been processed by the worker." />
-      ) : null}
-      {incident.ai_triage_status === "PENDING" || incident.ai_triage_status === "PROCESSING" ? (
-        <p className="mt-4 rounded-md bg-slate-50 px-3 py-2 text-sm text-slate-600">AI triage is still pending.</p>
-      ) : null}
-      {isFailed ? (
-        <p className="mt-4 rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-900">
-          AI triage did not produce a usable recommendation. Review the original complaint manually.
-        </p>
-      ) : null}
+      {!incident.ai_triage_status ? <EmptyState title="No AI status yet" detail="The triage event may still be waiting for the worker." /> : null}
+      {incident.ai_triage_status === "PENDING" || incident.ai_triage_status === "PROCESSING" ? <p className="info-note">AI triage is still pending.</p> : null}
+      {isFailed ? <p className="danger-note">AI triage did not produce a usable recommendation. Review the complaint manually.</p> : null}
       {recommendation ? (
-        <div className="mt-4 grid gap-3 text-sm md:grid-cols-2">
-          <div>
-            <p className="text-slate-500">Recommended category</p>
-            <p className="font-semibold text-slate-950">{recommendation.category}</p>
-          </div>
-          <div>
-            <p className="text-slate-500">Suggested priority</p>
-            <p className="font-semibold text-slate-950">{recommendation.suggested_priority}</p>
-          </div>
-          <div className="md:col-span-2">
-            <p className="text-slate-500">Summary</p>
-            <p className="font-semibold text-slate-950">{recommendation.issue_summary}</p>
-          </div>
-          <div className="md:col-span-2">
-            <p className="text-slate-500">Safety notes</p>
-            <p className="font-semibold text-slate-950">
-              {recommendation.safety_notes.length ? recommendation.safety_notes.join(", ") : "None provided"}
-            </p>
-          </div>
-        </div>
+        <dl className="definition-grid">
+          <div><dt>Category</dt><dd>{recommendation.category}</dd></div>
+          <div><dt>Suggested priority</dt><dd>{recommendation.suggested_priority}</dd></div>
+          <div className="wide"><dt>Summary</dt><dd>{recommendation.issue_summary}</dd></div>
+          <div className="wide"><dt>Location</dt><dd>{recommendation.location ?? "None provided"}</dd></div>
+          <div className="wide"><dt>Safety notes</dt><dd>{recommendation.safety_notes.length ? recommendation.safety_notes.join(", ") : "None provided"}</dd></div>
+        </dl>
       ) : null}
-
-      <form
-        className="mt-4 grid gap-3 border-t border-slate-200 pt-4 md:grid-cols-2"
-        onSubmit={(event: FormEvent<HTMLFormElement>) => {
-          event.preventDefault();
-          mutation.mutate();
-        }}
-      >
-        <label className="field-label">
-          Confirmed category
-          <input required className="field-input" value={category} onChange={(event) => setCategory(event.target.value)} />
-        </label>
-        <label className="field-label">
-          Confirmed priority
-          <select className="field-input" value={priority} onChange={(event) => setPriority(event.target.value as typeof priority)}>
-            {incidentPriorities.map((item) => (
-              <option key={item} value={item}>
-                {item}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="field-label md:col-span-2">
-          Review notes
-          <textarea className="field-input" value={notes} onChange={(event) => setNotes(event.target.value)} />
-        </label>
-        <label className="flex items-center gap-2 text-sm font-medium text-slate-700 md:col-span-2">
-          <input
-            type="checkbox"
-            checked={suspectedHazard}
-            onChange={(event) => setSuspectedHazard(event.target.checked)}
-          />
-          Suspected hazard requiring escalation
-        </label>
-        {mutation.isError ? <MutationError title="Manual triage failed" error={mutation.error} /> : null}
-        <button className="primary-button md:w-max" disabled={mutation.isPending || incident.status !== "PENDING_TRIAGE"} type="submit">
-          Confirm triage
-        </button>
-      </form>
-    </div>
+      {canReview ? (
+        <form className="stack subsection" onSubmit={(event: FormEvent<HTMLFormElement>) => { event.preventDefault(); mutation.mutate(); }}>
+          <div className="form-grid">
+            <label className="field-label">Confirmed category<input required className="field-input" value={category} onChange={(event) => setCategory(event.target.value)} /></label>
+            <label className="field-label">Confirmed priority<select className="field-input" value={priority} onChange={(event) => setPriority(event.target.value as typeof priority)}>{incidentPriorities.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
+          </div>
+          <label className="field-label">Review notes<textarea className="field-input" value={notes} onChange={(event) => setNotes(event.target.value)} /></label>
+          <label className="check-row"><input type="checkbox" checked={suspectedHazard} onChange={(event) => setSuspectedHazard(event.target.checked)} />Suspected hazard requiring escalation</label>
+          {mutation.isError ? <MutationError title="Manual triage failed" error={mutation.error} /> : null}
+          <button className="primary-button fit" disabled={mutation.isPending || incident.status !== "PENDING_TRIAGE"} type="submit">Confirm triage</button>
+        </form>
+      ) : <p className="info-note">Only facility managers can confirm AI triage recommendations.</p>}
+    </article>
   );
 }
 
-function TechnicianAssignment({
-  incident,
-  technicians,
-  isLoading,
-  error,
-  isSuccess,
-  onChanged,
-}: {
-  incident: IncidentDetailResponse;
-  technicians: TechnicianListItem[];
-  isLoading: boolean;
-  error: Error | null;
-  isSuccess: boolean;
-  onChanged: () => void;
-}) {
-  const { headers } = useIdentity();
+function TechnicianAssignment({ incident, technicians, isLoading, error, isSuccess, onChanged }: { incident: IncidentDetailResponse; technicians: TechnicianListItem[]; isLoading: boolean; error: Error | null; isSuccess: boolean; onChanged: () => void }) {
   const [technicianId, setTechnicianId] = useState("");
-
-  const mutation = useMutation({
-    mutationFn: () => assignTechnician(headers, incident.id, { technician_id: technicianId, expected_version: incident.version }),
-    onSuccess: onChanged,
-  });
+  const mutation = useMutation({ mutationFn: () => assignTechnician(incident.id, { technician_id: technicianId, expected_version: incident.version }), onSuccess: onChanged });
 
   return (
-    <div className="rounded-md border border-slate-200 bg-white p-4 shadow-sm">
-      <h3 className="text-base font-semibold text-slate-950">Technician assignment</h3>
-      <p className="mt-1 text-sm text-slate-500">Availability is derived from active assignments.</p>
+    <article className="panel stack">
+      <div><p className="eyebrow">Assignment</p><h3>Technician dispatch</h3><p className="muted-copy">Availability is derived from active ASSIGNED and IN_PROGRESS assignments.</p></div>
       {isLoading ? <LoadingState label="Loading technicians" /> : null}
       {error ? <ErrorState detail={error.message} /> : null}
-      {technicians.length === 0 && isSuccess ? (
-        <EmptyState title="No technicians visible" detail="Check the manager building identity." />
-      ) : null}
+      {technicians.length === 0 && isSuccess ? <EmptyState title="No technicians visible" detail="No technicians are visible to this manager session." /> : null}
       {technicians.length > 0 ? (
-        <form
-          className="mt-3 space-y-3"
-          onSubmit={(event) => {
-            event.preventDefault();
-            mutation.mutate();
-          }}
-        >
-          <label className="field-label">
-            Technician
-            <select className="field-input" value={technicianId} onChange={(event) => setTechnicianId(event.target.value)} required>
-              <option value="">Select technician profile</option>
-              {technicians.map((technician) => (
-                <option key={technician.id} value={technician.id}>
-                  {technician.display_name} - {technician.available ? "available" : "busy"} - {technician.skills.join(", ") || "no skills"}
-                </option>
-              ))}
-            </select>
-          </label>
-          <div className="space-y-2">
-            {technicians.map((technician) => (
-              <div key={technician.id} className="rounded-md border border-slate-200 px-3 py-2 text-sm">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="font-semibold text-slate-900">{technician.display_name}</span>
-                  <span className={technician.available ? "text-emerald-700" : "text-rose-700"}>
-                    {technician.available ? "Available" : "Unavailable"}
-                  </span>
-                </div>
-                <p className="mt-1 text-slate-500">{technician.skills.join(", ") || "No skills recorded"}</p>
-                <p className="mt-1 font-mono text-xs text-slate-500">Technician profile: {technician.id}</p>
-                <p className="mt-1 font-mono text-xs text-slate-500">Technician user: {technician.user_id}</p>
-              </div>
-            ))}
-          </div>
+        <form className="stack" onSubmit={(event) => { event.preventDefault(); mutation.mutate(); }}>
+          <label className="field-label">Technician<select className="field-input" value={technicianId} onChange={(event) => setTechnicianId(event.target.value)} required><option value="">Select technician profile</option>{technicians.map((technician) => <option key={technician.id} value={technician.id}>{technician.display_name} - {technician.available ? "available" : "busy"}</option>)}</select></label>
+          <div className="tech-list">{technicians.map((technician) => <div key={technician.id} className="tech-card"><div><strong>{technician.display_name}</strong><span>{technician.skills.join(", ") || "No skills recorded"}</span></div><StatusBadge status={technician.available ? "AVAILABLE" : "UNAVAILABLE"} /><code>profile {compactUuid(technician.id)}</code><code>user {compactUuid(technician.user_id)}</code></div>)}</div>
           {mutation.isError ? <MutationError title="Assignment failed" error={mutation.error} /> : null}
-          <button
-            className="primary-button w-full"
-            disabled={mutation.isPending || incident.status !== "AWAITING_ASSIGNMENT"}
-            type="submit"
-          >
-            Assign technician
-          </button>
+          <button className="primary-button" disabled={mutation.isPending || incident.status !== "AWAITING_ASSIGNMENT"} type="submit">Assign technician</button>
         </form>
       ) : null}
-    </div>
+    </article>
   );
 }
 
-function IncidentLifecycle({
-  incident,
-  technicians,
-  onChanged,
-}: {
-  incident: IncidentDetailResponse;
-  technicians: TechnicianListItem[];
-  onChanged: () => void;
-}) {
-  const { headers, identity, setIdentity } = useIdentity();
+function IncidentLifecycle({ incident, role, onChanged }: { incident: IncidentDetailResponse; role: string | null; onChanged: () => void }) {
   const [resolutionNotes, setResolutionNotes] = useState("");
-  const activeAssignment = incident.active_assignment;
-  const assignedTechnician = activeAssignment
-    ? technicians.find((technician) => technician.id === activeAssignment.technician_id)
-    : undefined;
-
-  const startMutation = useMutation({
-    mutationFn: () => startIncident(headers, incident.id, { expected_version: incident.version }),
-    onSuccess: onChanged,
-  });
-  const resolveMutation = useMutation({
-    mutationFn: () =>
-      resolveIncident(headers, incident.id, {
-        expected_version: incident.version,
-        resolution_notes: resolutionNotes.trim(),
-      }),
-    onSuccess: onChanged,
-  });
-  const closeMutation = useMutation({
-    mutationFn: () => closeIncident(headers, incident.id, { expected_version: incident.version }),
-    onSuccess: onChanged,
-  });
-
+  const startMutation = useMutation({ mutationFn: () => startIncident(incident.id, { expected_version: incident.version }), onSuccess: onChanged });
+  const resolveMutation = useMutation({ mutationFn: () => resolveIncident(incident.id, { expected_version: incident.version, resolution_notes: resolutionNotes.trim() }), onSuccess: onChanged });
+  const closeMutation = useMutation({ mutationFn: () => closeIncident(incident.id, { expected_version: incident.version }), onSuccess: onChanged });
   const activeError = startMutation.error ?? resolveMutation.error ?? closeMutation.error;
   const pending = startMutation.isPending || resolveMutation.isPending || closeMutation.isPending;
-  const canStart = incident.status === "ASSIGNED";
-  const canResolve = Boolean(incident.status === "IN_PROGRESS" && resolutionNotes.trim());
-  const canClose = incident.status === "RESOLVED";
-
+  const canTechnicianAct = role === "TECHNICIAN";
+  const canManagerClose = role === "FACILITY_MANAGER";
   const nextAction = useMemo(() => {
-    if (incident.status === "ASSIGNED") return "Technician can start work.";
-    if (incident.status === "IN_PROGRESS") return "Technician can resolve work with notes.";
-    if (incident.status === "RESOLVED") return "Manager can close the incident.";
+    if (incident.status === "ASSIGNED") return "Assigned technicians can start work.";
+    if (incident.status === "IN_PROGRESS") return "Assigned technicians can resolve work with notes.";
+    if (incident.status === "RESOLVED") return "Facility managers can close the incident.";
     return "No lifecycle action is available for this state.";
   }, [incident.status]);
 
-  const switchToAssignedTechnician = () => {
-    if (!assignedTechnician) return;
-    setIdentity({
-      userId: assignedTechnician.user_id,
-      role: "technician",
-      buildingId: identity.buildingId,
-    });
-  };
-
   return (
-    <div className="rounded-md border border-slate-200 bg-white p-4 shadow-sm">
-      <h3 className="text-base font-semibold text-slate-950">Incident lifecycle</h3>
-      <p className="mt-1 text-sm text-slate-500">{nextAction}</p>
-      {activeAssignment ? (
-        <div className="mt-3 rounded-md bg-slate-50 px-3 py-2 text-sm text-slate-700">
-          Active assignment {compactUuid(activeAssignment.assignment_id)} is {activeAssignment.status} for {activeAssignment.technician_display_name}.
-        </div>
-      ) : (
-        <EmptyState
-          title="No active assignment for lifecycle work"
-          detail="Resolved incidents release capacity; close remains a manager action."
-        />
-      )}
-      {assignedTechnician ? (
-        <button className="secondary-button mt-3 w-full" type="button" onClick={switchToAssignedTechnician}>
-          Switch to assigned technician identity
-        </button>
-      ) : activeAssignment ? (
-        <p className="danger-note mt-3">
-          The assigned technician user ID is unavailable until a local-demo manager can load the technician list.
-        </p>
-      ) : null}
-      <p className="danger-note mt-3">
-        Start and resolve use the trusted local-demo technician user identity. This is not production authentication.
-      </p>
-      <div className="mt-4 space-y-3">
-        <button className="primary-button w-full" disabled={!canStart || pending} onClick={() => startMutation.mutate()}>
-          Start work
-        </button>
-        <label className="field-label">
-          Resolution notes
-          <textarea className="field-input" value={resolutionNotes} onChange={(event) => setResolutionNotes(event.target.value)} />
-        </label>
-        <button className="primary-button w-full" disabled={!canResolve || pending} onClick={() => resolveMutation.mutate()}>
-          Resolve work
-        </button>
-        <button className="secondary-button w-full" disabled={!canClose || pending} onClick={() => closeMutation.mutate()}>
-          Close incident
-        </button>
-        {activeError ? <MutationError title="Lifecycle transition failed" error={activeError} /> : null}
-      </div>
-    </div>
+    <article className="panel stack">
+      <div><p className="eyebrow">Lifecycle</p><h3>State transition</h3><p className="muted-copy">{nextAction}</p></div>
+      {incident.active_assignment ? <p className="info-note">Active assignment {compactUuid(incident.active_assignment.assignment_id)} is {incident.active_assignment.status} for {incident.active_assignment.technician_display_name}.</p> : <EmptyState title="No active assignment" detail="Start and resolve actions require the assigned technician session." />}
+      <button className="primary-button" disabled={!canTechnicianAct || incident.status !== "ASSIGNED" || pending} onClick={() => startMutation.mutate()}>Start work</button>
+      <label className="field-label">Resolution notes<textarea className="field-input" value={resolutionNotes} onChange={(event) => setResolutionNotes(event.target.value)} /></label>
+      <button className="primary-button" disabled={!canTechnicianAct || incident.status !== "IN_PROGRESS" || !resolutionNotes.trim() || pending} onClick={() => resolveMutation.mutate()}>Resolve work</button>
+      <button className="secondary-button" disabled={!canManagerClose || incident.status !== "RESOLVED" || pending} onClick={() => closeMutation.mutate()}>Close incident</button>
+      {activeError ? <MutationError title="Lifecycle transition failed" error={activeError} /> : null}
+    </article>
   );
 }
 
 function MutationError({ title, error }: { title: string; error: Error }) {
   const conflict = isApiError(error) && error.status === 409;
   return (
-    <div className="space-y-2">
+    <div className="stack-sm">
       <ErrorState title={conflict ? "Conflict requires review" : title} detail={error.message} />
-      {conflict ? (
-        <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">
-          Refetch the latest incident state and review the current version before retrying manually.
-        </p>
-      ) : null}
+      {conflict ? <p className="danger-note">Refetch the latest incident state and review its version before retrying manually.</p> : null}
     </div>
   );
 }
