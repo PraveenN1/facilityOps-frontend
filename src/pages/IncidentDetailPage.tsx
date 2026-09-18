@@ -21,10 +21,23 @@ import { EmptyState, ErrorState, LoadingState } from "../ui/AsyncState";
 import { StatusBadge } from "../ui/StatusBadge";
 import { compactUuid, formatDateTime } from "../utils/format";
 
+const triageableStatuses = new Set(["PENDING_TRIAGE", "MANUAL_REVIEW"]);
+const assignmentStatuses = new Set(["ASSIGNED", "IN_PROGRESS"]);
+const knownHazardText = [
+  ["water", "electrical panel"],
+  ["leak", "electrical panel"],
+  ["leakage", "electrical panel"],
+  ["smoke"],
+  ["fire"],
+  ["gas leak"],
+  ["sparking"],
+  ["electric shock"],
+];
+
 export function IncidentDetailPage() {
   const { incidentId } = useParams<{ incidentId: string }>();
   const { role } = useAuth();
-  const { selectedBuildingId } = useBuildingSelection();
+  const { selectedBuildingId, buildings } = useBuildingSelection();
   const queryClient = useQueryClient();
 
   const incidentQuery = useQuery({
@@ -33,10 +46,11 @@ export function IncidentDetailPage() {
     enabled: Boolean(incidentId),
   });
 
+  const shouldLoadTechnicians = role === "FACILITY_MANAGER" && incidentQuery.data?.status === "AWAITING_ASSIGNMENT";
   const techniciansQuery = useQuery({
     queryKey: ["technicians", selectedBuildingId],
     queryFn: () => listTechnicians({ buildingId: selectedBuildingId }),
-    enabled: role === "FACILITY_MANAGER",
+    enabled: shouldLoadTechnicians,
   });
 
   const refreshWorkflow = () => {
@@ -50,37 +64,41 @@ export function IncidentDetailPage() {
 
   if (!incidentId) return <ErrorState detail="Incident ID is missing from the route." />;
 
+  const incident = incidentQuery.data;
+  const buildingName = incident ? buildings.find((building) => building.id === incident.building_id)?.name : null;
+
   return (
     <section className="stack-lg">
       <div className="section-heading">
         <div>
           <Link to="/" className="text-link">Back to workspace</Link>
-          <h2>Incident {compactUuid(incidentId)}</h2>
+          <p className="eyebrow">Incident detail</p>
+          <h2>{incident ? incident.complaint_description : `Incident ${compactUuid(incidentId)}`}</h2>
+          <p className="muted-copy">{incident ? `Reference ${compactUuid(incident.id)}` : "Loading incident reference"}</p>
         </div>
-        {incidentQuery.data ? <StatusBadge status={incidentQuery.data.status} /> : null}
+        {incident ? <StatusBadge status={incident.status} /> : null}
       </div>
 
       {incidentQuery.isLoading ? <LoadingState label="Loading incident" /> : null}
       {incidentQuery.isError ? <ErrorState detail={incidentQuery.error.message} /> : null}
 
-      {incidentQuery.data ? (
+      {incident ? (
         <div className="detail-grid">
           <div className="stack">
-            <IncidentSummary incident={incidentQuery.data} />
-            <AiTriageReview incident={incidentQuery.data} canReview={role === "FACILITY_MANAGER"} onChanged={refreshWorkflow} />
+            <OriginalComplaint incident={incident} buildingName={buildingName} />
+            <AiAssessment incident={incident} />
+            <HumanDecision incident={incident} canReview={role === "FACILITY_MANAGER"} onChanged={refreshWorkflow} />
           </div>
           <div className="stack">
-            {role === "FACILITY_MANAGER" ? (
-              <TechnicianAssignment
-                incident={incidentQuery.data}
-                technicians={techniciansQuery.data?.items ?? []}
-                isLoading={techniciansQuery.isLoading}
-                error={techniciansQuery.error}
-                isSuccess={techniciansQuery.isSuccess}
-                onChanged={refreshWorkflow}
-              />
-            ) : null}
-            <IncidentLifecycle incident={incidentQuery.data} role={role} onChanged={refreshWorkflow} />
+            <StateActionPanel
+              incident={incident}
+              role={role}
+              technicians={techniciansQuery.data?.items ?? []}
+              techniciansLoading={techniciansQuery.isLoading}
+              techniciansError={techniciansQuery.error}
+              techniciansLoaded={techniciansQuery.isSuccess}
+              onChanged={refreshWorkflow}
+            />
           </div>
         </div>
       ) : null}
@@ -88,9 +106,10 @@ export function IncidentDetailPage() {
   );
 }
 
-function IncidentSummary({ incident }: { incident: IncidentDetailResponse }) {
+function OriginalComplaint({ incident, buildingName }: { incident: IncidentDetailResponse; buildingName: string | null | undefined }) {
+  const hazardSignal = hasSafetySignal(incident);
   return (
-    <article className="panel stack priority-edge priority-medium">
+    <article className={`panel stack priority-edge priority-${incident.priority.toLowerCase()}`}>
       <div className="section-heading compact">
         <div>
           <p className="eyebrow">Original complaint</p>
@@ -98,10 +117,13 @@ function IncidentSummary({ incident }: { incident: IncidentDetailResponse }) {
         </div>
         <span className="mono-cell">v{incident.version}</span>
       </div>
-      <p className="body-copy">{incident.complaint_description}</p>
+      <p className="body-copy complaint-lead">{incident.complaint_description}</p>
+      {hazardSignal ? (
+        <p className="danger-note">Safety review required. Backend hazard restrictions remain authoritative and may prevent assignment clearance.</p>
+      ) : null}
       <dl className="definition-grid">
         <div><dt>Priority</dt><dd>{incident.priority}</dd></div>
-        <div><dt>Building</dt><dd className="mono-cell">{compactUuid(incident.building_id)}</dd></div>
+        <div><dt>Building</dt><dd>{buildingName ?? "Authorized building"}</dd></div>
         <div><dt>Created</dt><dd>{formatDateTime(incident.created_at)}</dd></div>
         <div><dt>Updated</dt><dd>{formatDateTime(incident.updated_at)}</dd></div>
       </dl>
@@ -118,9 +140,8 @@ function ActiveAssignment({ incident }: { incident: IncidentDetailResponse }) {
       {assignment ? (
         <dl className="definition-grid">
           <div><dt>Technician</dt><dd>{assignment.technician_display_name}</dd></div>
-          <div><dt>Status</dt><dd>{assignment.status}</dd></div>
-          <div><dt>Assignment ID</dt><dd className="mono-cell">{assignment.assignment_id}</dd></div>
-          <div><dt>Technician profile</dt><dd className="mono-cell">{assignment.technician_id}</dd></div>
+          <div><dt>Status</dt><dd>{assignment.status.replaceAll("_", " ")}</dd></div>
+          <div><dt>Assignment ref</dt><dd className="mono-cell">{compactUuid(assignment.assignment_id)}</dd></div>
         </dl>
       ) : (
         <EmptyState title="No active assignment" detail="Resolved incidents release capacity; historical assignments may still exist." />
@@ -129,9 +150,66 @@ function ActiveAssignment({ incident }: { incident: IncidentDetailResponse }) {
   );
 }
 
-function AiTriageReview({ incident, canReview, onChanged }: { incident: IncidentDetailResponse; canReview: boolean; onChanged: () => void }) {
-  const [category, setCategory] = useState(incident.latest_triage_result?.validated_result?.category ?? incident.category ?? "");
-  const [priority, setPriority] = useState(incident.latest_triage_result?.validated_result?.suggested_priority ?? incident.priority);
+function AiAssessment({ incident }: { incident: IncidentDetailResponse }) {
+  const triage = incident.latest_triage_result;
+  const recommendation = triage?.validated_result;
+  const isPending = incident.ai_triage_status === "PENDING" || incident.ai_triage_status === "PROCESSING";
+  const isFailed = ["FAILED", "INVALID_OUTPUT", "TIMEOUT"].includes(incident.ai_triage_status ?? "");
+
+  return (
+    <article className="panel stack ai-panel">
+      <div className="section-heading compact">
+        <div><p className="eyebrow">AI assessment</p><h3>Advisory recommendation</h3></div>
+        <StatusBadge status={incident.ai_triage_status} ai />
+      </div>
+      {!incident.ai_triage_status ? <EmptyState title="Awaiting AI signal" detail="No triage result or outbox status is visible yet." /> : null}
+      {isPending ? <p className="info-note">AI triage is still processing. Human approval has not occurred.</p> : null}
+      {isFailed ? <p className="danger-note">AI triage did not produce a usable recommendation. Manual review can still record a human decision when backend safety checks allow it.</p> : null}
+      {recommendation ? (
+        <dl className="definition-grid">
+          <div><dt>Recommended category</dt><dd>{recommendation.category}</dd></div>
+          <div><dt>Suggested priority</dt><dd>{recommendation.suggested_priority}</dd></div>
+          <div className="wide"><dt>Summary</dt><dd>{recommendation.issue_summary}</dd></div>
+          <div className="wide"><dt>Location</dt><dd>{recommendation.location ?? "None provided"}</dd></div>
+          <div className="wide"><dt>Potential hazards</dt><dd>{recommendation.potential_hazards.length ? recommendation.potential_hazards.join(", ") : "None provided"}</dd></div>
+          <div className="wide"><dt>Safety notes</dt><dd>{recommendation.safety_notes.length ? recommendation.safety_notes.join(", ") : "None provided"}</dd></div>
+          <div><dt>Needs human review</dt><dd>{recommendation.needs_human_review ? "Yes" : "No"}</dd></div>
+          <div><dt>Model</dt><dd>{triage?.model_version ?? "Not reported"}</dd></div>
+        </dl>
+      ) : null}
+    </article>
+  );
+}
+
+function HumanDecision({ incident, canReview, onChanged }: { incident: IncidentDetailResponse; canReview: boolean; onChanged: () => void }) {
+  const canEditDecision = canReview && triageableStatuses.has(incident.status);
+  const hasConfirmedDecision = !triageableStatuses.has(incident.status) && Boolean(incident.category);
+
+  return (
+    <article className="panel stack human-panel">
+      <div className="section-heading compact">
+        <div><p className="eyebrow">Human-confirmed decision</p><h3>{hasConfirmedDecision ? "Confirmed triage" : "Review required"}</h3></div>
+        {hasConfirmedDecision ? <StatusBadge status={incident.status} /> : null}
+      </div>
+      {hasConfirmedDecision ? (
+        <dl className="definition-grid">
+          <div><dt>Confirmed category</dt><dd>{incident.category}</dd></div>
+          <div><dt>Confirmed priority</dt><dd>{incident.priority}</dd></div>
+        </dl>
+      ) : null}
+      {incident.status === "MANUAL_REVIEW" ? <p className="danger-note">Manual review is required before assignment. Suspected hazards cannot be cleared here without backend-approved escalation.</p> : null}
+      {canEditDecision ? <ManualTriageForm incident={incident} onChanged={onChanged} /> : null}
+      {!canEditDecision && !hasConfirmedDecision ? (
+        <p className="info-note">{canReview ? "No triage action is available for this state." : "Only facility managers can confirm triage decisions."}</p>
+      ) : null}
+    </article>
+  );
+}
+
+function ManualTriageForm({ incident, onChanged }: { incident: IncidentDetailResponse; onChanged: () => void }) {
+  const recommendation = incident.latest_triage_result?.validated_result;
+  const [category, setCategory] = useState(recommendation?.category ?? incident.category ?? "");
+  const [priority, setPriority] = useState(recommendation?.suggested_priority ?? incident.priority);
   const [suspectedHazard, setSuspectedHazard] = useState(false);
   const [notes, setNotes] = useState("");
 
@@ -140,91 +218,189 @@ function AiTriageReview({ incident, canReview, onChanged }: { incident: Incident
     onSuccess: onChanged,
   });
 
-  const triage = incident.latest_triage_result;
-  const recommendation = triage?.validated_result;
-  const isFailed = ["FAILED", "INVALID_OUTPUT", "TIMEOUT"].includes(incident.ai_triage_status ?? "");
-
   return (
-    <article className="panel stack ai-panel">
-      <div className="section-heading compact">
-        <div><p className="eyebrow">AI triage review</p><h3>Recommendation</h3></div>
-        <StatusBadge status={incident.ai_triage_status} ai />
+    <form className="stack subsection" onSubmit={(event: FormEvent<HTMLFormElement>) => { event.preventDefault(); mutation.mutate(); }}>
+      <div className="form-grid">
+        <label className="field-label">Confirmed category<input required className="field-input" value={category} onChange={(event) => setCategory(event.target.value)} /></label>
+        <label className="field-label">Confirmed priority<select className="field-input" value={priority} onChange={(event) => setPriority(event.target.value as typeof priority)}>{incidentPriorities.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
       </div>
-      {!incident.ai_triage_status ? <EmptyState title="No AI status yet" detail="The triage event may still be waiting for the worker." /> : null}
-      {incident.ai_triage_status === "PENDING" || incident.ai_triage_status === "PROCESSING" ? <p className="info-note">AI triage is still pending.</p> : null}
-      {isFailed ? <p className="danger-note">AI triage did not produce a usable recommendation. Review the complaint manually.</p> : null}
-      {recommendation ? (
-        <dl className="definition-grid">
-          <div><dt>Category</dt><dd>{recommendation.category}</dd></div>
-          <div><dt>Suggested priority</dt><dd>{recommendation.suggested_priority}</dd></div>
-          <div className="wide"><dt>Summary</dt><dd>{recommendation.issue_summary}</dd></div>
-          <div className="wide"><dt>Location</dt><dd>{recommendation.location ?? "None provided"}</dd></div>
-          <div className="wide"><dt>Safety notes</dt><dd>{recommendation.safety_notes.length ? recommendation.safety_notes.join(", ") : "None provided"}</dd></div>
-        </dl>
-      ) : null}
-      {canReview ? (
-        <form className="stack subsection" onSubmit={(event: FormEvent<HTMLFormElement>) => { event.preventDefault(); mutation.mutate(); }}>
-          <div className="form-grid">
-            <label className="field-label">Confirmed category<input required className="field-input" value={category} onChange={(event) => setCategory(event.target.value)} /></label>
-            <label className="field-label">Confirmed priority<select className="field-input" value={priority} onChange={(event) => setPriority(event.target.value as typeof priority)}>{incidentPriorities.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
-          </div>
-          <label className="field-label">Review notes<textarea className="field-input" value={notes} onChange={(event) => setNotes(event.target.value)} /></label>
-          <label className="check-row"><input type="checkbox" checked={suspectedHazard} onChange={(event) => setSuspectedHazard(event.target.checked)} />Suspected hazard requiring escalation</label>
-          {mutation.isError ? <MutationError title="Manual triage failed" error={mutation.error} /> : null}
-          <button className="primary-button fit" disabled={mutation.isPending || incident.status !== "PENDING_TRIAGE"} type="submit">Confirm triage</button>
-        </form>
-      ) : <p className="info-note">Only facility managers can confirm AI triage recommendations.</p>}
-    </article>
+      <label className="field-label">Review notes<textarea className="field-input" value={notes} onChange={(event) => setNotes(event.target.value)} /></label>
+      <label className="check-row">
+        <input type="checkbox" checked={suspectedHazard} onChange={(event) => setSuspectedHazard(event.target.checked)} />
+        Suspected hazard requiring escalation
+      </label>
+      <p className="muted-copy">Leaving this unchecked does not establish that an incident is safe. Backend safety checks still decide whether triage can proceed.</p>
+      {mutation.isError ? <MutationError title="Manual triage failed" error={mutation.error} /> : null}
+      <button className="primary-button fit" disabled={mutation.isPending || !category.trim()} type="submit">Confirm triage</button>
+    </form>
   );
 }
 
-function TechnicianAssignment({ incident, technicians, isLoading, error, isSuccess, onChanged }: { incident: IncidentDetailResponse; technicians: TechnicianListItem[]; isLoading: boolean; error: Error | null; isSuccess: boolean; onChanged: () => void }) {
+function StateActionPanel(props: {
+  incident: IncidentDetailResponse;
+  role: string | null;
+  technicians: TechnicianListItem[];
+  techniciansLoading: boolean;
+  techniciansError: Error | null;
+  techniciansLoaded: boolean;
+  onChanged: () => void;
+}) {
+  const { incident, role } = props;
+
+  if (role === "FACILITY_MANAGER" && incident.status === "AWAITING_ASSIGNMENT") {
+    return <TechnicianAssignment {...props} />;
+  }
+  if (role === "FACILITY_MANAGER" && incident.status === "RESOLVED") {
+    return <ManagerClosure incident={incident} onChanged={props.onChanged} />;
+  }
+  if (role === "TECHNICIAN" && assignmentStatuses.has(incident.status)) {
+    return <TechnicianLifecycle incident={incident} onChanged={props.onChanged} />;
+  }
+  return <ReadOnlyStatePanel incident={incident} role={role} />;
+}
+
+function TechnicianAssignment({
+  incident,
+  technicians,
+  techniciansLoading,
+  techniciansError,
+  techniciansLoaded,
+  onChanged,
+}: {
+  incident: IncidentDetailResponse;
+  role: string | null;
+  technicians: TechnicianListItem[];
+  techniciansLoading: boolean;
+  techniciansError: Error | null;
+  techniciansLoaded: boolean;
+  onChanged: () => void;
+}) {
   const [technicianId, setTechnicianId] = useState("");
-  const mutation = useMutation({ mutationFn: () => assignTechnician(incident.id, { technician_id: technicianId, expected_version: incident.version }), onSuccess: onChanged });
+  const queryClient = useQueryClient();
+  const requiredSkill = incident.category;
+  const availableQualified = technicians.filter((technician) => isSelectableTechnician(technician, requiredSkill));
+  const unavailable = technicians.filter((technician) => technician.status !== "ACTIVE" || !technician.available);
+  const notQualified = requiredSkill
+    ? technicians.filter((technician) => technician.status === "ACTIVE" && technician.available && !technician.skills.includes(requiredSkill))
+    : [];
+
+  const mutation = useMutation({
+    mutationFn: () => assignTechnician(incident.id, { technician_id: technicianId, expected_version: incident.version }),
+    onSuccess: onChanged,
+    onError: (error) => {
+      if (isApiError(error) && error.status === 409) {
+        setTechnicianId("");
+        void queryClient.invalidateQueries({ queryKey: ["incident", incident.id] });
+        void queryClient.invalidateQueries({ queryKey: ["technicians"] });
+      }
+    },
+  });
 
   return (
     <article className="panel stack">
-      <div><p className="eyebrow">Assignment</p><h3>Technician dispatch</h3><p className="muted-copy">Availability is derived from active ASSIGNED and IN_PROGRESS assignments.</p></div>
-      {isLoading ? <LoadingState label="Loading technicians" /> : null}
-      {error ? <ErrorState detail={error.message} /> : null}
-      {technicians.length === 0 && isSuccess ? <EmptyState title="No technicians visible" detail="No technicians are visible to this manager session." /> : null}
-      {technicians.length > 0 ? (
+      <div>
+        <p className="eyebrow">Technician dispatch</p>
+        <h3>Qualified candidates</h3>
+        <p className="muted-copy">Availability is derived from active ASSIGNED and IN_PROGRESS assignments.</p>
+      </div>
+      {techniciansLoading ? <LoadingState label="Loading technicians" /> : null}
+      {techniciansError ? <ErrorState detail={techniciansError.message} /> : null}
+      {availableQualified.length === 0 && techniciansLoaded ? (
+        <EmptyState title="No qualified technicians are currently available." detail="Backend capacity and qualification rules remain authoritative." />
+      ) : null}
+      {availableQualified.length > 0 ? (
         <form className="stack" onSubmit={(event) => { event.preventDefault(); mutation.mutate(); }}>
-          <label className="field-label">Technician<select className="field-input" value={technicianId} onChange={(event) => setTechnicianId(event.target.value)} required><option value="">Select technician profile</option>{technicians.map((technician) => <option key={technician.id} value={technician.id}>{technician.display_name} - {technician.available ? "available" : "busy"}</option>)}</select></label>
-          <div className="tech-list">{technicians.map((technician) => <div key={technician.id} className="tech-card"><div><strong>{technician.display_name}</strong><span>{technician.skills.join(", ") || "No skills recorded"}</span></div><StatusBadge status={technician.available ? "AVAILABLE" : "UNAVAILABLE"} /><code>profile {compactUuid(technician.id)}</code><code>user {compactUuid(technician.user_id)}</code></div>)}</div>
+          <label className="field-label">
+            Available and qualified
+            <select className="field-input" value={technicianId} onChange={(event) => setTechnicianId(event.target.value)} required>
+              <option value="">Select technician</option>
+              {availableQualified.map((technician) => <option key={technician.id} value={technician.id}>{technician.display_name}</option>)}
+            </select>
+          </label>
+          <TechnicianGroup title="Available and qualified" technicians={availableQualified} />
+          {unavailable.length > 0 ? <TechnicianGroup title="Unavailable" technicians={unavailable} /> : null}
+          {notQualified.length > 0 ? <TechnicianGroup title="Not qualified" technicians={notQualified} /> : null}
           {mutation.isError ? <MutationError title="Assignment failed" error={mutation.error} /> : null}
-          <button className="primary-button" disabled={mutation.isPending || incident.status !== "AWAITING_ASSIGNMENT"} type="submit">Assign technician</button>
+          <button className="primary-button" disabled={mutation.isPending || !technicianId} type="submit">Assign technician</button>
         </form>
+      ) : null}
+      {availableQualified.length === 0 ? (
+        <>
+          {unavailable.length > 0 ? <TechnicianGroup title="Unavailable" technicians={unavailable} /> : null}
+          {notQualified.length > 0 ? <TechnicianGroup title="Not qualified" technicians={notQualified} /> : null}
+        </>
       ) : null}
     </article>
   );
 }
 
-function IncidentLifecycle({ incident, role, onChanged }: { incident: IncidentDetailResponse; role: string | null; onChanged: () => void }) {
+function TechnicianGroup({ title, technicians }: { title: string; technicians: TechnicianListItem[] }) {
+  return (
+    <div className="stack-sm">
+      <h4 className="group-heading">{title}</h4>
+      <div className="tech-list">
+        {technicians.map((technician) => (
+          <div key={technician.id} className="tech-card">
+            <div>
+              <strong>{technician.display_name}</strong>
+              <span>{technician.skills.join(", ") || "No skills recorded"}</span>
+            </div>
+            <StatusBadge status={technician.available && technician.status === "ACTIVE" ? "AVAILABLE" : "UNAVAILABLE"} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TechnicianLifecycle({ incident, onChanged }: { incident: IncidentDetailResponse; onChanged: () => void }) {
   const [resolutionNotes, setResolutionNotes] = useState("");
   const startMutation = useMutation({ mutationFn: () => startIncident(incident.id, { expected_version: incident.version }), onSuccess: onChanged });
   const resolveMutation = useMutation({ mutationFn: () => resolveIncident(incident.id, { expected_version: incident.version, resolution_notes: resolutionNotes.trim() }), onSuccess: onChanged });
-  const closeMutation = useMutation({ mutationFn: () => closeIncident(incident.id, { expected_version: incident.version }), onSuccess: onChanged });
-  const activeError = startMutation.error ?? resolveMutation.error ?? closeMutation.error;
-  const pending = startMutation.isPending || resolveMutation.isPending || closeMutation.isPending;
-  const canTechnicianAct = role === "TECHNICIAN";
-  const canManagerClose = role === "FACILITY_MANAGER";
-  const nextAction = useMemo(() => {
-    if (incident.status === "ASSIGNED") return "Assigned technicians can start work.";
-    if (incident.status === "IN_PROGRESS") return "Assigned technicians can resolve work with notes.";
-    if (incident.status === "RESOLVED") return "Facility managers can close the incident.";
-    return "No lifecycle action is available for this state.";
-  }, [incident.status]);
+  const activeError = startMutation.error ?? resolveMutation.error;
+  const pending = startMutation.isPending || resolveMutation.isPending;
 
   return (
     <article className="panel stack">
-      <div><p className="eyebrow">Lifecycle</p><h3>State transition</h3><p className="muted-copy">{nextAction}</p></div>
-      {incident.active_assignment ? <p className="info-note">Active assignment {compactUuid(incident.active_assignment.assignment_id)} is {incident.active_assignment.status} for {incident.active_assignment.technician_display_name}.</p> : <EmptyState title="No active assignment" detail="Start and resolve actions require the assigned technician session." />}
-      <button className="primary-button" disabled={!canTechnicianAct || incident.status !== "ASSIGNED" || pending} onClick={() => startMutation.mutate()}>Start work</button>
-      <label className="field-label">Resolution notes<textarea className="field-input" value={resolutionNotes} onChange={(event) => setResolutionNotes(event.target.value)} /></label>
-      <button className="primary-button" disabled={!canTechnicianAct || incident.status !== "IN_PROGRESS" || !resolutionNotes.trim() || pending} onClick={() => resolveMutation.mutate()}>Resolve work</button>
-      <button className="secondary-button" disabled={!canManagerClose || incident.status !== "RESOLVED" || pending} onClick={() => closeMutation.mutate()}>Close incident</button>
+      <div><p className="eyebrow">Technician workflow</p><h3>Assigned work</h3></div>
+      {incident.active_assignment ? <p className="info-note">{incident.active_assignment.technician_display_name} is assigned and the assignment is {incident.active_assignment.status.replaceAll("_", " ")}.</p> : <EmptyState title="No active assignment" detail="Start and resolve actions require an active assignment." />}
+      {incident.status === "ASSIGNED" ? <button className="primary-button" disabled={pending} onClick={() => startMutation.mutate()}>Start work</button> : null}
+      {incident.status === "IN_PROGRESS" ? (
+        <>
+          <label className="field-label">Resolution notes<textarea className="field-input" value={resolutionNotes} onChange={(event) => setResolutionNotes(event.target.value)} /></label>
+          <button className="primary-button" disabled={!resolutionNotes.trim() || pending} onClick={() => resolveMutation.mutate()}>Resolve work</button>
+        </>
+      ) : null}
       {activeError ? <MutationError title="Lifecycle transition failed" error={activeError} /> : null}
+    </article>
+  );
+}
+
+function ManagerClosure({ incident, onChanged }: { incident: IncidentDetailResponse; onChanged: () => void }) {
+  const closeMutation = useMutation({ mutationFn: () => closeIncident(incident.id, { expected_version: incident.version }), onSuccess: onChanged });
+  return (
+    <article className="panel stack">
+      <div><p className="eyebrow">Closure</p><h3>Manager closure</h3><p className="muted-copy">Resolution details are not exposed by the current API contract.</p></div>
+      <button className="secondary-button" disabled={closeMutation.isPending} onClick={() => closeMutation.mutate()}>Close incident</button>
+      {closeMutation.isError ? <MutationError title="Close failed" error={closeMutation.error} /> : null}
+    </article>
+  );
+}
+
+function ReadOnlyStatePanel({ incident, role }: { incident: IncidentDetailResponse; role: string | null }) {
+  const message = useMemo(() => {
+    if (incident.status === "PENDING_TRIAGE") return "Waiting for AI assessment or authorized manager triage.";
+    if (incident.status === "MANUAL_REVIEW") return "Manual review is required before dispatch.";
+    if (incident.status === "ASSIGNED") return role === "FACILITY_MANAGER" ? "The assigned technician controls start and resolve actions." : "No action is available for this session.";
+    if (incident.status === "IN_PROGRESS") return role === "FACILITY_MANAGER" ? "Work is in progress with the assigned technician." : "No action is available for this session.";
+    if (incident.status === "CLOSED") return "This incident is closed and read-only.";
+    return "No action is available for this state.";
+  }, [incident.status, role]);
+
+  return (
+    <article className="panel stack">
+      <div><p className="eyebrow">Workflow action</p><h3>{incident.status.replaceAll("_", " ")}</h3></div>
+      <p className="info-note">{message}</p>
     </article>
   );
 }
@@ -234,7 +410,20 @@ function MutationError({ title, error }: { title: string; error: Error }) {
   return (
     <div className="stack-sm">
       <ErrorState title={conflict ? "Conflict requires review" : title} detail={error.message} />
-      {conflict ? <p className="danger-note">Refetch the latest incident state and review its version before retrying manually.</p> : null}
+      {conflict ? <p className="danger-note">The incident was refetched. Review the latest state and choose again before retrying.</p> : null}
     </div>
   );
+}
+
+function isSelectableTechnician(technician: TechnicianListItem, requiredSkill: string | null | undefined) {
+  return technician.status === "ACTIVE" && technician.available && requiredSkill ? technician.skills.includes(requiredSkill) : false;
+}
+
+function hasSafetySignal(incident: IncidentDetailResponse) {
+  const recommendation = incident.latest_triage_result?.validated_result;
+  if (recommendation?.needs_human_review) return true;
+  if ((recommendation?.potential_hazards.length ?? 0) > 0) return true;
+  if ((recommendation?.safety_notes.length ?? 0) > 0) return true;
+  const normalized = incident.complaint_description.toLowerCase();
+  return knownHazardText.some((terms) => terms.every((term) => normalized.includes(term)));
 }

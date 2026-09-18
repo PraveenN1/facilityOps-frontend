@@ -12,6 +12,7 @@ export function ManagerWorkspacePage() {
   const buildingId = selectedBuildingId;
   const operations = useQuery({ queryKey: ["metrics", "operations", buildingId], queryFn: () => getOperationsMetrics({ buildingId }) });
   const ai = useQuery({ queryKey: ["metrics", "ai", buildingId], queryFn: () => getAiMetrics({ buildingId }) });
+  const hasMetrics = Boolean(operations.data && ai.data);
 
   return (
     <section className="stack-lg">
@@ -23,7 +24,7 @@ export function ManagerWorkspacePage() {
         </div>
         <Link className="secondary-button" to="/incidents">Open incident queue</Link>
       </div>
-      {operations.isLoading || ai.isLoading ? <LoadingState label="Loading metrics" /> : null}
+      {(operations.isLoading || ai.isLoading) && !hasMetrics ? <LoadingState label="Loading metrics" /> : null}
       {operations.isError ? <ErrorState detail={operations.error.message} /> : null}
       {ai.isError ? <ErrorState detail={ai.error.message} /> : null}
       {operations.data && ai.data ? (
@@ -37,6 +38,9 @@ export function ManagerWorkspacePage() {
           <Metric label="AI failures" value={ai.data.failed_requests} accent="ai" />
           <Metric label="Human-review backlog" value={ai.data.incidents_awaiting_human_review} accent="ai" />
         </div>
+      ) : null}
+      {operations.data && ai.data && operations.data.total_incidents === 0 && ai.data.triage_requests === 0 ? (
+        <EmptyState title="No operational data yet" detail="Metrics will populate from backend incidents, assignments, and triage events." />
       ) : null}
       <div className="panel">
         <div className="section-heading compact">
@@ -54,8 +58,8 @@ export function ManagerWorkspacePage() {
 function Metric({ label, value, accent }: { label: string; value: number; accent?: "ai" }) {
   return (
     <div className={`metric-tile ${accent === "ai" ? "ai" : ""}`}>
-      <span>{label}</span>
-      <strong>{value.toLocaleString()}</strong>
+      <span className="metric-label">{label}</span>
+      <strong className="metric-value">{value.toLocaleString()}</strong>
     </div>
   );
 }

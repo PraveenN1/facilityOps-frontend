@@ -2,7 +2,6 @@ import { NavLink, Outlet, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../state/AuthContext";
 import { BuildingProvider, useBuildingSelection } from "../state/BuildingContext";
-import { compactUuid } from "../utils/format";
 
 const navByRole = {
   FACILITY_MANAGER: [
@@ -64,7 +63,6 @@ function AppChrome() {
           <div className="scope-box">
             <span>Building scope</span>
             <strong>{building.selectedBuilding?.name ?? "All authorized buildings"}</strong>
-            <code>{building.selectedBuildingId ? compactUuid(building.selectedBuildingId) : "ALL"}</code>
           </div>
         </aside>
         <main className="workspace-main">

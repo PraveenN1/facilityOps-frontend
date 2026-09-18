@@ -83,7 +83,6 @@ code,
   .scope-box { @apply mt-6 rounded-md border p-3 text-sm; border-color: var(--line); }
   .scope-box span, .eyebrow { @apply block text-xs font-bold uppercase; color: var(--muted); letter-spacing: 0; }
   .scope-box strong { @apply mt-1 block; }
-  .scope-box code { @apply mt-2 block text-xs; color: var(--muted); }
   .user-chip, .building-pill { @apply rounded-[3px] border px-3 py-2 text-sm; background: var(--panel); border-color: var(--line); }
   .user-chip { @apply flex flex-col; }
   .user-chip strong { @apply text-xs uppercase; color: var(--muted); }
@@ -100,6 +99,7 @@ code,
   .section-heading h3, .panel h3 { @apply text-lg font-semibold; letter-spacing: 0; }
   .muted-copy { color: var(--muted); @apply text-sm; }
   .body-copy { @apply text-sm leading-6; color: var(--ink); }
+  .complaint-lead { @apply text-base font-semibold; }
   .field-label { @apply block text-sm font-semibold; color: var(--muted); }
   .field-input { @apply mt-1 w-full rounded-[3px] border px-3 py-2 text-sm outline-none transition; background: var(--panel); color: var(--ink); border-color: var(--line); }
   .field-input:focus { border-color: var(--blue); box-shadow: 0 0 0 2px color-mix(in srgb, var(--blue) 18%, transparent); }
@@ -119,14 +119,28 @@ code,
   .form-grid { @apply grid gap-3 md:grid-cols-2; }
   .check-row { @apply flex min-h-10 items-center gap-2 text-sm font-semibold; color: var(--muted); }
   .detail-grid { @apply grid gap-4 xl:grid-cols-[minmax(0,1fr)_380px]; }
-  .metric-grid { @apply grid gap-3 sm:grid-cols-2 xl:grid-cols-4; }
-  .metric-card { @apply rounded-md border p-4; background: var(--panel); border-color: var(--line); }
-  .metric-card strong { @apply mt-2 block text-3xl; }
+  .metrics-grid, .metric-grid { @apply grid gap-3 sm:grid-cols-2 xl:grid-cols-4; }
+  .metric-tile, .metric-card { @apply flex min-h-28 flex-col justify-between rounded-md border p-4; background: var(--panel); border-color: var(--line); }
+  .metric-tile.ai { border-left: 3px solid var(--violet); }
+  .metric-label { @apply text-sm font-semibold; color: var(--muted); }
+  .metric-value, .metric-card strong { @apply block text-3xl font-semibold leading-none; color: var(--ink); }
   .table-wrap { @apply overflow-x-auto rounded-md border; border-color: var(--line); background: var(--panel); }
   .data-table { @apply min-w-full border-collapse text-left text-sm; }
   .data-table th { @apply border-b px-3 py-2 text-xs uppercase; color: var(--muted); border-color: var(--line); letter-spacing: 0; }
   .data-table td { @apply border-b px-3 py-3 align-top; border-color: var(--line); }
   .data-table tr:last-child td { @apply border-b-0; }
+  .queue-toolbar { @apply flex flex-col gap-3 rounded-md border p-3 sm:flex-row sm:items-end sm:justify-between; background: var(--panel); border-color: var(--line); }
+  .compact-field { @apply w-full sm:max-w-64; }
+  .queue-count { @apply text-sm font-semibold; color: var(--muted); }
+  .queue-list { @apply overflow-hidden rounded-md border; background: var(--panel); border-color: var(--line); }
+  .queue-header { @apply hidden border-b px-4 py-2 text-xs font-bold uppercase lg:grid lg:grid-cols-[140px_minmax(0,1.8fr)_150px_140px_170px] lg:gap-4; color: var(--muted); border-color: var(--line); letter-spacing: 0; }
+  .queue-row { @apply grid gap-3 border-b p-4 lg:grid-cols-[140px_minmax(0,1.8fr)_150px_140px_170px] lg:items-start lg:gap-4; border-color: var(--line); }
+  .queue-row:last-child { @apply border-b-0; }
+  .queue-ref { @apply flex min-w-0 flex-col gap-1; }
+  .queue-ref span, .queue-summary span { @apply text-sm; color: var(--muted); }
+  .queue-summary { @apply min-w-0; }
+  .queue-summary strong { @apply block whitespace-normal break-words text-sm font-semibold leading-6; color: var(--ink); }
+  .queue-time { @apply text-sm; color: var(--muted); }
   .priority-edge { border-left: 3px solid var(--line); }
   .priority-low { border-left-color: var(--ok); }
   .priority-medium { border-left-color: var(--blue); }
@@ -136,8 +150,10 @@ code,
   .pager { @apply flex items-center justify-between gap-3; }
   .tech-list, .work-list, .complaint-list { @apply flex flex-col gap-3; }
   .tech-card, .work-card, .complaint-row { @apply rounded-md border p-3 text-sm no-underline; background: var(--panel); color: var(--ink); border-color: var(--line); }
-  .tech-card { @apply grid gap-2; }
+  .tech-card { @apply grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start; }
   .tech-card span, .complaint-row span { @apply mt-1 block; color: var(--muted); }
+  .group-heading { @apply text-sm font-semibold; color: var(--ink); }
+  .human-panel { border-left: 3px solid var(--blue); }
   .work-card-head, .complaint-row { @apply flex items-start justify-between gap-3; }
   .narrow-page { @apply mx-auto max-w-2xl; }
   .login-page { @apply flex min-h-screen items-center justify-center p-4; background: var(--bg); }

@@ -11,9 +11,13 @@ function jsonResponse(body: unknown, status = 200) {
   return Promise.resolve(new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } }));
 }
 
+function requestUrl(input: RequestInfo | URL) {
+  return input instanceof Request ? input.url : String(input);
+}
+
 function mockManagerFetch(incidentBody: unknown) {
   return vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
-    const url = String(input);
+    const url = requestUrl(input);
     if (url.includes("/api/v1/auth/me")) return jsonResponse({ id: "manager-id", email: "manager.demo@facilityops.local", role: "FACILITY_MANAGER", buildings: [{ id: buildingId, name: "Demo Tower" }] });
     if (url.includes("/api/v1/buildings")) return jsonResponse({ items: [{ id: buildingId, name: "Demo Tower" }] });
     if (url.includes("/api/v1/incidents")) return jsonResponse(incidentBody);
@@ -28,6 +32,7 @@ describe("IncidentDashboardPage", () => {
   });
 
   it("renders incident rows returned by the API", async () => {
+    const longDescription = "Power failure in lobby with multiple tenants reporting flickering lights near the reception desk and elevator bank";
     mockManagerFetch({
       total: 1,
       limit: 10,
@@ -36,7 +41,7 @@ describe("IncidentDashboardPage", () => {
         id: "00000000-0000-0000-0000-000000000010",
         complaint_id: "00000000-0000-0000-0000-000000000011",
         building_id: buildingId,
-        complaint_description: "Power failure in lobby",
+        complaint_description: longDescription,
         category: "ELECTRICAL",
         priority: "HIGH",
         status: "ASSIGNED",
@@ -48,16 +53,20 @@ describe("IncidentDashboardPage", () => {
     renderWithProviders(<IncidentDashboardPage />);
 
     await waitFor(() => {
-      expect(screen.getByText("Power failure in lobby")).toBeInTheDocument();
+      expect(screen.getByText(longDescription)).toBeInTheDocument();
       expect(screen.getAllByText("ASSIGNED").length).toBeGreaterThanOrEqual(1);
       expect(screen.getByText("SUCCEEDED")).toBeInTheDocument();
     });
+    expect(await screen.findByText("Demo Tower")).toBeInTheDocument();
+    expect(await screen.findByText("00000000...0010")).toBeInTheDocument();
+    expect(screen.queryByText("00000000-0000-0000-0000-000000000010")).not.toBeInTheDocument();
+    expect(screen.getByRole("table", { name: /incident queue/i })).toBeInTheDocument();
   });
 
   it("passes selected building scope to the server-side incident listing", async () => {
     window.localStorage.setItem("facilityops.selectedBuilding.manager-id", otherBuildingId);
     const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
-      const url = String(input);
+      const url = requestUrl(input);
       if (url.includes("/api/v1/auth/me")) {
         return jsonResponse({
           id: "manager-id",
@@ -84,7 +93,7 @@ describe("IncidentDashboardPage", () => {
     renderWithProviders(<IncidentDashboardPage />);
 
     await waitFor(() =>
-      expect(fetchMock.mock.calls.some(([input]) => String(input).includes(`building_id=${otherBuildingId}`))).toBe(true),
+      expect(fetchMock.mock.calls.some(([input]) => requestUrl(input).includes(`building_id=${otherBuildingId}`))).toBe(true),
     );
   });
 

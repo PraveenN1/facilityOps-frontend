@@ -26,7 +26,7 @@ export function BuildingProvider({ children }: { children: React.ReactNode }) {
     retry: false,
   });
 
-  const buildings = buildingsQuery.data?.items ?? [];
+  const buildings = buildingsQuery.data?.items ?? user?.buildings ?? [];
 
   useEffect(() => {
     if (!user) {
