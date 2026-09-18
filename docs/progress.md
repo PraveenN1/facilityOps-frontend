@@ -48,3 +48,13 @@ Task 012A.2 frontend API contract synchronization has been implemented against t
 - No production authentication contract exists yet.
 - No backend building/user listing APIs exist; the frontend uses documented local-demo seed IDs for development only.
 - Notification, SLA, reassignment, cancellation, and production deployment flows remain outside this task.
+## Task 012B End-to-End Verification
+
+- Participated in full project E2E verification with the backend API, PostgreSQL, worker, and React dev server running locally.
+- `npm run typecheck` passed.
+- `npm test` passed: 5 files, 8 tests. React Router future-flag warnings were emitted.
+- `npm run build` passed.
+- `npm run smoke:backend` passed against the live backend API.
+- React dev server root returned HTTP 200 during live verification.
+- Browser-level UI automation was attempted through CUA, but no browser surfaces were available; browser interaction is recorded as blocked rather than passed.
+- The project-level E2E report is recorded in the backend repository at `docs/e2e-verification.md`.
