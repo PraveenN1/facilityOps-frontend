@@ -16,6 +16,7 @@ import {
 import { incidentPriorities } from "../api/config";
 import type { IncidentDetailResponse, TechnicianListItem } from "../api/types";
 import { useAuth } from "../state/AuthContext";
+import { useBuildingSelection } from "../state/BuildingContext";
 import { EmptyState, ErrorState, LoadingState } from "../ui/AsyncState";
 import { StatusBadge } from "../ui/StatusBadge";
 import { compactUuid, formatDateTime } from "../utils/format";
@@ -23,6 +24,7 @@ import { compactUuid, formatDateTime } from "../utils/format";
 export function IncidentDetailPage() {
   const { incidentId } = useParams<{ incidentId: string }>();
   const { role } = useAuth();
+  const { selectedBuildingId } = useBuildingSelection();
   const queryClient = useQueryClient();
 
   const incidentQuery = useQuery({
@@ -32,8 +34,8 @@ export function IncidentDetailPage() {
   });
 
   const techniciansQuery = useQuery({
-    queryKey: ["technicians"],
-    queryFn: listTechnicians,
+    queryKey: ["technicians", selectedBuildingId],
+    queryFn: () => listTechnicians({ buildingId: selectedBuildingId }),
     enabled: role === "FACILITY_MANAGER",
   });
 

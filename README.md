@@ -72,7 +72,7 @@ Use the seeded demo users documented by the backend README. The frontend display
 
 - Login, session restore, logout, and protected routes.
 - Manager overview with operations and AI metrics.
-- Manager incident queue with pagination, status filtering, AI triage status, and incident details navigation.
+- Manager incident queue with server-side building selection, pagination, status filtering, AI triage status, and incident details navigation.
 - Complaint creation with stable idempotency key per retryable submission.
 - Reporter complaint list and tracking navigation.
 - AI triage review with original complaint, recommendation, pending/completed/failed states, and manager confirmation.
@@ -101,6 +101,7 @@ Use the seeded demo users documented by the backend README. The frontend display
 - `GET /api/v1/metrics/ai`
 
 API types are generated from `openapi/facilityops-openapi.json` into `src/api/generated.ts`.
+`GET /api/v1/incidents`, `GET /api/v1/technicians`, `GET /api/v1/metrics/operations`, and `GET /api/v1/metrics/ai` accept optional `building_id` filters. When no building is selected, the backend returns data for the authenticated manager's authorized buildings.
 
 ## Verification
 
@@ -117,6 +118,5 @@ The backend smoke check requires the backend to be running on `http://localhost:
 ## Known Backend Limitations
 
 - The backend does not provide production SSO/OAuth; this frontend uses the current backend cookie login contract.
-- Incident and technician list endpoints are scoped by authenticated backend authorization, but do not currently expose a `building_id` query filter. Building selection is used where the OpenAPI contract supports it, including metrics and complaint creation.
 - SLA risk, latency trends, AI accuracy, assignment history, and resolution history are not exposed by the current backend contract, so the frontend does not fabricate them.
 - Browser end-to-end verification requires a running backend, PostgreSQL database, seeded demo users, and an available browser automation surface.

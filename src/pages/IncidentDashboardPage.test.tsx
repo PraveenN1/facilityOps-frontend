@@ -5,6 +5,7 @@ import { IncidentDashboardPage } from "./IncidentDashboardPage";
 import { renderWithProviders } from "../test/test-utils";
 
 const buildingId = "10000000-0000-0000-0000-000000000001";
+const otherBuildingId = "10000000-0000-0000-0000-000000000002";
 
 function jsonResponse(body: unknown, status = 200) {
   return Promise.resolve(new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } }));
@@ -46,9 +47,45 @@ describe("IncidentDashboardPage", () => {
 
     renderWithProviders(<IncidentDashboardPage />);
 
-    await waitFor(() => expect(screen.getByText("Power failure in lobby")).toBeInTheDocument());
-    expect(screen.getAllByText("ASSIGNED").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText("SUCCEEDED")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText("Power failure in lobby")).toBeInTheDocument();
+      expect(screen.getAllByText("ASSIGNED").length).toBeGreaterThanOrEqual(1);
+      expect(screen.getByText("SUCCEEDED")).toBeInTheDocument();
+    });
+  });
+
+  it("passes selected building scope to the server-side incident listing", async () => {
+    window.localStorage.setItem("facilityops.selectedBuilding.manager-id", otherBuildingId);
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
+      const url = String(input);
+      if (url.includes("/api/v1/auth/me")) {
+        return jsonResponse({
+          id: "manager-id",
+          email: "manager.demo@facilityops.local",
+          role: "FACILITY_MANAGER",
+          buildings: [
+            { id: buildingId, name: "Demo Tower" },
+            { id: otherBuildingId, name: "Warehouse" },
+          ],
+        });
+      }
+      if (url.includes("/api/v1/buildings")) {
+        return jsonResponse({
+          items: [
+            { id: buildingId, name: "Demo Tower" },
+            { id: otherBuildingId, name: "Warehouse" },
+          ],
+        });
+      }
+      if (url.includes("/api/v1/incidents")) return jsonResponse({ total: 0, limit: 10, offset: 0, items: [] });
+      return jsonResponse({ detail: "unexpected request" }, 500);
+    });
+
+    renderWithProviders(<IncidentDashboardPage />);
+
+    await waitFor(() =>
+      expect(fetchMock.mock.calls.some(([input]) => String(input).includes(`building_id=${otherBuildingId}`))).toBe(true),
+    );
   });
 
   it("renders an empty state", async () => {

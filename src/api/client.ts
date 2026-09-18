@@ -114,7 +114,7 @@ export interface ListIncidentsParams extends BuildingScopedParams {
 export function listIncidents(params: ListIncidentsParams) {
   const search = new URLSearchParams({ limit: String(params.limit), offset: String(params.offset) });
   if (params.status) search.set("status", params.status);
-  return request<IncidentListResponse>(`/api/v1/incidents?${search.toString()}`);
+  return request<IncidentListResponse>(withBuilding(`/api/v1/incidents?${search.toString()}`, params.buildingId));
 }
 
 export function getIncident(incidentId: string) {
@@ -147,8 +147,8 @@ export function manualTriage(incidentId: string, payload: ManualTriageRequest) {
   return request<IncidentDetailResponse>(`/api/v1/incidents/${incidentId}/manual-triage`, { method: "POST", body: payload, csrf: true });
 }
 
-export function listTechnicians() {
-  return request<TechnicianListResponse>("/api/v1/technicians");
+export function listTechnicians(params: BuildingScopedParams = {}) {
+  return request<TechnicianListResponse>(withBuilding("/api/v1/technicians", params.buildingId));
 }
 
 export function assignTechnician(incidentId: string, payload: AssignmentCreateRequest) {

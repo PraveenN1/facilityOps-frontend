@@ -2,25 +2,23 @@
 
 ## Current Status
 
-Task 012P.4 operations console redesign has been implemented in the frontend repository against the current backend OpenAPI contract.
+Task 012P.5B frontend integration synchronization is implemented and verified with generated OpenAPI types, unit/component tests, type checking, production build, and backend health smoke testing. Full browser workflow verification could not be completed because the available computer-use browser inventory returned no usable browser surfaces.
 
 ## Completed
 
-- Read frontend engineering instructions, README, progress documentation, and relevant backend README/architecture/decision context.
-- Exported the current backend OpenAPI contract to `openapi/facilityops-openapi.json`.
+- Confirmed backend Task 012P.5A final verification recorded a full PostgreSQL suite result of 159 passed, 1 skipped, and 1 warning.
+- Confirmed the local backend on `http://localhost:8000` responds to `/ready` and exposes the latest OpenAPI contract.
+- Exported the running backend OpenAPI contract to `openapi/facilityops-openapi.json`.
 - Regenerated TypeScript API types with `openapi-typescript`.
-- Verified the generated contract includes authentication, building discovery, complaint, incident, technician, lifecycle, and metrics APIs used by the console.
-- Replaced the old `X-Dev-*` identity header flow with backend cookie login, `/auth/me` session restore, logout, and CSRF headers for state-changing requests.
-- Removed obsolete local-demo identity source files.
-- Added protected routing and role-based workspaces for facility managers, technicians, and reporters.
-- Added building discovery and selection. One authorized building is auto-selected; multiple buildings allow explicit selection or all-authorized scope.
-- Implemented manager overview metrics using operations and AI metrics endpoints.
-- Updated incident queue with pagination, status filtering, stable navigation, AI triage status, and empty/loading/error states.
-- Updated incident detail with active assignment display, AI triage review, manager manual triage, technician assignment, and role-gated lifecycle controls.
-- Added technician workspace for active assigned work.
-- Added reporter workspace for submitted complaints and complaint creation with stable idempotency key handling.
-- Updated the design system to an industrial operations-console style with light/dark theme support, compact radii, neutral statuses, priority edges, and AI violet accents.
-- Updated tests for generated contract usage, cookie credentials, CSRF/idempotency behavior, active assignment display, null active assignment display, role navigation, and technician lifecycle identity handling.
+- Verified the generated contract includes optional `building_id` filters on `GET /api/v1/incidents` and `GET /api/v1/technicians`.
+- Wired selected building scope into incident listing, technician listing, operations metrics, and AI metrics requests.
+- Included selected building IDs in TanStack Query keys for scoped data.
+- Added query cancellation/invalidation when the building selection changes.
+- Reset incident pagination when the selected building changes.
+- Preserved backend cookie authentication, `/auth/me` session restoration, logout, CSRF headers for mutations, and role-based route behavior.
+- Preserved the distinction between `technician.id` and `technician.user_id` for assignment and technician lifecycle handoff.
+- Preserved active assignment display and null active-assignment handling in incident details.
+- Added regression coverage for generated building filter contracts, API client building parameters, dashboard building-scoped incident listing, and technician building-scoped listing.
 
 ## API Contract Notes
 
@@ -28,23 +26,24 @@ Task 012P.4 operations console redesign has been implemented in the frontend rep
 - The frontend stores only the CSRF token returned by login.
 - `TechnicianListItem.user_id` is displayed separately from `TechnicianListItem.id`.
 - `IncidentDetailResponse.active_assignment` is displayed when present; `null` is treated only as no current active assignment.
-- Metrics support optional `building_id`; incident and technician list contracts do not currently expose a building filter, so those views rely on backend authorization scoping.
+- Incident listing, technician listing, operations metrics, and AI metrics support optional `building_id`.
+- When `building_id` is omitted, the backend uses all buildings authorized for the authenticated manager.
 
 ## Verification Log
 
 - `npm run generate:api` passed and regenerated `src/api/generated.ts` from `openapi/facilityops-openapi.json`.
-- `npm run typecheck` passed after the auth/routing/page updates.
-- `npm test` passed: 5 files, 11 tests. React Router emitted future-flag warnings from the test environment.
-- `npm run build` passed after correcting the AI recommendation location field to match the generated schema.
+- `npm run typecheck` passed.
+- `npm test` initially failed one dashboard assertion because the test read the AI status during an intermediate building-selection loading state; the test was tightened to wait for the complete rendered row.
+- `npm test` passed after the fix: 5 test files, 15 tests passed. React Router emitted future-flag warnings from the test environment.
+- `npm run build` passed.
 - `npm run smoke:backend` passed: `Backend health check passed.`
-- Real backend login/session restore passed for `manager.demo@facilityops.local`: login returned a CSRF token and `/api/v1/auth/me` returned role `FACILITY_MANAGER`.
-- Real backend discovery/metrics read check against the currently running `localhost:8000` returned 404 for `/api/v1/buildings` and `/api/v1/metrics/operations`; the live process appears older than the OpenAPI contract exported from the backend source tree.
-- `git diff --check` passed with Git CRLF conversion warnings only.
+- Live auth/proxy check through `http://localhost:5173/api` passed without logging cookies or tokens: login returned 200, `/api/v1/auth/me` returned 200 with role `FACILITY_MANAGER`, logout returned 204, and `/api/v1/auth/me` returned 401 after logout.
+- `git diff --check` passed with Git LF-to-CRLF conversion warnings only.
+- Browser automation check: `cua.createBrowserTab("edge", "http://localhost:5173", ...)` reported `Browser is not available: edge`; `cua.getState()` returned no apps and no browsers. Browser-level workflow success was not claimed.
 
 ## Remaining
 
-- Full browser-level workflow verification has not yet been completed in this task.
-- Backend incident and technician list APIs do not expose explicit building filter query parameters.
+- Full browser-level workflow verification still requires an available browser automation surface.
+- Real Groq triage behavior depends on the backend worker and configured Groq credentials; this frontend task did not run the worker.
 - SLA risk, latency trend, AI accuracy, assignment history, and resolution history are not available from the current backend contract.
 - Production authentication hardening such as SSO/OAuth remains outside the current backend contract.
-

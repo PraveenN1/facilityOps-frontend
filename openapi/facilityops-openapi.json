@@ -351,6 +351,23 @@
               ],
               "title": "Status"
             }
+          },
+          {
+            "name": "building_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Building Id"
+            }
           }
         ],
         "responses": {
@@ -893,6 +910,25 @@
         ],
         "summary": "List Technicians",
         "operationId": "list_technicians_api_v1_technicians_get",
+        "parameters": [
+          {
+            "name": "building_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Building Id"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -900,6 +936,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/TechnicianListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -1059,7 +1105,7 @@
           },
           "expected_version": {
             "type": "integer",
-            "minimum": 1.0,
+            "minimum": 1,
             "title": "Expected Version"
           }
         },
@@ -1610,7 +1656,7 @@
         "properties": {
           "expected_version": {
             "type": "integer",
-            "minimum": 1.0,
+            "minimum": 1,
             "title": "Expected Version"
           }
         },
@@ -1751,7 +1797,7 @@
         "properties": {
           "expected_version": {
             "type": "integer",
-            "minimum": 1.0,
+            "minimum": 1,
             "title": "Expected Version"
           },
           "resolution_notes": {
@@ -1956,7 +2002,7 @@
           },
           "expected_version": {
             "type": "integer",
-            "minimum": 1.0,
+            "minimum": 1,
             "title": "Expected Version"
           },
           "suspected_hazard": {

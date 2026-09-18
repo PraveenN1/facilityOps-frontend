@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { listIncidents } from "../api/client";
 import { incidentStatuses } from "../api/config";
@@ -21,6 +21,10 @@ export function IncidentDashboardPage({ embedded = false }: { embedded?: boolean
     queryKey: ["incidents", selectedBuildingId, status, offset],
     queryFn: () => listIncidents({ limit: pageSize, offset, status, buildingId: selectedBuildingId }),
   });
+
+  useEffect(() => {
+    setOffset(0);
+  }, [selectedBuildingId]);
 
   const total = incidentsQuery.data?.total ?? 0;
   const canGoBack = offset > 0;

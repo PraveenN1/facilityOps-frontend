@@ -54,6 +54,9 @@ export function BuildingProvider({ children }: { children: React.ReactNode }) {
       if (buildingId) window.localStorage.setItem(storageKey, buildingId);
       else window.localStorage.removeItem(storageKey);
     }
+    void queryClient.cancelQueries({ queryKey: ["incidents"] });
+    void queryClient.cancelQueries({ queryKey: ["metrics"] });
+    void queryClient.cancelQueries({ queryKey: ["technicians"] });
     void queryClient.invalidateQueries({ queryKey: ["incidents"] });
     void queryClient.invalidateQueries({ queryKey: ["metrics"] });
     void queryClient.invalidateQueries({ queryKey: ["technicians"] });

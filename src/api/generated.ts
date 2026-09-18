@@ -1165,6 +1165,7 @@ export interface operations {
                 limit?: number;
                 offset?: number;
                 status?: ("PENDING_TRIAGE" | "AWAITING_ASSIGNMENT" | "AWAITING_APPROVAL" | "ASSIGNED" | "IN_PROGRESS" | "RESOLVED" | "CLOSED" | "MANUAL_REVIEW") | null;
+                building_id?: string | null;
             };
             header?: never;
             path?: never;
@@ -1492,7 +1493,9 @@ export interface operations {
     };
     list_technicians_api_v1_technicians_get: {
         parameters: {
-            query?: never;
+            query?: {
+                building_id?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -1506,6 +1509,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TechnicianListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

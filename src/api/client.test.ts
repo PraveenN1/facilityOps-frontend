@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { createComplaint, listIncidents, login, storeCsrfToken } from "./client";
+import { createComplaint, listIncidents, listTechnicians, login, storeCsrfToken } from "./client";
 
 function jsonResponse(body: unknown, status = 200) {
   return Promise.resolve(new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } }));
@@ -22,6 +22,18 @@ describe("API client", () => {
     expect(init?.credentials).toBe("include");
     expect(headers.get("X-Dev-User-Id")).toBeNull();
     expect(String(fetchMock.mock.calls[0][0])).toContain("/api/v1/incidents?limit=10&offset=0");
+  });
+
+  it("sends server-side building filters for manager listing endpoints", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(() =>
+      jsonResponse({ items: [], total: 0, limit: 10, offset: 0 }),
+    );
+
+    await listIncidents({ limit: 10, offset: 0, status: "ASSIGNED", buildingId: "building-id" });
+    await listTechnicians({ buildingId: "building-id" });
+
+    expect(String(fetchMock.mock.calls[0][0])).toContain("/api/v1/incidents?limit=10&offset=0&status=ASSIGNED&building_id=building-id");
+    expect(String(fetchMock.mock.calls[1][0])).toContain("/api/v1/technicians?building_id=building-id");
   });
 
   it("stores CSRF from login and sends it with idempotent complaint creation", async () => {

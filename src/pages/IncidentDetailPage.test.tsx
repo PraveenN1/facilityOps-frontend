@@ -7,6 +7,7 @@ import { csrfStorageKey } from "../api/config";
 import { renderWithProviders } from "../test/test-utils";
 
 const buildingId = "10000000-0000-0000-0000-000000000001";
+const otherBuildingId = "10000000-0000-0000-0000-000000000002";
 const technicianUserId = "10000000-0000-0000-0000-000000000012";
 const technicianId = "10000000-0000-0000-0000-000000000020";
 const incidentId = "20000000-0000-0000-0000-000000000001";
@@ -46,8 +47,8 @@ function jsonResponse(body: unknown, status = 200) {
   return Promise.resolve(new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } }));
 }
 
-function mockSession(role: "FACILITY_MANAGER" | "TECHNICIAN") {
-  return { id: role === "TECHNICIAN" ? technicianUserId : "manager-id", email: role === "TECHNICIAN" ? "technician.demo@facilityops.local" : "manager.demo@facilityops.local", role, buildings: [{ id: buildingId, name: "Demo Tower" }] };
+function mockSession(role: "FACILITY_MANAGER" | "TECHNICIAN", buildings = [{ id: buildingId, name: "Demo Tower" }]) {
+  return { id: role === "TECHNICIAN" ? technicianUserId : "manager-id", email: role === "TECHNICIAN" ? "technician.demo@facilityops.local" : "manager.demo@facilityops.local", role, buildings };
 }
 
 describe("IncidentDetailPage", () => {
@@ -73,6 +74,38 @@ describe("IncidentDetailPage", () => {
     expect(screen.getAllByText("technician.demo@facilityops.local").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText(assignmentId)).toBeInTheDocument();
     await waitFor(() => expect(screen.getByText(/user 10000000\.\.\.0012/i)).toBeInTheDocument());
+  });
+
+  it("passes selected building scope to the technician listing", async () => {
+    window.localStorage.setItem("facilityops.selectedBuilding.manager-id", otherBuildingId);
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
+      const url = String(input);
+      if (url.includes("/api/v1/auth/me")) {
+        return jsonResponse(
+          mockSession("FACILITY_MANAGER", [
+            { id: buildingId, name: "Demo Tower" },
+            { id: otherBuildingId, name: "Warehouse" },
+          ]),
+        );
+      }
+      if (url.includes("/api/v1/buildings")) {
+        return jsonResponse({
+          items: [
+            { id: buildingId, name: "Demo Tower" },
+            { id: otherBuildingId, name: "Warehouse" },
+          ],
+        });
+      }
+      if (url.includes("/api/v1/technicians")) return jsonResponse(technicians());
+      if (url.includes(`/api/v1/incidents/${incidentId}`)) return jsonResponse(incident());
+      return jsonResponse({ detail: "unexpected request" }, 500);
+    });
+
+    renderWithProviders(<IncidentDetailPage />, { initialEntries: [`/incidents/${incidentId}`], routePath: "/incidents/:incidentId" });
+
+    await waitFor(() =>
+      expect(fetchMock.mock.calls.some(([input]) => String(input).includes(`/api/v1/technicians?building_id=${otherBuildingId}`))).toBe(true),
+    );
   });
 
   it("uses authenticated technician session and CSRF for lifecycle actions", async () => {

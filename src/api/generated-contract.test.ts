@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { components } from "./generated";
+import type { components, paths } from "./generated";
 
 describe("generated API contract", () => {
   it("includes backend Task 012A dashboard fields", () => {
@@ -38,5 +38,20 @@ describe("generated API contract", () => {
 
     expect(technician.user_id).toBe("technician-user-id");
     expect(incident.active_assignment?.technician_id).toBe("technician-profile-id");
+  });
+
+  it("includes Task 012P.5A building filters on manager listings", () => {
+    const incidentQuery: NonNullable<paths["/api/v1/incidents"]["get"]["parameters"]["query"]> = {
+      limit: 10,
+      offset: 0,
+      building_id: "building-id",
+      status: "ASSIGNED",
+    };
+    const technicianQuery: NonNullable<paths["/api/v1/technicians"]["get"]["parameters"]["query"]> = {
+      building_id: "building-id",
+    };
+
+    expect(incidentQuery.building_id).toBe("building-id");
+    expect(technicianQuery.building_id).toBe("building-id");
   });
 });
