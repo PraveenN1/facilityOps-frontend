@@ -2,7 +2,7 @@
 
 ## Current Status
 
-Task 012C-D frontend demo-readiness corrections are implemented and verified with unit/component tests, type checking, production build, and diff hygiene checks. Full browser workflow verification could not be completed because the available computer-use browser inventory returned no usable browser surfaces.
+Task 012C-T technician workspace UX corrections are implemented and verified with generated API types, unit/component tests, type checking, production build, backend smoke testing, and a live technician `my-work` contract spot-check. Full browser workflow verification could not be completed because the available computer-use browser inventory returned no usable browser surfaces.
 
 ## Completed
 
@@ -17,6 +17,13 @@ Task 012C-D frontend demo-readiness corrections are implemented and verified wit
 - Building context now falls back to authenticated `/auth/me` building memberships while `/buildings` is loading, preventing stale anonymous building labels during scoped fetches.
 - Task 012C-D corrected the AI assessment panel so a `PROCESSED` outbox status without a persisted `latest_triage_result.validated_result` shows an accurate empty state instead of a blank advisory recommendation.
 - Persisted validated AI recommendations continue to render from `latest_triage_result.validated_result`; the UI does not fabricate AI output or confidence.
+- Task 012C-T reworked the technician workspace into state-driven work-order cards without changing backend lifecycle or RBAC rules.
+- `ASSIGNED` work orders now show Start work as the sole primary action; resolution notes and Resolve work are not rendered.
+- `IN_PROGRESS` work orders hide Start work and show resolution notes plus Resolve work as the sole primary action.
+- Successful resolution now shows a server-confirmed local success message, explains that the job leaves the active queue, invalidates/refetches technician work, incident, incident list, and metrics caches, and preserves the confirmation above the empty state.
+- Failed resolution does not show success. HTTP 409 conflicts show a review message and refetch the active queue without automatically retrying.
+- Technician work cards now use the complaint summary as the headline, short incident references, authenticated building display names, category, priority, status, and created time without exposing routine UUIDs as primary labels.
+- Technician work cards use mobile-first single-column spacing, full-width primary actions, larger resolution textareas, and constrained desktop width.
 - Confirmed backend Task 012P.5A final verification recorded a full PostgreSQL suite result of 159 passed, 1 skipped, and 1 warning.
 - Confirmed the local backend on `http://localhost:8000` responds to `/ready` and exposes the latest OpenAPI contract.
 - Exported the running backend OpenAPI contract to `openapi/facilityops-openapi.json`.
@@ -57,6 +64,13 @@ Task 012C-D frontend demo-readiness corrections are implemented and verified wit
 - `npm test` passed for Task 012C-D: 6 test files and 27 tests passed. React Router emitted future-flag warnings from the test environment.
 - `npm run build` passed for Task 012C-D.
 - `git diff --check` passed for Task 012C-D frontend changes with Git LF-to-CRLF conversion warnings only.
+- Task 012C-T focused technician workspace tests passed: `npx vitest run src/pages/TechnicianWorkspacePage.test.tsx` reported 1 test file and 8 tests passed.
+- `npm run generate:api` passed for Task 012C-T.
+- `npm run typecheck` passed for Task 012C-T.
+- `npm test` passed for Task 012C-T: 7 test files and 35 tests passed. React Router emitted future-flag warnings from the test environment.
+- `npm run build` passed for Task 012C-T.
+- `npm run smoke:backend` passed for Task 012C-T: `Backend health check passed.`
+- Live backend technician spot-check passed: technician login returned HTTP 200, `GET /api/v1/incidents/my-work` returned HTTP 200, and the response contained 1 active item.
 
 ## Remaining
 

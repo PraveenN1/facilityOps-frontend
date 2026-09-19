@@ -149,12 +149,23 @@ code,
   .filter-row, .action-row { @apply flex flex-wrap items-center gap-3; }
   .pager { @apply flex items-center justify-between gap-3; }
   .tech-list, .work-list, .complaint-list { @apply flex flex-col gap-3; }
+  .work-list { @apply max-w-3xl; }
   .tech-card, .work-card, .complaint-row { @apply rounded-md border p-3 text-sm no-underline; background: var(--panel); color: var(--ink); border-color: var(--line); }
   .tech-card { @apply grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start; }
   .tech-card span, .complaint-row span { @apply mt-1 block; color: var(--muted); }
   .group-heading { @apply text-sm font-semibold; color: var(--ink); }
   .human-panel { border-left: 3px solid var(--blue); }
   .work-card-head, .complaint-row { @apply flex items-start justify-between gap-3; }
+  .work-order-card { @apply flex flex-col gap-4 p-4 sm:p-5; overflow-wrap: anywhere; }
+  .work-order-main { @apply flex flex-col gap-4; }
+  .work-order-head { @apply flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between; }
+  .work-order-head h3 { @apply text-lg font-semibold leading-snug; color: var(--ink); }
+  .work-order-meta { @apply grid grid-cols-1 gap-3 text-sm sm:grid-cols-2; }
+  .work-order-meta dt { @apply text-xs font-semibold uppercase; color: var(--muted); }
+  .work-order-meta dd { @apply mt-1 font-medium; color: var(--ink); }
+  .work-primary-action { @apply w-full; min-height: 44px; }
+  .resolution-textarea { @apply min-h-32 resize-y; }
+  .success-note { @apply rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-950; }
   .narrow-page { @apply mx-auto max-w-2xl; }
   .login-page { @apply flex min-h-screen items-center justify-center p-4; background: var(--bg); }
   .login-card { @apply w-full max-w-md rounded-md border p-6 shadow-sm; background: var(--panel); border-color: var(--line); }
