@@ -2,7 +2,7 @@
 
 ## Current Status
 
-Task 012C-UI manager console UX corrections are implemented and verified with generated OpenAPI types, unit/component tests, type checking, production build, and diff hygiene checks. Full browser workflow verification could not be completed because the available computer-use browser inventory returned no usable browser surfaces.
+Task 012C-D frontend demo-readiness corrections are implemented and verified with unit/component tests, type checking, production build, and diff hygiene checks. Full browser workflow verification could not be completed because the available computer-use browser inventory returned no usable browser surfaces.
 
 ## Completed
 
@@ -15,6 +15,8 @@ Task 012C-UI manager console UX corrections are implemented and verified with ge
 - Limited technician dispatch UI to `AWAITING_ASSIGNMENT`; candidates are grouped into available qualified, unavailable, and not qualified where the contract supports it.
 - Assignment conflicts now clear the selected technician, refetch incident and technician data, and require the manager to choose again before retrying.
 - Building context now falls back to authenticated `/auth/me` building memberships while `/buildings` is loading, preventing stale anonymous building labels during scoped fetches.
+- Task 012C-D corrected the AI assessment panel so a `PROCESSED` outbox status without a persisted `latest_triage_result.validated_result` shows an accurate empty state instead of a blank advisory recommendation.
+- Persisted validated AI recommendations continue to render from `latest_triage_result.validated_result`; the UI does not fabricate AI output or confidence.
 - Confirmed backend Task 012P.5A final verification recorded a full PostgreSQL suite result of 159 passed, 1 skipped, and 1 warning.
 - Confirmed the local backend on `http://localhost:8000` responds to `/ready` and exposes the latest OpenAPI contract.
 - Exported the running backend OpenAPI contract to `openapi/facilityops-openapi.json`.
@@ -50,10 +52,15 @@ Task 012C-UI manager console UX corrections are implemented and verified with ge
 - Live auth/proxy check through `http://localhost:5173/api` passed without logging cookies or tokens: login returned 200, `/api/v1/auth/me` returned 200 with role `FACILITY_MANAGER`, logout returned 204, and `/api/v1/auth/me` returned 401 after logout.
 - `git diff --check` passed with Git LF-to-CRLF conversion warnings only.
 - Browser automation check for Task 012C-UI: `cua.getState()` returned no apps and no browsers. Browser-level workflow success was not claimed.
+- Task 012C-D focused AI assessment tests passed: `npx vitest run src/pages/IncidentDetailPage.test.tsx` reported 1 test file and 14 tests passed.
+- `npm run typecheck` passed for Task 012C-D.
+- `npm test` passed for Task 012C-D: 6 test files and 27 tests passed. React Router emitted future-flag warnings from the test environment.
+- `npm run build` passed for Task 012C-D.
+- `git diff --check` passed for Task 012C-D frontend changes with Git LF-to-CRLF conversion warnings only.
 
 ## Remaining
 
 - Full browser-level workflow verification still requires an available browser automation surface.
-- Real Groq triage behavior depends on the backend worker and configured Groq credentials; this frontend task did not run the worker.
+- Real Groq triage behavior depends on the backend worker and configured Groq credentials. Task 012C-D backend verification confirmed one isolated demo triage event was processed successfully with the real Groq provider.
 - SLA risk, latency trend, AI accuracy, assignment history, and resolution history are not available from the current backend contract.
 - Production authentication hardening such as SSO/OAuth remains outside the current backend contract.

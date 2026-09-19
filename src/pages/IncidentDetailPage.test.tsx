@@ -214,6 +214,61 @@ describe("IncidentDetailPage", () => {
     expect(screen.queryByRole("button", { name: /confirm triage/i })).not.toBeInTheDocument();
   });
 
+  it("shows a precise empty AI state when processing completed without a persisted recommendation", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
+      const url = requestUrl(input);
+      if (url.includes("/api/v1/auth/me")) return jsonResponse(mockSession("FACILITY_MANAGER"));
+      if (url.includes("/api/v1/buildings")) return jsonResponse({ items: [{ id: buildingId, name: "Demo Tower" }] });
+      if (url.includes(`/api/v1/incidents/${incidentId}`)) return jsonResponse(incident({ status: "AWAITING_ASSIGNMENT", ai_triage_status: "PROCESSED", latest_triage_result: null, active_assignment: null }));
+      return jsonResponse({ detail: "unexpected request" }, 500);
+    });
+
+    renderWithProviders(<IncidentDetailPage />, { initialEntries: [`/incidents/${incidentId}`], routePath: "/incidents/:incidentId" });
+
+    await waitFor(() => expect(screen.getByText("No persisted AI recommendation")).toBeInTheDocument());
+    expect(screen.getByText(/processed, but the backend did not persist a validated recommendation/i)).toBeInTheDocument();
+  });
+
+  it("renders persisted validated AI recommendations when present", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
+      const url = requestUrl(input);
+      if (url.includes("/api/v1/auth/me")) return jsonResponse(mockSession("FACILITY_MANAGER"));
+      if (url.includes("/api/v1/buildings")) return jsonResponse({ items: [{ id: buildingId, name: "Demo Tower" }] });
+      if (url.includes(`/api/v1/incidents/${incidentId}`)) {
+        return jsonResponse(incident({
+          status: "PENDING_TRIAGE",
+          ai_triage_status: "SUCCEEDED",
+          latest_triage_result: {
+            id: "40000000-0000-0000-0000-000000000001",
+            status: "SUCCEEDED",
+            model_version: "groq:openai/gpt-oss-20b",
+            validated_result: {
+              category: "HVAC",
+              location: "East wing conference room",
+              issue_summary: "Conference room is too warm with weak airflow.",
+              symptoms: ["warm room", "weak airflow"],
+              potential_hazards: [],
+              suggested_priority: "MEDIUM",
+              missing_information: [],
+              needs_human_review: false,
+              safety_notes: [],
+            },
+            created_at: "2026-09-17T10:02:00Z",
+          },
+          active_assignment: null,
+        }));
+      }
+      return jsonResponse({ detail: "unexpected request" }, 500);
+    });
+
+    renderWithProviders(<IncidentDetailPage />, { initialEntries: [`/incidents/${incidentId}`], routePath: "/incidents/:incidentId" });
+
+    await waitFor(() => expect(screen.getByText("Recommended category")).toBeInTheDocument());
+    expect(screen.getByText("HVAC")).toBeInTheDocument();
+    expect(screen.getByText("Conference room is too warm with weak airflow.")).toBeInTheDocument();
+    expect(screen.getByText("groq:openai/gpt-oss-20b")).toBeInTheDocument();
+  });
+
   it("shows no eligible technician empty state and not-qualified technicians", async () => {
     vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
       const url = requestUrl(input);

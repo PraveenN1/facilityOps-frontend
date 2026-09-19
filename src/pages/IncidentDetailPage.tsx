@@ -155,6 +155,7 @@ function AiAssessment({ incident }: { incident: IncidentDetailResponse }) {
   const recommendation = triage?.validated_result;
   const isPending = incident.ai_triage_status === "PENDING" || incident.ai_triage_status === "PROCESSING";
   const isFailed = ["FAILED", "INVALID_OUTPUT", "TIMEOUT"].includes(incident.ai_triage_status ?? "");
+  const processedWithoutRecommendation = incident.ai_triage_status === "PROCESSED" && !recommendation;
 
   return (
     <article className="panel stack ai-panel">
@@ -165,6 +166,9 @@ function AiAssessment({ incident }: { incident: IncidentDetailResponse }) {
       {!incident.ai_triage_status ? <EmptyState title="Awaiting AI signal" detail="No triage result or outbox status is visible yet." /> : null}
       {isPending ? <p className="info-note">AI triage is still processing. Human approval has not occurred.</p> : null}
       {isFailed ? <p className="danger-note">AI triage did not produce a usable recommendation. Manual review can still record a human decision when backend safety checks allow it.</p> : null}
+      {processedWithoutRecommendation ? (
+        <EmptyState title="No persisted AI recommendation" detail="The triage event was processed, but the backend did not persist a validated recommendation for this incident." />
+      ) : null}
       {recommendation ? (
         <dl className="definition-grid">
           <div><dt>Recommended category</dt><dd>{recommendation.category}</dd></div>
