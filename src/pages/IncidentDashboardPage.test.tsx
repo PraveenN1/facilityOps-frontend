@@ -30,6 +30,7 @@ function incident(overrides: Partial<IncidentListItem> = {}): IncidentListItem {
   return {
     id: "00000000-0000-0000-0000-000000000010",
     complaint_id: "00000000-0000-0000-0000-000000000011",
+    public_ticket_id: "FO-2026-000315",
     building_id: buildingId,
     complaint_description: "Power failure in lobby",
     category: "ELECTRICAL",
@@ -67,8 +68,8 @@ describe("IncidentDashboardPage", () => {
       expect(screen.getByText("AI completed")).toBeInTheDocument();
     });
     expect(screen.queryByText(buildingId)).not.toBeInTheDocument();
-    const row = await screen.findByRole("link", { name: /open incident 00000000\.\.\.0010/i });
-    expect(row).toHaveTextContent("00000000...0010");
+    const row = await screen.findByRole("link", { name: /open incident FO-2026-000315/i });
+    expect(row).toHaveTextContent("FO-2026-000315");
     expect(screen.queryByText("00000000-0000-0000-0000-000000000010")).not.toBeInTheDocument();
     expect(screen.getByRole("list", { name: /incident queue/i })).toBeInTheDocument();
     expect(row).toHaveAttribute("href", "/incidents/00000000-0000-0000-0000-000000000010");
@@ -176,6 +177,8 @@ describe("IncidentDashboardPage", () => {
   });
 
   it("does not treat processed AI without validated result as a recommendation", () => {
+    expect(aiQueueLabel({ ai_triage_status: "PROCESSED_NO_RESULT", latest_triage_result: null })).toBe("Processed, no recommendation");
+    expect(aiQueueLabel({ ai_triage_status: "SKIPPED_OBSOLETE", latest_triage_result: null })).toBe("AI skipped after human review");
     expect(aiQueueLabel({ ai_triage_status: "PROCESSED", latest_triage_result: null })).toBe("Processed, no recommendation");
     expect(aiQueueLabel({
       ai_triage_status: "PROCESSED",

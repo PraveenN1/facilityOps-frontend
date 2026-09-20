@@ -73,12 +73,12 @@ Use the seeded demo users documented by the backend README. The frontend display
 
 - Single-column polished login, session restore, logout, protected routes, and persisted light/dark theme selection.
 - Manager overview with operations and AI metrics.
-- Manager incident queue with server-side building selection, pagination, status filtering, AI triage status, and incident details navigation.
+- Manager incident queue with server-side building selection, pagination, status filtering, public ticket references, AI triage status, and incident details navigation.
 - Maintenance request creation with stable idempotency key per retryable submission kept internal to the API client.
-- Reporter request list and reporter-specific progress tracking navigation.
+- Reporter request list and reporter-specific progress tracking navigation using backend-provided public ticket references.
 - AI triage review with original complaint, recommendation, pending/completed/failed states, and manager confirmation.
 - Technician assignment with skills, availability, technician profile/user identity distinction, expected version, and HTTP 409 conflict display.
-- Technician assigned-work workspace with start and resolve actions.
+- Technician assigned-work workspace with public ticket references, start, and resolve actions.
 - Incident lifecycle actions with state refetching after mutations.
 
 ## Backend API Contracts Used
@@ -102,6 +102,7 @@ Use the seeded demo users documented by the backend README. The frontend display
 - `GET /api/v1/metrics/ai`
 
 API types are generated from `openapi/facilityops-openapi.json` into `src/api/generated.ts`.
+Backend Task 014 contracts expose `public_ticket_id` across complaint, incident, and technician work responses; `display_name`/`reporter_display_name` for human-readable identities; and terminal AI states such as `SKIPPED_OBSOLETE` and `PROCESSED_NO_RESULT`. The frontend displays those values but continues to use internal UUIDs for routes, mutations, and cache keys.
 `GET /api/v1/incidents`, `GET /api/v1/technicians`, `GET /api/v1/metrics/operations`, and `GET /api/v1/metrics/ai` accept optional `building_id` filters. When no building is selected, the backend returns data for the authenticated manager's authorized buildings.
 
 ## Verification

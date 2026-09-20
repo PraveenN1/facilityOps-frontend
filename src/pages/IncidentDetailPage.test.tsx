@@ -17,8 +17,10 @@ function incident(overrides: Record<string, unknown> = {}) {
   return {
     id: incidentId,
     complaint_id: "20000000-0000-0000-0000-000000000002",
+    public_ticket_id: "FO-2026-000201",
     building_id: buildingId,
     reporter_id: "10000000-0000-0000-0000-000000000011",
+    reporter_display_name: "Riley Chen",
     complaint_description: "Power failure in lobby",
     category: "ELECTRICAL",
     priority: "HIGH",

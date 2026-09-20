@@ -32,6 +32,7 @@ function workItem(overrides: Record<string, unknown> = {}) {
   return {
     id: assignedIncidentId,
     complaint_id: "20000000-0000-0000-0000-000000000101",
+    public_ticket_id: "FO-2026-000401",
     building_id: buildingId,
     complaint_description: "Training room air handler is blowing warm air",
     category: "HVAC",
@@ -49,6 +50,7 @@ function resolvedIncident() {
   return {
     id: inProgressIncidentId,
     complaint_id: "20000000-0000-0000-0000-000000000102",
+    public_ticket_id: "FO-2026-000402",
     building_id: buildingId,
     reporter_id: "10000000-0000-0000-0000-000000000011",
     complaint_description: "Conference room fan coil is noisy",
@@ -88,7 +90,7 @@ describe("TechnicianWorkspacePage", () => {
     expect(screen.queryByRole("button", { name: /resolve work/i })).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/resolution notes/i)).not.toBeInTheDocument();
     expect(screen.getByText("Demo Tower")).toBeInTheDocument();
-    expect(screen.getByText("20000000...0001")).toBeInTheDocument();
+    expect(screen.getByText("FO-2026-000401")).toBeInTheDocument();
     expect(screen.queryByText(assignedIncidentId)).not.toBeInTheDocument();
   });
 
@@ -140,7 +142,7 @@ describe("TechnicianWorkspacePage", () => {
     await user.type(await screen.findByLabelText(/resolution notes/i), "Cleaned filter and restored airflow.");
     await user.click(screen.getByRole("button", { name: /resolve work/i }));
 
-    await waitFor(() => expect(screen.getByText(/Resolved 20000000...0002/i)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/Resolved FO-2026-000402/i)).toBeInTheDocument());
     expect(screen.getByText(/This job left your active queue/i)).toBeInTheDocument();
     expect(screen.getByText(/Resolution notes: Cleaned filter and restored airflow/i)).toBeInTheDocument();
     await waitFor(() => expect(workRequests).toBeGreaterThan(1));

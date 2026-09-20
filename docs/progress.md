@@ -2,7 +2,7 @@
 
 ## Current Status
 
-Task 012C-MANAGER final manager workflow correctness and UX fixes are implemented and verified with generated API types, TypeScript checking, unit/component tests, production build, and diff check. The manager triage category input is now constrained to approved category values. Full browser visual verification was not performed in this pass.
+Task 014D frontend contract integration is implemented. The frontend now consumes backend public ticket references, human-readable display names, reporter display names, and AI terminal states from the regenerated OpenAPI contract. TypeScript checking and the component/unit test suite have passed; production build, backend smoke, and diff check are recorded below. Full browser visual verification was not performed in this pass.
 
 ## Completed
 
@@ -61,6 +61,10 @@ Task 012C-MANAGER final manager workflow correctness and UX fixes are implemente
 - Manager incident detail hides routine assignment IDs, shows compact no-assignment states for pending/pre-dispatch incidents, and avoids implying that no historical assignment existed after resolution or closure.
 - Safety presentation now uses backend-visible AI assessment hazard/escalation signals only. The frontend no longer classifies danger from complaint keywords and still does not clear hazards client-side.
 - AI advisory information and human-confirmed triage remain visually separate, and the AI model name is displayed only when the backend provides it.
+- Task 014D exported the latest backend OpenAPI contract and regenerated `src/api/generated.ts`.
+- Public ticket references from `public_ticket_id` are now the user-facing identifier in reporter request cards/details, manager queue/details, and technician work-order cards/resolution confirmation. Internal UUIDs remain in routes, mutations, and TanStack Query keys.
+- The authenticated shell now displays backend `display_name` as the primary identity label with role as secondary context. Technician dispatch and active assignment views continue to use backend-provided technician display names, and manager incident detail shows `reporter_display_name` when available.
+- AI status rendering now explicitly handles `SKIPPED_OBSOLETE` as skipped after human review and `PROCESSED_NO_RESULT` as processed without a persisted recommendation. The UI does not treat either status as a validated AI recommendation.
 
 ## API Contract Notes
 
@@ -68,6 +72,8 @@ Task 012C-MANAGER final manager workflow correctness and UX fixes are implemente
 - The frontend stores only the CSRF token returned by login.
 - `TechnicianListItem.user_id` is displayed separately from `TechnicianListItem.id`.
 - `IncidentDetailResponse.active_assignment` is displayed when present; `null` is treated only as no current active assignment.
+- Public ticket references come from backend `public_ticket_id`; the frontend does not derive or truncate UUIDs for user-facing ticket labels.
+- Human-readable identity labels come from backend `display_name`, `reporter_display_name`, and technician display-name fields; names are presentation-only and never used for authorization.
 - Incident listing, technician listing, operations metrics, and AI metrics support optional `building_id`.
 - When `building_id` is omitted, the backend uses all buildings authorized for the authenticated manager.
 
@@ -124,6 +130,13 @@ Task 012C-MANAGER final manager workflow correctness and UX fixes are implemente
 - Task 012C-MANAGER category-dropdown follow-up `npm test` passed: 8 test files and 58 tests passed. React Router future-flag warnings were emitted by the test environment.
 - Task 012C-MANAGER category-dropdown follow-up `npm run build` passed.
 - Task 012C-MANAGER category-dropdown follow-up `git diff --check` passed with Git LF-to-CRLF conversion warnings only.
+- Task 014D `npm run generate:api` passed and regenerated `src/api/generated.ts` from the exported backend OpenAPI contract.
+- Task 014D `npm run typecheck` passed.
+- Task 014D initial `npm test` run failed 3 assertions because test API mocks omitted the new required `public_ticket_id`; mocks and assertions were updated to the backend contract.
+- Task 014D `npm test` passed after the mock updates: 8 test files and 59 tests passed. React Router future-flag warnings were emitted by the test environment.
+- Task 014D `npm run build` passed: TypeScript project build and Vite production build completed successfully.
+- Task 014D `npm run smoke:backend` passed: `Backend health check passed.` The live backend on port 8000 responded, but its `/openapi.json` did not include `public_ticket_id`, `reporter_display_name`, `SKIPPED_OBSOLETE`, or `PROCESSED_NO_RESULT`, indicating the running backend process is stale relative to the exported source OpenAPI used for type generation.
+- Task 014D `git diff --check` passed with Git LF-to-CRLF conversion warnings only.
 
 ## Remaining
 

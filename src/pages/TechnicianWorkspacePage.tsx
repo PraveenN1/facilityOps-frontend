@@ -8,10 +8,10 @@ import type { TechnicianWorkItem } from "../api/types";
 import { useBuildingSelection } from "../state/BuildingContext";
 import { EmptyState, ErrorState, LoadingState } from "../ui/AsyncState";
 import { StatusBadge } from "../ui/StatusBadge";
-import { compactUuid, formatDateTime } from "../utils/format";
+import { formatDateTime } from "../utils/format";
 
 interface ResolutionConfirmation {
-  incidentId: string;
+  publicTicketId: string;
   description: string;
   resolutionNotes: string | null;
 }
@@ -69,7 +69,7 @@ export function TechnicianWorkspacePage() {
 function ResolutionSuccess({ confirmation }: { confirmation: ResolutionConfirmation }) {
   return (
     <div role="status" className="success-note">
-      <p className="font-semibold icon-heading"><CheckCircle2 aria-hidden size={18} />Resolved {compactUuid(confirmation.incidentId)}</p>
+      <p className="font-semibold icon-heading"><CheckCircle2 aria-hidden size={18} />Resolved {confirmation.publicTicketId}</p>
       <p>{confirmation.description}</p>
       <p>This job left your active queue after the server confirmed the resolution.</p>
       {confirmation.resolutionNotes ? <p>Resolution notes: {confirmation.resolutionNotes}</p> : null}
@@ -118,7 +118,7 @@ function WorkCard({
     },
     onSuccess: (incident) => {
       onResolved({
-        incidentId: incident.id,
+        publicTicketId: incident.public_ticket_id,
         description: incident.complaint_description,
         resolutionNotes: notes.trim() || null,
       });
@@ -151,8 +151,8 @@ function WorkCard({
           <div>
             <dt>Reference</dt>
             <dd>
-              <Link to={`/incidents/${item.id}`} className="mono-link" aria-label={`Open incident ${item.id}`}>
-                {compactUuid(item.id)}
+              <Link to={`/incidents/${item.id}`} className="mono-link" aria-label={`Open ticket ${item.public_ticket_id}`}>
+                {item.public_ticket_id}
               </Link>
             </dd>
           </div>

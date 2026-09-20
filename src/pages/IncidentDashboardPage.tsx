@@ -11,7 +11,7 @@ import { useAuth } from "../state/AuthContext";
 import { useBuildingSelection } from "../state/BuildingContext";
 import { EmptyState, ErrorState, LoadingState } from "../ui/AsyncState";
 import { StatusBadge } from "../ui/StatusBadge";
-import { compactUuid, formatDateTime } from "../utils/format";
+import { formatDateTime } from "../utils/format";
 
 const pageSize = 10;
 
@@ -75,11 +75,11 @@ export function IncidentDashboardPage({ embedded = false }: { embedded?: boolean
                 <Link
                   className={`queue-row priority-edge priority-${incident.priority.toLowerCase()}`}
                   to={`/incidents/${incident.id}`}
-                  aria-label={`Open incident ${compactUuid(incident.id)}: ${incident.complaint_description}`}
+                  aria-label={`Open incident ${incident.public_ticket_id}: ${incident.complaint_description}`}
                 >
                   <div className="queue-summary">
                     <strong>{incident.complaint_description}</strong>
-                    <span className="queue-refline">Incident {compactUuid(incident.id)} · {buildingNameById.get(incident.building_id) ?? "Authorized building"}</span>
+                    <span className="queue-refline">Ticket {incident.public_ticket_id} · {buildingNameById.get(incident.building_id) ?? "Authorized building"}</span>
                   </div>
                   <div className="queue-meta">
                     <span>{incident.category ?? "Uncategorized"}</span>
@@ -134,8 +134,9 @@ export function aiQueueLabel(incident: Pick<IncidentListItem, "ai_triage_status"
   const hasRecommendation = Boolean(incident.latest_triage_result?.validated_result);
   if (!status) return "AI not available";
   if ((status === "PROCESSED" || status === "SUCCEEDED") && hasRecommendation) return "AI recommendation ready";
-  if (status === "PROCESSED") return "Processed, no recommendation";
+  if (status === "PROCESSED_NO_RESULT" || status === "PROCESSED") return "Processed, no recommendation";
   if (status === "SUCCEEDED") return "AI completed";
+  if (status === "SKIPPED_OBSOLETE") return "AI skipped after human review";
   if (status === "PENDING") return "AI pending";
   if (status === "PROCESSING") return "AI processing";
   if (status === "TIMEOUT") return "AI timed out";

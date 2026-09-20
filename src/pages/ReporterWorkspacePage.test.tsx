@@ -34,6 +34,7 @@ describe("ReporterWorkspacePage", () => {
       items: [{
         id: "20000000-0000-0000-0000-000000000001",
         building_id: buildingId,
+        public_ticket_id: "FO-2026-000501",
         description: "Conference room is too warm with weak airflow",
         status: "PENDING_TRIAGE",
         created_at: "2026-09-17T10:00:00Z",
@@ -47,6 +48,7 @@ describe("ReporterWorkspacePage", () => {
     renderWithProviders(<ReporterWorkspacePage />);
 
     await waitFor(() => expect(screen.getByText("Conference room is too warm with weak airflow")).toBeInTheDocument());
+    expect(screen.getByText(/Ticket FO-2026-000501/i)).toBeInTheDocument();
     expect(screen.getByText(/Demo Tower/i)).toBeInTheDocument();
     expect(screen.getByText("Technician being arranged")).toBeInTheDocument();
     expect(screen.getByText(/facility team has reviewed your request/i)).toBeInTheDocument();

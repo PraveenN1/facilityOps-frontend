@@ -443,6 +443,8 @@ export interface components {
             id: string;
             /** Email */
             email: string;
+            /** Display Name */
+            display_name: string;
             /** Role */
             role: string;
             /** Building Ids */
@@ -486,6 +488,8 @@ export interface components {
              * Format: uuid
              */
             complaint_id: string;
+            /** Public Ticket Id */
+            public_ticket_id: string;
             /**
              * Incident Id
              * Format: uuid
@@ -504,6 +508,8 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            /** Public Ticket Id */
+            public_ticket_id: string;
             /**
              * Building Id
              * Format: uuid
@@ -514,6 +520,8 @@ export interface components {
              * Format: uuid
              */
             reporter_id: string;
+            /** Reporter Display Name */
+            reporter_display_name: string;
             /** Description */
             description: string;
             /**
@@ -577,6 +585,8 @@ export interface components {
              * Format: uuid
              */
             complaint_id: string;
+            /** Public Ticket Id */
+            public_ticket_id: string;
             /**
              * Building Id
              * Format: uuid
@@ -587,6 +597,8 @@ export interface components {
              * Format: uuid
              */
             reporter_id: string;
+            /** Reporter Display Name */
+            reporter_display_name: string;
             /** Complaint Description */
             complaint_description: string;
             /** Category */
@@ -637,6 +649,8 @@ export interface components {
              * Format: uuid
              */
             complaint_id: string;
+            /** Public Ticket Id */
+            public_ticket_id: string;
             /**
              * Building Id
              * Format: uuid
@@ -805,6 +819,8 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            /** Public Ticket Id */
+            public_ticket_id: string;
             /**
              * Building Id
              * Format: uuid
@@ -894,6 +910,8 @@ export interface components {
              * Format: uuid
              */
             complaint_id: string;
+            /** Public Ticket Id */
+            public_ticket_id: string;
             /**
              * Building Id
              * Format: uuid

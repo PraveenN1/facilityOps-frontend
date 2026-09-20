@@ -20,7 +20,7 @@ import { useAuth } from "../state/AuthContext";
 import { useBuildingSelection } from "../state/BuildingContext";
 import { EmptyState, ErrorState, LoadingState } from "../ui/AsyncState";
 import { StatusBadge } from "../ui/StatusBadge";
-import { compactUuid, formatDateTime } from "../utils/format";
+import { formatDateTime } from "../utils/format";
 import { nextStepForStatus, reporterProgressSteps, reporterStatusLabel } from "./ReporterWorkspacePage";
 
 const triageableStatuses = new Set(["PENDING_TRIAGE", "MANUAL_REVIEW"]);
@@ -77,8 +77,8 @@ export function IncidentDetailPage() {
         <div>
           <Link to="/" className="text-link">Back to workspace</Link>
           <p className="eyebrow">Incident detail</p>
-          <h2>{incident ? incident.complaint_description : `Incident ${compactUuid(incidentId)}`}</h2>
-          <p className="muted-copy">{incident ? `Reference ${compactUuid(incident.id)}` : "Loading incident reference"}</p>
+          <h2>{incident ? incident.complaint_description : "Loading incident"}</h2>
+          <p className="muted-copy">{incident ? `Ticket ${incident.public_ticket_id}` : "Loading ticket reference"}</p>
         </div>
         {incident ? <StatusBadge status={incident.status} /> : null}
       </div>
@@ -129,8 +129,8 @@ function ReporterIncidentDetail({
         <div>
           <Link to="/" className="text-link">Back to my requests</Link>
           <p className="eyebrow">Request detail</p>
-          <h2>{incident ? incident.complaint_description : `Request ${compactUuid(incidentId)}`}</h2>
-          <p className="muted-copy">{incident ? `Request ${compactUuid(incident.complaint_id)}` : "Loading request reference"}</p>
+          <h2>{incident ? incident.complaint_description : "Loading request"}</h2>
+          <p className="muted-copy">{incident ? `Ticket ${incident.public_ticket_id}` : "Loading ticket reference"}</p>
         </div>
         {incident ? <StatusBadge status={reporterStatusLabel(incident.status)} /> : null}
       </div>
@@ -150,7 +150,7 @@ function ReporterIncidentDetail({
             <div><dt>Building</dt><dd>{buildingName ?? "Authorized building"}</dd></div>
             <div><dt>Submitted</dt><dd>{formatDateTime(incident.created_at)}</dd></div>
             <div><dt>Last updated</dt><dd>{formatDateTime(incident.updated_at)}</dd></div>
-            <div><dt>Reference</dt><dd className="mono-cell">{compactUuid(incident.complaint_id)}</dd></div>
+            <div><dt>Ticket</dt><dd className="mono-cell">{incident.public_ticket_id}</dd></div>
           </dl>
           <div className="subsection">
             <h3>What you reported</h3>
@@ -196,6 +196,8 @@ function OriginalComplaint({ incident, buildingName }: { incident: IncidentDetai
         <p className="danger-note">Safety review required by backend-visible AI assessment signals. Backend hazard restrictions remain authoritative and may prevent assignment clearance.</p>
       ) : null}
       <dl className="definition-grid">
+        <div><dt>Ticket</dt><dd className="mono-cell">{incident.public_ticket_id}</dd></div>
+        <div><dt>Reporter</dt><dd>{incident.reporter_display_name ?? "Reporter"}</dd></div>
         <div><dt>Priority</dt><dd>{incident.priority}</dd></div>
         <div><dt>Building</dt><dd>{buildingName ?? "Authorized building"}</dd></div>
         <div><dt>Created</dt><dd>{formatDateTime(incident.created_at)}</dd></div>
@@ -234,7 +236,8 @@ function AiAssessment({ incident }: { incident: IncidentDetailResponse }) {
   const recommendation = triage?.validated_result;
   const isPending = incident.ai_triage_status === "PENDING" || incident.ai_triage_status === "PROCESSING";
   const isFailed = ["FAILED", "INVALID_OUTPUT", "TIMEOUT"].includes(incident.ai_triage_status ?? "");
-  const processedWithoutRecommendation = incident.ai_triage_status === "PROCESSED" && !recommendation;
+  const processedWithoutRecommendation = (incident.ai_triage_status === "PROCESSED_NO_RESULT" || incident.ai_triage_status === "PROCESSED") && !recommendation;
+  const skippedObsolete = incident.ai_triage_status === "SKIPPED_OBSOLETE";
   const hasConfirmedDecision = !triageableStatuses.has(incident.status) && Boolean(incident.category);
 
   return (
@@ -252,6 +255,9 @@ function AiAssessment({ incident }: { incident: IncidentDetailResponse }) {
         </p>
       ) : null}
       {isFailed ? <p className="danger-note">AI triage did not produce a usable recommendation. Manual review can still record a human decision when backend safety checks allow it.</p> : null}
+      {skippedObsolete ? (
+        <EmptyState title="AI skipped after human review" detail="The AI triage event became obsolete after a facility manager completed manual review. No AI recommendation was applied." />
+      ) : null}
       {processedWithoutRecommendation ? (
         <EmptyState title="No persisted AI recommendation" detail="The triage event was processed, but the backend did not persist a validated recommendation for this incident." />
       ) : null}

@@ -9,7 +9,7 @@ import { useAuth } from "../state/AuthContext";
 import { useBuildingSelection } from "../state/BuildingContext";
 import { EmptyState, ErrorState, LoadingState } from "../ui/AsyncState";
 import { StatusBadge } from "../ui/StatusBadge";
-import { compactUuid, formatDateTime } from "../utils/format";
+import { formatDateTime } from "../utils/format";
 
 const pageSize = 20;
 function newIdempotencyKey() { return crypto.randomUUID(); }
@@ -31,7 +31,7 @@ export function ReporterWorkspacePage() {
           <Link key={complaint.id} to={`/incidents/${complaint.incident_id}`} className="complaint-row priority-edge priority-medium">
             <div className="request-card-main">
               <strong>{requestTitle(complaint)}</strong>
-              <span>Request {compactUuid(complaint.id)} · {buildingNameById.get(complaint.building_id) ?? "Authorized building"}</span>
+              <span>Ticket {complaint.public_ticket_id} · {buildingNameById.get(complaint.building_id) ?? "Authorized building"}</span>
               <span>Submitted {formatDateTime(complaint.created_at)}</span>
             </div>
             <div className="request-card-status">

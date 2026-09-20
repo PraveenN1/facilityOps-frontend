@@ -53,7 +53,7 @@ function AppChrome() {
             <span>{theme === "dark" ? "Light" : "Dark"}</span>
           </button>
           <div className="user-chip">
-            <span>{auth.user?.email}</span>
+            <span>{auth.user?.display_name ?? auth.user?.email}</span>
             <strong>{auth.role?.replaceAll("_", " ")}</strong>
           </div>
           <button className="secondary-button icon-button" type="button" onClick={handleLogout}>

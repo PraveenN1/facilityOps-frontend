@@ -7,7 +7,7 @@ describe("generated API contract", () => {
     const technician: components["schemas"]["TechnicianListItem"] = {
       id: "technician-profile-id",
       user_id: "technician-user-id",
-      display_name: "technician.demo@facilityops.local",
+      display_name: "Taylor Reed",
       skills: ["ELECTRICAL"],
       status: "ACTIVE",
       available: true,
@@ -16,8 +16,10 @@ describe("generated API contract", () => {
     const incident: components["schemas"]["IncidentDetailResponse"] = {
       id: "incident-id",
       complaint_id: "complaint-id",
+      public_ticket_id: "FO-2026-000315",
       building_id: "building-id",
       reporter_id: "reporter-id",
+      reporter_display_name: "Riley Chen",
       complaint_description: "Power failure in lobby",
       category: "ELECTRICAL",
       priority: "HIGH",
@@ -38,6 +40,8 @@ describe("generated API contract", () => {
 
     expect(technician.user_id).toBe("technician-user-id");
     expect(incident.active_assignment?.technician_id).toBe("technician-profile-id");
+    expect(incident.public_ticket_id).toBe("FO-2026-000315");
+    expect(incident.reporter_display_name).toBe("Riley Chen");
   });
 
   it("includes Task 012P.5A building filters on manager listings", () => {
@@ -53,5 +57,26 @@ describe("generated API contract", () => {
 
     expect(incidentQuery.building_id).toBe("building-id");
     expect(technicianQuery.building_id).toBe("building-id");
+    });
+
+  it("accepts backend Task 014C terminal AI states", () => {
+    const skipped: components["schemas"]["IncidentListItem"] = {
+      id: "incident-id",
+      complaint_id: "complaint-id",
+      public_ticket_id: "FO-2026-000316",
+      building_id: "building-id",
+      complaint_description: "Warm conference room",
+      category: "HVAC",
+      priority: "MEDIUM",
+      status: "AWAITING_ASSIGNMENT",
+      created_at: "2026-09-17T10:00:00Z",
+      ai_triage_status: "SKIPPED_OBSOLETE",
+      latest_triage_result: null,
+    };
+
+    const noResult = { ...skipped, ai_triage_status: "PROCESSED_NO_RESULT" };
+
+    expect(skipped.ai_triage_status).toBe("SKIPPED_OBSOLETE");
+    expect(noResult.ai_triage_status).toBe("PROCESSED_NO_RESULT");
   });
 });

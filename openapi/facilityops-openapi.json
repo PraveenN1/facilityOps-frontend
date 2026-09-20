@@ -1105,7 +1105,7 @@
           },
           "expected_version": {
             "type": "integer",
-            "minimum": 1,
+            "minimum": 1.0,
             "title": "Expected Version"
           }
         },
@@ -1221,6 +1221,10 @@
             "type": "string",
             "title": "Email"
           },
+          "display_name": {
+            "type": "string",
+            "title": "Display Name"
+          },
           "role": {
             "type": "string",
             "title": "Role"
@@ -1245,6 +1249,7 @@
         "required": [
           "id",
           "email",
+          "display_name",
           "role",
           "building_ids",
           "buildings"
@@ -1331,6 +1336,10 @@
             "format": "uuid",
             "title": "Complaint Id"
           },
+          "public_ticket_id": {
+            "type": "string",
+            "title": "Public Ticket Id"
+          },
           "incident_id": {
             "type": "string",
             "format": "uuid",
@@ -1345,6 +1354,7 @@
         "type": "object",
         "required": [
           "complaint_id",
+          "public_ticket_id",
           "incident_id",
           "status"
         ],
@@ -1357,6 +1367,10 @@
             "format": "uuid",
             "title": "Id"
           },
+          "public_ticket_id": {
+            "type": "string",
+            "title": "Public Ticket Id"
+          },
           "building_id": {
             "type": "string",
             "format": "uuid",
@@ -1366,6 +1380,10 @@
             "type": "string",
             "format": "uuid",
             "title": "Reporter Id"
+          },
+          "reporter_display_name": {
+            "type": "string",
+            "title": "Reporter Display Name"
           },
           "description": {
             "type": "string",
@@ -1397,8 +1415,10 @@
         "type": "object",
         "required": [
           "id",
+          "public_ticket_id",
           "building_id",
           "reporter_id",
+          "reporter_display_name",
           "description",
           "status",
           "created_at",
@@ -1528,6 +1548,10 @@
             "format": "uuid",
             "title": "Complaint Id"
           },
+          "public_ticket_id": {
+            "type": "string",
+            "title": "Public Ticket Id"
+          },
           "building_id": {
             "type": "string",
             "format": "uuid",
@@ -1537,6 +1561,10 @@
             "type": "string",
             "format": "uuid",
             "title": "Reporter Id"
+          },
+          "reporter_display_name": {
+            "type": "string",
+            "title": "Reporter Display Name"
           },
           "complaint_description": {
             "type": "string",
@@ -1639,8 +1667,10 @@
         "required": [
           "id",
           "complaint_id",
+          "public_ticket_id",
           "building_id",
           "reporter_id",
+          "reporter_display_name",
           "complaint_description",
           "category",
           "priority",
@@ -1656,7 +1686,7 @@
         "properties": {
           "expected_version": {
             "type": "integer",
-            "minimum": 1,
+            "minimum": 1.0,
             "title": "Expected Version"
           }
         },
@@ -1677,6 +1707,10 @@
             "type": "string",
             "format": "uuid",
             "title": "Complaint Id"
+          },
+          "public_ticket_id": {
+            "type": "string",
+            "title": "Public Ticket Id"
           },
           "building_id": {
             "type": "string",
@@ -1753,6 +1787,7 @@
         "required": [
           "id",
           "complaint_id",
+          "public_ticket_id",
           "building_id",
           "complaint_description",
           "category",
@@ -1797,7 +1832,7 @@
         "properties": {
           "expected_version": {
             "type": "integer",
-            "minimum": 1,
+            "minimum": 1.0,
             "title": "Expected Version"
           },
           "resolution_notes": {
@@ -2002,7 +2037,7 @@
           },
           "expected_version": {
             "type": "integer",
-            "minimum": 1,
+            "minimum": 1.0,
             "title": "Expected Version"
           },
           "suspected_hazard": {
@@ -2130,6 +2165,10 @@
             "format": "uuid",
             "title": "Id"
           },
+          "public_ticket_id": {
+            "type": "string",
+            "title": "Public Ticket Id"
+          },
           "building_id": {
             "type": "string",
             "format": "uuid",
@@ -2197,6 +2236,7 @@
         "type": "object",
         "required": [
           "id",
+          "public_ticket_id",
           "building_id",
           "description",
           "status",
@@ -2326,6 +2366,10 @@
             "format": "uuid",
             "title": "Complaint Id"
           },
+          "public_ticket_id": {
+            "type": "string",
+            "title": "Public Ticket Id"
+          },
           "building_id": {
             "type": "string",
             "format": "uuid",
@@ -2400,6 +2444,7 @@
         "required": [
           "id",
           "complaint_id",
+          "public_ticket_id",
           "building_id",
           "complaint_description",
           "category",

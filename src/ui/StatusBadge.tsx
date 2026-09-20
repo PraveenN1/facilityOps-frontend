@@ -15,6 +15,8 @@ const toneByStatus: Record<string, string> = {
   TIMEOUT: "status-muted-warning",
   PENDING: "status-workflow",
   PROCESSING: "status-ai",
+  SKIPPED_OBSOLETE: "status-neutral",
+  PROCESSED_NO_RESULT: "status-neutral",
 };
 
 export function StatusBadge({ status, ai = false }: { status: string | null | undefined; ai?: boolean }) {
