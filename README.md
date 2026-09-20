@@ -70,11 +70,11 @@ Use the seeded demo users documented by the backend README. The frontend display
 
 ## Implemented Screens
 
-- Login, session restore, logout, and protected routes.
+- Polished login, session restore, logout, protected routes, and persisted light/dark theme selection.
 - Manager overview with operations and AI metrics.
 - Manager incident queue with server-side building selection, pagination, status filtering, AI triage status, and incident details navigation.
-- Complaint creation with stable idempotency key per retryable submission.
-- Reporter complaint list and tracking navigation.
+- Maintenance request creation with stable idempotency key per retryable submission kept internal to the API client.
+- Reporter request list and reporter-specific progress tracking navigation.
 - AI triage review with original complaint, recommendation, pending/completed/failed states, and manager confirmation.
 - Technician assignment with skills, availability, technician profile/user identity distinction, expected version, and HTTP 409 conflict display.
 - Technician assigned-work workspace with start and resolve actions.

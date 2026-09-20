@@ -57,7 +57,7 @@ describe("IncidentDashboardPage", () => {
       expect(screen.getAllByText("ASSIGNED").length).toBeGreaterThanOrEqual(1);
       expect(screen.getByText("SUCCEEDED")).toBeInTheDocument();
     });
-    expect(await screen.findByText("Demo Tower")).toBeInTheDocument();
+    expect(screen.queryByText(buildingId)).not.toBeInTheDocument();
     expect(await screen.findByText("00000000...0010")).toBeInTheDocument();
     expect(screen.queryByText("00000000-0000-0000-0000-000000000010")).not.toBeInTheDocument();
     expect(screen.getByRole("table", { name: /incident queue/i })).toBeInTheDocument();

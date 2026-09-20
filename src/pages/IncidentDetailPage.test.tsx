@@ -183,7 +183,7 @@ describe("IncidentDetailPage", () => {
     expect(screen.queryByRole("button", { name: /start work/i })).not.toBeInTheDocument();
   });
 
-  it("renders pending AI and manual triage without implying approval", async () => {
+  it("renders pending AI and manual triage without implying completed review", async () => {
     vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
       const url = requestUrl(input);
       if (url.includes("/api/v1/auth/me")) return jsonResponse(mockSession("FACILITY_MANAGER"));
@@ -194,8 +194,26 @@ describe("IncidentDetailPage", () => {
 
     renderWithProviders(<IncidentDetailPage />, { initialEntries: [`/incidents/${incidentId}`], routePath: "/incidents/:incidentId" });
 
-    await waitFor(() => expect(screen.getByText(/human approval has not occurred/i)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/manual review has not been completed yet/i)).toBeInTheDocument());
     expect(screen.getByRole("button", { name: /confirm triage/i })).toBeInTheDocument();
+  });
+
+  it("shows reporter-friendly request detail without manager workflow controls", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
+      const url = requestUrl(input);
+      if (url.includes("/api/v1/auth/me")) return jsonResponse({ id: "reporter-id", email: "reporter.demo@facilityops.local", role: "REPORTER", buildings: [{ id: buildingId, name: "Demo Tower" }] });
+      if (url.includes("/api/v1/buildings")) return jsonResponse({ items: [{ id: buildingId, name: "Demo Tower" }] });
+      if (url.includes(`/api/v1/incidents/${incidentId}`)) return jsonResponse(incident({ status: "AWAITING_ASSIGNMENT", ai_triage_status: "PROCESSING", active_assignment: null }));
+      return jsonResponse({ detail: "unexpected request" }, 500);
+    });
+
+    renderWithProviders(<IncidentDetailPage />, { initialEntries: [`/incidents/${incidentId}`], routePath: "/incidents/:incidentId" });
+
+    await waitFor(() => expect(screen.getAllByText("Technician being arranged").length).toBeGreaterThanOrEqual(1));
+    expect(screen.getByText(/facility team has reviewed your request and is arranging a technician/i)).toBeInTheDocument();
+    expect(screen.queryByText("AI assessment")).not.toBeInTheDocument();
+    expect(screen.queryByText("Human-confirmed decision")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /confirm triage/i })).not.toBeInTheDocument();
   });
 
   it("shows AI timeout history alongside completed manual triage", async () => {
@@ -212,6 +230,22 @@ describe("IncidentDetailPage", () => {
     await waitFor(() => expect(screen.getByText(/AI triage did not produce a usable recommendation/i)).toBeInTheDocument());
     expect(screen.getByText("Confirmed triage")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /confirm triage/i })).not.toBeInTheDocument();
+  });
+
+  it("does not say manual review is missing after manager-confirmed triage", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
+      const url = requestUrl(input);
+      if (url.includes("/api/v1/auth/me")) return jsonResponse(mockSession("FACILITY_MANAGER"));
+      if (url.includes("/api/v1/buildings")) return jsonResponse({ items: [{ id: buildingId, name: "Demo Tower" }] });
+      if (url.includes(`/api/v1/incidents/${incidentId}`)) return jsonResponse(incident({ status: "AWAITING_ASSIGNMENT", ai_triage_status: "PROCESSING", active_assignment: null }));
+      return jsonResponse({ detail: "unexpected request" }, 500);
+    });
+
+    renderWithProviders(<IncidentDetailPage />, { initialEntries: [`/incidents/${incidentId}`], routePath: "/incidents/:incidentId" });
+
+    await waitFor(() => expect(screen.getByText(/Manual review completed/i)).toBeInTheDocument());
+    expect(screen.getByText(/facility manager has confirmed the operational triage/i)).toBeInTheDocument();
+    expect(screen.queryByText(/manual review has not been completed yet/i)).not.toBeInTheDocument();
   });
 
   it("shows a precise empty AI state when processing completed without a persisted recommendation", async () => {

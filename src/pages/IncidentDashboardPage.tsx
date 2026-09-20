@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { listIncidents } from "../api/client";
 import { incidentStatuses } from "../api/config";
 import type { IncidentStatusValue } from "../api/types";
+import { useAuth } from "../state/AuthContext";
 import { useBuildingSelection } from "../state/BuildingContext";
 import { EmptyState, ErrorState, LoadingState } from "../ui/AsyncState";
 import { StatusBadge } from "../ui/StatusBadge";
@@ -14,6 +15,7 @@ const pageSize = 10;
 
 export function IncidentDashboardPage({ embedded = false }: { embedded?: boolean }) {
   const { buildings, selectedBuildingId, selectedBuilding } = useBuildingSelection();
+  const { user } = useAuth();
   const [status, setStatus] = useState<IncidentStatusValue | "">("");
   const [offset, setOffset] = useState(0);
 
@@ -29,7 +31,8 @@ export function IncidentDashboardPage({ embedded = false }: { embedded?: boolean
   const total = incidentsQuery.data?.total ?? 0;
   const canGoBack = offset > 0;
   const canGoForward = offset + pageSize < total;
-  const buildingNameById = new Map(buildings.map((building) => [building.id, building.name]));
+  const authorizedBuildings = buildings.length > 0 ? buildings : user?.buildings ?? [];
+  const buildingNameById = new Map(authorizedBuildings.map((building) => [building.id, building.name]));
 
   return (
     <section className={embedded ? "stack" : "stack-lg"}>

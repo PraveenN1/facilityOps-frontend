@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { csrfStorageKey } from "../api/config";
 import { AuthProvider } from "../state/AuthContext";
+import { ThemeProvider } from "../state/ThemeContext";
 import { LoginPage } from "../pages/LoginPage";
 import type { ReactElement } from "react";
 import { AppLayout } from "./AppLayout";
@@ -18,9 +19,11 @@ function renderAuth(ui: ReactElement) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
   return render(
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <MemoryRouter>{ui}</MemoryRouter>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <MemoryRouter>{ui}</MemoryRouter>
+        </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>,
   );
 }
@@ -64,5 +67,23 @@ describe("session authentication UI", () => {
 
     await waitFor(() => expect(screen.getByText("Incident queue")).toBeInTheDocument());
     expect(screen.queryByText(/use demo reporter/i)).not.toBeInTheDocument();
+  });
+
+  it("persists the selected theme from the app chrome", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
+      const url = String(input);
+      if (url.includes("/api/v1/auth/me")) return jsonResponse({ id: "manager-id", email: "manager.demo@facilityops.local", role: "FACILITY_MANAGER", buildings: [{ id: "building-id", name: "Demo Tower" }] });
+      if (url.includes("/api/v1/buildings")) return jsonResponse({ items: [{ id: "building-id", name: "Demo Tower" }] });
+      return jsonResponse({ detail: "unexpected request" }, 500);
+    });
+
+    renderAuth(<AppLayout />);
+
+    const darkToggle = await screen.findByRole("button", { name: /switch to dark theme/i });
+    await userEvent.click(darkToggle);
+
+    expect(window.localStorage.getItem("facilityops.theme")).toBe("dark");
+    expect(document.documentElement.dataset.theme).toBe("dark");
+    expect(screen.getByRole("button", { name: /switch to light theme/i })).toBeInTheDocument();
   });
 });

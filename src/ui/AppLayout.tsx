@@ -2,6 +2,7 @@ import { NavLink, Outlet, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../state/AuthContext";
 import { BuildingProvider, useBuildingSelection } from "../state/BuildingContext";
+import { useTheme } from "../state/ThemeContext";
 
 const navByRole = {
   FACILITY_MANAGER: [
@@ -10,8 +11,8 @@ const navByRole = {
   ],
   TECHNICIAN: [{ to: "/", label: "My work" }],
   REPORTER: [
-    { to: "/", label: "My complaints" },
-    { to: "/complaints/new", label: "New complaint" },
+    { to: "/", label: "My requests" },
+    { to: "/complaints/new", label: "New request" },
   ],
 };
 
@@ -27,6 +28,7 @@ function AppChrome() {
   const auth = useAuth();
   const navigate = useNavigate();
   const building = useBuildingSelection();
+  const { theme, toggleTheme } = useTheme();
   const role = auth.role ?? "REPORTER";
   const navItems = navByRole[role] ?? [];
 
@@ -44,6 +46,9 @@ function AppChrome() {
         </div>
         <div className="topbar-actions">
           <BuildingSelector />
+          <button className="theme-toggle" type="button" onClick={toggleTheme} aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}>
+            {theme === "dark" ? "Light" : "Dark"}
+          </button>
           <div className="user-chip">
             <span>{auth.user?.email}</span>
             <strong>{auth.role?.replaceAll("_", " ")}</strong>

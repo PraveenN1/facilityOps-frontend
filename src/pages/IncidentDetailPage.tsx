@@ -20,6 +20,7 @@ import { useBuildingSelection } from "../state/BuildingContext";
 import { EmptyState, ErrorState, LoadingState } from "../ui/AsyncState";
 import { StatusBadge } from "../ui/StatusBadge";
 import { compactUuid, formatDateTime } from "../utils/format";
+import { nextStepForStatus, reporterStatusLabel } from "./ReporterWorkspacePage";
 
 const triageableStatuses = new Set(["PENDING_TRIAGE", "MANUAL_REVIEW"]);
 const assignmentStatuses = new Set(["ASSIGNED", "IN_PROGRESS"]);
@@ -67,6 +68,18 @@ export function IncidentDetailPage() {
   const incident = incidentQuery.data;
   const buildingName = incident ? buildings.find((building) => building.id === incident.building_id)?.name : null;
 
+  if (role === "REPORTER") {
+    return (
+      <ReporterIncidentDetail
+        incident={incident}
+        incidentId={incidentId}
+        buildingName={buildingName}
+        isLoading={incidentQuery.isLoading}
+        error={incidentQuery.error}
+      />
+    );
+  }
+
   return (
     <section className="stack-lg">
       <div className="section-heading">
@@ -101,6 +114,57 @@ export function IncidentDetailPage() {
             />
           </div>
         </div>
+      ) : null}
+    </section>
+  );
+}
+
+function ReporterIncidentDetail({
+  incident,
+  incidentId,
+  buildingName,
+  isLoading,
+  error,
+}: {
+  incident: IncidentDetailResponse | undefined;
+  incidentId: string;
+  buildingName: string | null | undefined;
+  isLoading: boolean;
+  error: Error | null;
+}) {
+  return (
+    <section className="narrow-page stack-lg">
+      <div className="section-heading">
+        <div>
+          <Link to="/" className="text-link">Back to my requests</Link>
+          <p className="eyebrow">Request detail</p>
+          <h2>{incident ? incident.complaint_description : `Request ${compactUuid(incidentId)}`}</h2>
+          <p className="muted-copy">{incident ? `Request ${compactUuid(incident.complaint_id)}` : "Loading request reference"}</p>
+        </div>
+        {incident ? <StatusBadge status={reporterStatusLabel(incident.status)} /> : null}
+      </div>
+
+      {isLoading ? <LoadingState label="Loading request" /> : null}
+      {error ? <ErrorState title="Request could not be loaded" detail={error.message} /> : null}
+
+      {incident ? (
+        <article className={`panel stack request-detail priority-edge priority-${incident.priority.toLowerCase()}`}>
+          <div>
+            <p className="eyebrow">Current progress</p>
+            <h3>{reporterStatusLabel(incident.status)}</h3>
+            <p className="body-copy">{nextStepForStatus(incident.status)}</p>
+          </div>
+          <dl className="definition-grid">
+            <div><dt>Building</dt><dd>{buildingName ?? "Authorized building"}</dd></div>
+            <div><dt>Submitted</dt><dd>{formatDateTime(incident.created_at)}</dd></div>
+            <div><dt>Last updated</dt><dd>{formatDateTime(incident.updated_at)}</dd></div>
+            <div><dt>Reference</dt><dd className="mono-cell">{compactUuid(incident.complaint_id)}</dd></div>
+          </dl>
+          <div className="subsection">
+            <h3>What you reported</h3>
+            <p className="body-copy complaint-lead">{incident.complaint_description}</p>
+          </div>
+        </article>
       ) : null}
     </section>
   );
@@ -156,6 +220,7 @@ function AiAssessment({ incident }: { incident: IncidentDetailResponse }) {
   const isPending = incident.ai_triage_status === "PENDING" || incident.ai_triage_status === "PROCESSING";
   const isFailed = ["FAILED", "INVALID_OUTPUT", "TIMEOUT"].includes(incident.ai_triage_status ?? "");
   const processedWithoutRecommendation = incident.ai_triage_status === "PROCESSED" && !recommendation;
+  const hasConfirmedDecision = !triageableStatuses.has(incident.status) && Boolean(incident.category);
 
   return (
     <article className="panel stack ai-panel">
@@ -164,7 +229,13 @@ function AiAssessment({ incident }: { incident: IncidentDetailResponse }) {
         <StatusBadge status={incident.ai_triage_status} ai />
       </div>
       {!incident.ai_triage_status ? <EmptyState title="Awaiting AI signal" detail="No triage result or outbox status is visible yet." /> : null}
-      {isPending ? <p className="info-note">AI triage is still processing. Human approval has not occurred.</p> : null}
+      {isPending ? (
+        <p className="info-note">
+          {hasConfirmedDecision
+            ? "AI triage is still processing separately. Manual review completed and a facility manager has confirmed the operational triage."
+            : "AI triage is still processing. Manual review has not been completed yet."}
+        </p>
+      ) : null}
       {isFailed ? <p className="danger-note">AI triage did not produce a usable recommendation. Manual review can still record a human decision when backend safety checks allow it.</p> : null}
       {processedWithoutRecommendation ? (
         <EmptyState title="No persisted AI recommendation" detail="The triage event was processed, but the backend did not persist a validated recommendation for this incident." />

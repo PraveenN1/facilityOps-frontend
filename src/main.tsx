@@ -5,6 +5,7 @@ import { Navigate, createBrowserRouter, RouterProvider } from "react-router-dom"
 
 import { AppLayout } from "./ui/AppLayout";
 import { AuthProvider, useAuth } from "./state/AuthContext";
+import { ThemeProvider } from "./state/ThemeContext";
 import { ProtectedRoute } from "./ui/ProtectedRoute";
 import { ComplaintCreatePage } from "./pages/ComplaintCreatePage";
 import { IncidentDashboardPage } from "./pages/IncidentDashboardPage";
@@ -67,9 +68,11 @@ const router = createBrowserRouter([
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <RouterProvider router={router} />
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <RouterProvider router={router} />
+        </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   </React.StrictMode>,
 );

@@ -5,6 +5,7 @@ import { render } from "@testing-library/react";
 
 import { AuthProvider } from "../state/AuthContext";
 import { BuildingProvider } from "../state/BuildingContext";
+import { ThemeProvider } from "../state/ThemeContext";
 
 interface RenderOptions {
   initialEntries?: string[];
@@ -22,11 +23,13 @@ export function renderWithProviders(ui: ReactElement, options: RenderOptions = {
 
   return render(
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <BuildingProvider>
-          <MemoryRouter initialEntries={options.initialEntries}>{routeContent}</MemoryRouter>
-        </BuildingProvider>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <BuildingProvider>
+            <MemoryRouter initialEntries={options.initialEntries}>{routeContent}</MemoryRouter>
+          </BuildingProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>,
   );
 }

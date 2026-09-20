@@ -2,7 +2,7 @@
 
 ## Current Status
 
-Task 012C-T technician workspace UX corrections are implemented and verified with generated API types, unit/component tests, type checking, production build, backend smoke testing, and a live technician `my-work` contract spot-check. Full browser workflow verification could not be completed because the available computer-use browser inventory returned no usable browser surfaces.
+The UI refinement pass is implemented and verified with generated API types, TypeScript checking, unit/component tests, production build, and `git diff --check`. Full browser workflow verification was not performed in this pass.
 
 ## Completed
 
@@ -37,6 +37,14 @@ Task 012C-T technician workspace UX corrections are implemented and verified wit
 - Preserved the distinction between `technician.id` and `technician.user_id` for assignment and technician lifecycle handoff.
 - Preserved active assignment display and null active-assignment handling in incident details.
 - Added regression coverage for generated building filter contracts, API client building parameters, dashboard building-scoped incident listing, and technician building-scoped listing.
+- UI refinement pass added a polished SaaS-style login screen with clearer hierarchy, show/hide password control, safer demo wording, and theme access before authentication.
+- Added persisted light/dark theme support using `facilityops.theme`, system preference on first load, `data-theme` on the document root, and a theme toggle in the authenticated shell.
+- Refined shared visual primitives for dark theme support: panels, form fields, buttons, status badges, async states, notes, login surfaces, request cards, and focus states.
+- Reporter navigation and screens now use reporter-facing request language: "My requests", "New request", maintenance request copy, plain-language status labels, and next-step messaging.
+- Reporter request creation no longer exposes idempotency keys, outbox wording, or primary incident internals in the UI; retry safety remains internal to the API client.
+- Incident detail now renders a reporter-specific request tracking view for reporters, while preserving manager and technician workflow panels for their roles.
+- Fixed contradictory AI/manual status copy: AI processing is presented separately from manager-confirmed manual triage, and the UI no longer says manual review is missing after triage is confirmed.
+- Preserved recent technician workspace behavior while aligning shared styles with the refined light/dark design system.
 
 ## API Contract Notes
 
@@ -71,6 +79,12 @@ Task 012C-T technician workspace UX corrections are implemented and verified wit
 - `npm run build` passed for Task 012C-T.
 - `npm run smoke:backend` passed for Task 012C-T: `Backend health check passed.`
 - Live backend technician spot-check passed: technician login returned HTTP 200, `GET /api/v1/incidents/my-work` returned HTTP 200, and the response contained 1 active item.
+- UI refinement `npm run generate:api` passed: `openapi/facilityops-openapi.json` regenerated `src/api/generated.ts`.
+- UI refinement `npm run typecheck` passed.
+- UI refinement focused tests initially caught reporter async timing and a duplicate reporter status label assertion; tests were corrected to wait for loaded data and assert intentional duplicate status labels.
+- UI refinement `npm test` passed: 8 test files and 41 tests passed. React Router future-flag warnings were emitted by the test environment.
+- UI refinement `npm run build` passed: TypeScript project build and Vite production build completed successfully.
+- UI refinement `git diff --check` passed with Git LF-to-CRLF conversion warnings only.
 
 ## Remaining
 
