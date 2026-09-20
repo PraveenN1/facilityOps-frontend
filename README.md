@@ -4,8 +4,8 @@ React operations console for the FacilityOps AI backend.
 
 The frontend and backend are separate Git repositories:
 
-- Backend: `D:\Praveen\Development\facilityOps-ai`
-- Frontend: `D:\Praveen\Development\facilityOps-frontend`
+- Backend: `https://github.com/PraveenN1/facilityOps-ai`
+- Frontend: `https://github.com/PraveenN1/facilityOps-frontend`
 
 ## Stack
 
