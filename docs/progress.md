@@ -2,7 +2,7 @@
 
 ## Current Status
 
-Task 012C-VISUAL final UI polish is implemented and verified with generated API types, TypeScript checking, unit/component tests, and production build. Full browser visual verification was not performed in this pass.
+Task 012C-QUEUE incident queue visual upgrade is implemented and verified with generated API types, TypeScript checking, unit/component tests, production build, and diff check. Full browser visual verification was not performed in this pass.
 
 ## Completed
 
@@ -49,6 +49,12 @@ Task 012C-VISUAL final UI polish is implemented and verified with generated API 
 - Added `lucide-react` and applied restrained icons to sidebar navigation, metric headings, request actions, technician actions, AI/human review headings, theme toggle, logout, empty states, loading states, and success feedback.
 - Added a compact reporter request progress indicator derived only from the current incident status. It does not claim timestamps, ETAs, or a full history.
 - Refined status badge categories for workflow, AI processing, technician availability, success, and error states while keeping AI advisory state visually distinct from human approval.
+- Task 012C-QUEUE upgraded the shared incident queue used by the manager overview and incident dashboard into compact, full-row navigable work items without changing backend contracts.
+- Incident rows now show complaint summary as the primary text, short incident reference, building name from authenticated building context, category, priority, created timestamp, workflow status, AI status, and a navigation indicator.
+- Queue rows use semantic list markup with a single keyboard-accessible link per incident and avoid nesting interactive controls inside the row.
+- The status toolbar remains server-backed and compact, preserves API totals, and does not add fake client-side search or approximate quick filters.
+- Workflow indicators map approved incident states to readable labels with restrained Lucide icons. AI status remains independent from workflow state; `PROCESSED` without a persisted validated result is shown as processed without a recommendation.
+- Queue styling preserves the operations-console light/dark palette, uses stable grid columns on desktop, and stacks summary/status content on narrower screens without exposing routine UUIDs as primary labels.
 
 ## API Contract Notes
 
@@ -94,6 +100,13 @@ Task 012C-VISUAL final UI polish is implemented and verified with generated API 
 - Task 012C-VISUAL `npm run typecheck` passed.
 - Task 012C-VISUAL `npm test` passed: 8 test files and 42 tests passed. React Router future-flag warnings were emitted by the test environment.
 - Task 012C-VISUAL `npm run build` passed.
+- Task 012C-QUEUE focused regression tests passed: `npx vitest run src/pages/IncidentDashboardPage.test.tsx` reported 1 test file and 9 tests passed. React Router future-flag warnings were emitted by the test environment.
+- Task 012C-QUEUE `npm run generate:api` passed and regenerated `src/api/generated.ts` from `openapi/facilityops-openapi.json`.
+- Task 012C-QUEUE `npm run typecheck` passed.
+- Task 012C-QUEUE full `npm test` initially failed 1 dashboard assertion during parallel execution because multiple test files mock process-global `fetch`; focused dashboard tests passed. Vitest file parallelism was disabled in test configuration to match the suite's shared mock pattern.
+- Task 012C-QUEUE full `npm test` passed after the test isolation fix: 8 test files and 48 tests passed. React Router future-flag warnings were emitted by the test environment.
+- Task 012C-QUEUE `npm run build` passed: TypeScript project build and Vite production build completed successfully.
+- Task 012C-QUEUE `git diff --check` passed with Git LF-to-CRLF conversion warnings only.
 
 ## Remaining
 

@@ -206,17 +206,27 @@ code,
   .data-table td { @apply border-b px-3 py-3 align-top; border-color: var(--line); }
   .data-table tr:last-child td { @apply border-b-0; }
   .queue-toolbar { @apply flex flex-col gap-3 rounded-md border p-3 sm:flex-row sm:items-end sm:justify-between; background: var(--panel); border-color: var(--line); }
+  .toolbar-label { @apply inline-flex items-center gap-2; }
   .compact-field { @apply w-full sm:max-w-64; }
   .queue-count { @apply text-sm font-semibold; color: var(--muted); }
   .queue-list { @apply overflow-hidden rounded-md border; background: var(--panel); border-color: var(--line); }
-  .queue-header { @apply hidden border-b px-4 py-2 text-xs font-bold uppercase lg:grid lg:grid-cols-[140px_minmax(0,1.8fr)_150px_140px_170px] lg:gap-4; color: var(--muted); border-color: var(--line); letter-spacing: 0; }
-  .queue-row { @apply grid gap-3 border-b p-4 lg:grid-cols-[140px_minmax(0,1.8fr)_150px_140px_170px] lg:items-start lg:gap-4; border-color: var(--line); }
-  .queue-row:last-child { @apply border-b-0; }
-  .queue-ref { @apply flex min-w-0 flex-col gap-1; }
-  .queue-ref span, .queue-summary span { @apply text-sm; color: var(--muted); }
+  .queue-header { @apply hidden border-b px-4 py-2 text-xs font-bold uppercase lg:grid lg:grid-cols-[minmax(0,2fr)_minmax(190px,0.9fr)_170px_190px_36px] lg:gap-4; color: var(--muted); border-color: var(--line); letter-spacing: 0; }
+  .queue-items { @apply m-0 list-none p-0; }
+  .queue-item { @apply m-0 p-0; }
+  .queue-row { @apply grid min-h-20 gap-3 border-b p-3 text-sm no-underline transition sm:p-4 lg:grid-cols-[minmax(0,2fr)_minmax(190px,0.9fr)_170px_190px_36px] lg:items-center lg:gap-4; border-color: var(--line); color: var(--ink); }
+  .queue-row:hover { background: color-mix(in srgb, var(--blue) 5%, var(--panel)); }
+  .queue-row:focus-visible { outline-offset: -2px; }
+  .queue-item:last-child .queue-row { @apply border-b-0; }
   .queue-summary { @apply min-w-0; }
-  .queue-summary strong { @apply block whitespace-normal break-words text-sm font-semibold leading-6; color: var(--ink); }
-  .queue-time { @apply text-sm; color: var(--muted); }
+  .queue-summary strong { @apply block whitespace-normal break-words text-sm font-semibold leading-5; color: var(--ink); }
+  .queue-refline { @apply mt-1 block text-xs; color: var(--muted); }
+  .queue-meta { @apply flex flex-wrap gap-x-3 gap-y-1 text-xs font-semibold lg:flex-col lg:gap-1; color: var(--muted); }
+  .queue-state { @apply flex min-w-0 items-center gap-2; color: var(--muted); }
+  .queue-state.actionable { color: var(--blue); }
+  .queue-state.complete { color: var(--ok); }
+  .queue-state.ai { color: var(--violet); }
+  .queue-state.ai.failed { color: var(--danger); }
+  .queue-open { @apply hidden items-center justify-center lg:flex; color: var(--muted); }
   .priority-edge { border-left: 3px solid var(--line); }
   .priority-low { border-left-color: var(--ok); }
   .priority-medium { border-left-color: var(--blue); }
@@ -224,6 +234,8 @@ code,
   .priority-critical { border-left-color: var(--danger); }
   .filter-row, .action-row { @apply flex flex-wrap items-center gap-3; }
   .pager { @apply flex items-center justify-between gap-3; }
+  .pagination-row { @apply flex flex-col gap-3 border-t px-4 py-3 text-sm font-semibold sm:flex-row sm:items-center sm:justify-between; border-color: var(--line); color: var(--muted); }
+  .pager-actions { @apply flex flex-wrap gap-2; }
   .tech-list, .work-list, .complaint-list { @apply flex flex-col gap-3; }
   .work-list { @apply max-w-3xl; }
   .tech-card, .work-card, .complaint-row { @apply rounded-md border p-3 text-sm no-underline transition; background: var(--panel); color: var(--ink); border-color: var(--line); }
