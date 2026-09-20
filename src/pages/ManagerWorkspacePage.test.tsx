@@ -77,4 +77,12 @@ describe("ManagerWorkspacePage", () => {
     expect(within(backlogTile as HTMLElement).getByText("3")).toHaveClass("metric-value");
     expect(screen.queryByText(/sla/i)).not.toBeInTheDocument();
   });
+
+  it("labels the embedded queue without developer-facing pagination copy", async () => {
+    renderWithProviders(<ManagerWorkspacePage />);
+
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Incident queue" })).toBeInTheDocument());
+    expect(screen.queryByText(/server-paginated/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/global metrics/i)).not.toBeInTheDocument();
+  });
 });

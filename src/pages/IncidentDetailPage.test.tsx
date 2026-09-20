@@ -2,7 +2,7 @@ import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { IncidentDetailPage } from "./IncidentDetailPage";
+import { hasRequiredSkill, IncidentDetailPage } from "./IncidentDetailPage";
 import { csrfStorageKey } from "../api/config";
 import { renderWithProviders } from "../test/test-utils";
 
@@ -76,7 +76,7 @@ describe("IncidentDetailPage", () => {
 
     await waitFor(() => expect(screen.getByText("Current active assignment")).toBeInTheDocument());
     expect(screen.getAllByText("technician.demo@facilityops.local").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText("30000000...0001")).toBeInTheDocument();
+    expect(screen.queryByText("30000000...0001")).not.toBeInTheDocument();
     expect(screen.queryByText(assignmentId)).not.toBeInTheDocument();
     expect(screen.queryByText(/user 10000000/i)).not.toBeInTheDocument();
   });
@@ -323,6 +323,36 @@ describe("IncidentDetailPage", () => {
     expect(screen.queryByRole("button", { name: /assign technician/i })).not.toBeInTheDocument();
   });
 
+  it("keeps plumbing technicians selectable when category casing differs", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
+      const url = requestUrl(input);
+      if (url.includes("/api/v1/auth/me")) return jsonResponse(mockSession("FACILITY_MANAGER"));
+      if (url.includes("/api/v1/buildings")) return jsonResponse({ items: [{ id: buildingId, name: "Demo Tower" }] });
+      if (url.includes("/api/v1/technicians")) {
+        return jsonResponse({
+          items: [{
+            id: technicianId,
+            user_id: technicianUserId,
+            display_name: "technician@test.local",
+            skills: ["ELECTRICAL", "HVAC", "PLUMBING"],
+            status: "ACTIVE",
+            available: true,
+            active_assignment_id: null,
+          }],
+        });
+      }
+      if (url.includes(`/api/v1/incidents/${incidentId}`)) return jsonResponse(incident({ status: "AWAITING_ASSIGNMENT", category: "Plumbing", active_assignment: null }));
+      return jsonResponse({ detail: "unexpected request" }, 500);
+    });
+
+    renderWithProviders(<IncidentDetailPage />, { initialEntries: [`/incidents/${incidentId}`], routePath: "/incidents/:incidentId" });
+
+    const select = await screen.findByLabelText(/available and qualified/i);
+    expect(within(select).getByRole("option", { name: "technician@test.local" })).toBeInTheDocument();
+    expect(screen.queryByText("Not qualified")).not.toBeInTheDocument();
+    expect(hasRequiredSkill({ skills: ["ELECTRICAL", "HVAC", "PLUMBING"] }, "Plumbing")).toBe(true);
+  });
+
   it("refetches and clears technician selection after an assignment conflict", async () => {
     const user = userEvent.setup();
     let technicianRequests = 0;
@@ -356,17 +386,40 @@ describe("IncidentDetailPage", () => {
       const url = requestUrl(input);
       if (url.includes("/api/v1/auth/me")) return jsonResponse(mockSession("FACILITY_MANAGER"));
       if (url.includes("/api/v1/buildings")) return jsonResponse({ items: [{ id: buildingId, name: "Demo Tower" }] });
-      if (url.includes(`/api/v1/incidents/${incidentId}`)) return jsonResponse(incident({ status: "MANUAL_REVIEW", complaint_description: "Water leakage near an electrical panel", active_assignment: null }));
+      if (url.includes(`/api/v1/incidents/${incidentId}`)) {
+        return jsonResponse(incident({
+          status: "MANUAL_REVIEW",
+          complaint_description: "Water leakage near an electrical panel",
+          active_assignment: null,
+          latest_triage_result: {
+            id: "40000000-0000-0000-0000-000000000001",
+            status: "SUCCEEDED",
+            model_version: "groq:openai/gpt-oss-20b",
+            validated_result: {
+              category: "ELECTRICAL",
+              location: "Lobby",
+              issue_summary: "Water is near electrical equipment.",
+              symptoms: ["water leakage"],
+              potential_hazards: ["water near electrical equipment"],
+              suggested_priority: "CRITICAL",
+              missing_information: [],
+              needs_human_review: true,
+              safety_notes: ["Escalate before assignment"],
+            },
+            created_at: "2026-09-17T10:02:00Z",
+          },
+        }));
+      }
       return jsonResponse({ detail: "unexpected request" }, 500);
     });
 
     renderWithProviders(<IncidentDetailPage />, { initialEntries: [`/incidents/${incidentId}`], routePath: "/incidents/:incidentId" });
 
-    await waitFor(() => expect(screen.getByText(/Safety review required/i)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/Safety review required by backend-visible AI assessment signals/i)).toBeInTheDocument());
     expect(screen.getByText(/Leaving this unchecked does not establish that an incident is safe/i)).toBeInTheDocument();
   });
 
-  it("renders a null active assignment empty state without erasing history", async () => {
+  it("renders a null active assignment empty state without fabricating history", async () => {
     vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
       const url = requestUrl(input);
       if (url.includes("/api/v1/auth/me")) return jsonResponse(mockSession("FACILITY_MANAGER"));
@@ -379,6 +432,37 @@ describe("IncidentDetailPage", () => {
     renderWithProviders(<IncidentDetailPage />, { initialEntries: [`/incidents/${incidentId}`], routePath: "/incidents/:incidentId" });
 
     await waitFor(() => expect(screen.getAllByText("No active assignment").length).toBeGreaterThanOrEqual(1));
-    expect(screen.getByText(/historical assignments may still exist/i)).toBeInTheDocument();
+    expect(screen.getByText(/current API does not expose assignment history/i)).toBeInTheDocument();
+  });
+
+  it.each([
+    ["PENDING_TRIAGE", /Waiting for AI assessment/i],
+    ["MANUAL_REVIEW", /Manual review is required before dispatch/i],
+    ["AWAITING_ASSIGNMENT", /Qualified candidates/i],
+    ["ASSIGNED", /assigned technician controls start and resolve actions/i],
+    ["IN_PROGRESS", /Work is in progress with the assigned technician/i],
+    ["RESOLVED", /Close incident/i],
+    ["CLOSED", /This incident is closed and read-only/i],
+  ])("renders manager workflow state for %s", async (status, expected) => {
+    vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
+      const url = requestUrl(input);
+      if (url.includes("/api/v1/auth/me")) return jsonResponse(mockSession("FACILITY_MANAGER"));
+      if (url.includes("/api/v1/buildings")) return jsonResponse({ items: [{ id: buildingId, name: "Demo Tower" }] });
+      if (url.includes("/api/v1/technicians")) return jsonResponse({ items: [{ ...technicians().items[0], available: true, active_assignment_id: null }] });
+      if (url.includes(`/api/v1/incidents/${incidentId}`)) {
+        return jsonResponse(incident({
+          status,
+          active_assignment: assignmentStatusesForTest.has(status) ? incident().active_assignment : null,
+          version: status === "RESOLVED" || status === "CLOSED" ? 4 : 2,
+        }));
+      }
+      return jsonResponse({ detail: "unexpected request" }, 500);
+    });
+
+    renderWithProviders(<IncidentDetailPage />, { initialEntries: [`/incidents/${incidentId}`], routePath: "/incidents/:incidentId" });
+
+    await waitFor(() => expect(screen.getByText(expected)).toBeInTheDocument());
   });
 });
+
+const assignmentStatusesForTest = new Set(["ASSIGNED", "IN_PROGRESS"]);

@@ -2,7 +2,7 @@
 
 ## Current Status
 
-Task 012C-QUEUE incident queue visual upgrade is implemented and verified with generated API types, TypeScript checking, unit/component tests, production build, and diff check. Full browser visual verification was not performed in this pass.
+Task 012C-MANAGER final manager workflow correctness and UX fixes are implemented and verified with generated API types, TypeScript checking, unit/component tests, production build, and diff check. Full browser visual verification was not performed in this pass.
 
 ## Completed
 
@@ -55,6 +55,11 @@ Task 012C-QUEUE incident queue visual upgrade is implemented and verified with g
 - The status toolbar remains server-backed and compact, preserves API totals, and does not add fake client-side search or approximate quick filters.
 - Workflow indicators map approved incident states to readable labels with restrained Lucide icons. AI status remains independent from workflow state; `PROCESSED` without a persisted validated result is shown as processed without a recommendation.
 - Queue styling preserves the operations-console light/dark palette, uses stable grid columns on desktop, and stacks summary/status content on narrower screens without exposing routine UUIDs as primary labels.
+- Task 012C-MANAGER aligned frontend technician grouping with backend canonical category-to-skill matching so a `Plumbing` incident category matches a technician skill of `PLUMBING`.
+- Manager overview now labels the embedded section as `Incident queue` and removes developer-facing copy about server pagination and global metric calculation.
+- Manager incident detail hides routine assignment IDs, shows compact no-assignment states for pending/pre-dispatch incidents, and avoids implying that no historical assignment existed after resolution or closure.
+- Safety presentation now uses backend-visible AI assessment hazard/escalation signals only. The frontend no longer classifies danger from complaint keywords and still does not clear hazards client-side.
+- AI advisory information and human-confirmed triage remain visually separate, and the AI model name is displayed only when the backend provides it.
 
 ## API Contract Notes
 
@@ -107,10 +112,17 @@ Task 012C-QUEUE incident queue visual upgrade is implemented and verified with g
 - Task 012C-QUEUE full `npm test` passed after the test isolation fix: 8 test files and 48 tests passed. React Router future-flag warnings were emitted by the test environment.
 - Task 012C-QUEUE `npm run build` passed: TypeScript project build and Vite production build completed successfully.
 - Task 012C-QUEUE `git diff --check` passed with Git LF-to-CRLF conversion warnings only.
+- Task 012C-MANAGER focused frontend tests passed: `npx vitest run src/pages/IncidentDetailPage.test.tsx src/pages/ManagerWorkspacePage.test.tsx` reported 2 test files and 27 tests passed. React Router future-flag warnings were emitted by the test environment.
+- Task 012C-MANAGER `npm run generate:api` passed and regenerated `src/api/generated.ts` from `openapi/facilityops-openapi.json`.
+- Task 012C-MANAGER `npm run typecheck` passed.
+- Task 012C-MANAGER `npm test` passed: 8 test files and 57 tests passed. React Router future-flag warnings were emitted by the test environment.
+- Task 012C-MANAGER `npm run build` passed: TypeScript project build and Vite production build completed successfully.
+- Task 012C-MANAGER frontend `git diff --check` passed with Git LF-to-CRLF conversion warnings only.
 
 ## Remaining
 
 - Full browser-level workflow verification still requires an available browser automation surface.
 - Real Groq triage behavior depends on the backend worker and configured Groq credentials. Task 012C-D backend verification confirmed one isolated demo triage event was processed successfully with the real Groq provider.
 - SLA risk, latency trend, AI accuracy, assignment history, and resolution history are not available from the current backend contract.
+- Durable backend hazard-clearance state and complete assignment/resolution history remain unavailable from the current API contract.
 - Production authentication hardening such as SSO/OAuth remains outside the current backend contract.

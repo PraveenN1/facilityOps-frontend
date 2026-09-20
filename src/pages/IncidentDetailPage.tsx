@@ -25,16 +25,6 @@ import { nextStepForStatus, reporterProgressSteps, reporterStatusLabel } from ".
 
 const triageableStatuses = new Set(["PENDING_TRIAGE", "MANUAL_REVIEW"]);
 const assignmentStatuses = new Set(["ASSIGNED", "IN_PROGRESS"]);
-const knownHazardText = [
-  ["water", "electrical panel"],
-  ["leak", "electrical panel"],
-  ["leakage", "electrical panel"],
-  ["smoke"],
-  ["fire"],
-  ["gas leak"],
-  ["sparking"],
-  ["electric shock"],
-];
 
 export function IncidentDetailPage() {
   const { incidentId } = useParams<{ incidentId: string }>();
@@ -203,7 +193,7 @@ function OriginalComplaint({ incident, buildingName }: { incident: IncidentDetai
       </div>
       <p className="body-copy complaint-lead">{incident.complaint_description}</p>
       {hazardSignal ? (
-        <p className="danger-note">Safety review required. Backend hazard restrictions remain authoritative and may prevent assignment clearance.</p>
+        <p className="danger-note">Safety review required by backend-visible AI assessment signals. Backend hazard restrictions remain authoritative and may prevent assignment clearance.</p>
       ) : null}
       <dl className="definition-grid">
         <div><dt>Priority</dt><dd>{incident.priority}</dd></div>
@@ -218,6 +208,12 @@ function OriginalComplaint({ incident, buildingName }: { incident: IncidentDetai
 
 function ActiveAssignment({ incident }: { incident: IncidentDetailResponse }) {
   const assignment = incident.active_assignment;
+  const emptyTitle = incident.status === "PENDING_TRIAGE" || incident.status === "MANUAL_REVIEW" || incident.status === "AWAITING_ASSIGNMENT"
+    ? "No active assignment yet"
+    : "No active assignment";
+  const emptyDetail = incident.status === "RESOLVED" || incident.status === "CLOSED"
+    ? "Capacity has been released. The current API does not expose assignment history."
+    : "A current assignment will appear after dispatch.";
   return (
     <div className="subsection">
       <h3>Current active assignment</h3>
@@ -225,10 +221,9 @@ function ActiveAssignment({ incident }: { incident: IncidentDetailResponse }) {
         <dl className="definition-grid">
           <div><dt>Technician</dt><dd>{assignment.technician_display_name}</dd></div>
           <div><dt>Status</dt><dd>{assignment.status.replaceAll("_", " ")}</dd></div>
-          <div><dt>Assignment ref</dt><dd className="mono-cell">{compactUuid(assignment.assignment_id)}</dd></div>
         </dl>
       ) : (
-        <EmptyState title="No active assignment" detail="Resolved incidents release capacity; historical assignments may still exist." />
+        <EmptyState title={emptyTitle} detail={emptyDetail} />
       )}
     </div>
   );
@@ -269,7 +264,7 @@ function AiAssessment({ incident }: { incident: IncidentDetailResponse }) {
           <div className="wide"><dt>Potential hazards</dt><dd>{recommendation.potential_hazards.length ? recommendation.potential_hazards.join(", ") : "None provided"}</dd></div>
           <div className="wide"><dt>Safety notes</dt><dd>{recommendation.safety_notes.length ? recommendation.safety_notes.join(", ") : "None provided"}</dd></div>
           <div><dt>Needs human review</dt><dd>{recommendation.needs_human_review ? "Yes" : "No"}</dd></div>
-          {/* <div><dt>Model</dt><dd>{triage?.model_version ?? "Not reported"}</dd></div> */}
+          <div><dt>Model</dt><dd>{triage?.model_version ?? "Not reported"}</dd></div>
         </dl>
       ) : null}
     </article>
@@ -376,7 +371,7 @@ function TechnicianAssignment({
   const availableQualified = technicians.filter((technician) => isSelectableTechnician(technician, requiredSkill));
   const unavailable = technicians.filter((technician) => technician.status !== "ACTIVE" || !technician.available);
   const notQualified = requiredSkill
-    ? technicians.filter((technician) => technician.status === "ACTIVE" && technician.available && !technician.skills.includes(requiredSkill))
+    ? technicians.filter((technician) => technician.status === "ACTIVE" && technician.available && !hasRequiredSkill(technician, requiredSkill))
     : [];
 
   const mutation = useMutation({
@@ -511,7 +506,16 @@ function MutationError({ title, error }: { title: string; error: Error }) {
 }
 
 function isSelectableTechnician(technician: TechnicianListItem, requiredSkill: string | null | undefined) {
-  return technician.status === "ACTIVE" && technician.available && requiredSkill ? technician.skills.includes(requiredSkill) : false;
+  return technician.status === "ACTIVE" && technician.available && requiredSkill ? hasRequiredSkill(technician, requiredSkill) : false;
+}
+
+export function hasRequiredSkill(technician: Pick<TechnicianListItem, "skills">, requiredSkill: string) {
+  const canonicalRequiredSkill = canonicalSkill(requiredSkill);
+  return technician.skills.some((skill) => canonicalSkill(skill) === canonicalRequiredSkill);
+}
+
+function canonicalSkill(value: string) {
+  return value.trim().toUpperCase().replaceAll(" ", "_");
 }
 
 function hasSafetySignal(incident: IncidentDetailResponse) {
@@ -519,6 +523,5 @@ function hasSafetySignal(incident: IncidentDetailResponse) {
   if (recommendation?.needs_human_review) return true;
   if ((recommendation?.potential_hazards.length ?? 0) > 0) return true;
   if ((recommendation?.safety_notes.length ?? 0) > 0) return true;
-  const normalized = incident.complaint_description.toLowerCase();
-  return knownHazardText.some((terms) => terms.every((term) => normalized.includes(term)));
+  return false;
 }

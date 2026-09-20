@@ -22,7 +22,7 @@ export function ManagerWorkspacePage() {
         <div>
           <p className="eyebrow">Manager workspace</p>
           <h2>Operations overview</h2>
-          <p className="muted-copy">{selectedBuilding ? selectedBuilding.name : "All authorized buildings returned by the backend"}</p>
+          <p className="muted-copy">{selectedBuilding ? selectedBuilding.name : "All authorized buildings"}</p>
         </div>
         <Link className="secondary-button" to="/incidents">Open incident queue</Link>
       </div>
@@ -47,8 +47,8 @@ export function ManagerWorkspacePage() {
       <div className="panel">
         <div className="section-heading compact">
           <div>
-            <h3>Immediate queue</h3>
-            <p className="muted-copy">Server-paginated list. Global metrics are not calculated from this page.</p>
+            <h3>Incident queue</h3>
+            <p className="muted-copy">{selectedBuilding ? selectedBuilding.name : "All authorized buildings"}</p>
           </div>
         </div>
         <IncidentDashboardPage embedded />
