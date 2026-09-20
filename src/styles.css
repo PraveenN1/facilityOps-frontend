@@ -149,7 +149,7 @@ code,
   .workspace-grid { @apply grid min-h-[calc(100vh-88px)] lg:grid-cols-[260px_minmax(0,1fr)]; }
   .side-rail { @apply border-r p-4; background: var(--chrome); border-color: var(--line); }
   .workspace-main { @apply min-w-0 p-4 lg:p-6; }
-  .nav-item { @apply mb-2 flex items-center rounded-[3px] px-3 py-2 text-sm font-semibold no-underline; color: var(--muted); }
+  .nav-item { @apply mb-2 flex items-center gap-2 rounded-[3px] px-3 py-2 text-sm font-semibold no-underline; color: var(--muted); }
   .nav-item.active, .nav-item:hover { background: color-mix(in srgb, var(--blue) 12%, transparent); color: var(--blue); }
   .scope-box { @apply mt-6 rounded-md border p-3 text-sm; border-color: var(--line); }
   .scope-box span, .eyebrow { @apply block text-xs font-bold uppercase; color: var(--muted); letter-spacing: 0; }
@@ -157,9 +157,10 @@ code,
   .user-chip, .building-pill, .theme-toggle { @apply rounded-[3px] border px-3 py-2 text-sm; background: var(--panel); border-color: var(--line); }
   .user-chip { @apply flex flex-col; }
   .user-chip strong { @apply text-xs uppercase; color: var(--muted); }
+  .building-pill { @apply inline-flex items-center gap-2; }
   .building-select { @apply flex items-center gap-2 text-sm font-semibold; color: var(--muted); }
   .building-select select { @apply rounded-[3px] border px-3 py-2; background: var(--panel); color: var(--ink); border-color: var(--line); }
-  .theme-toggle { @apply font-semibold transition; color: var(--ink); }
+  .theme-toggle { @apply inline-flex items-center justify-center gap-2 font-semibold transition; color: var(--ink); }
   .theme-toggle:hover { background: color-mix(in srgb, var(--blue) 8%, var(--panel)); }
   .panel { @apply rounded-md border p-4 shadow-sm; background: var(--panel); border-color: var(--line); box-shadow: var(--shadow); }
   .ai-panel { border-left: 3px solid var(--violet); }
@@ -180,6 +181,8 @@ code,
   .primary-button:hover:not(:disabled) { background: var(--blue-dark); }
   .secondary-button { @apply inline-flex min-h-10 items-center justify-center rounded-[3px] border px-4 py-2 text-sm font-semibold transition disabled:opacity-50; background: var(--panel); color: var(--ink); border-color: var(--line); }
   .secondary-button:hover:not(:disabled) { background: color-mix(in srgb, var(--blue) 8%, var(--panel)); }
+  .icon-button { @apply gap-2; }
+  .icon-heading { @apply inline-flex items-center gap-2; }
   .fit { @apply w-fit; }
   .danger-note { @apply rounded-[3px] border px-3 py-2 text-sm; background: var(--warning-bg); border-color: color-mix(in srgb, var(--warning) 35%, var(--line)); color: var(--ink); }
   .info-note { @apply rounded-[3px] border px-3 py-2 text-sm; background: color-mix(in srgb, var(--blue) 8%, var(--panel)); border-color: color-mix(in srgb, var(--blue) 20%, var(--line)); color: var(--ink); }
@@ -195,7 +198,7 @@ code,
   .metrics-grid, .metric-grid { @apply grid gap-3 sm:grid-cols-2 xl:grid-cols-4; }
   .metric-tile, .metric-card { @apply flex min-h-28 flex-col justify-between rounded-md border p-4; background: var(--panel); border-color: var(--line); }
   .metric-tile.ai { border-left: 3px solid var(--violet); }
-  .metric-label { @apply text-sm font-semibold; color: var(--muted); }
+  .metric-label { @apply inline-flex items-center gap-2 text-sm font-semibold; color: var(--muted); }
   .metric-value, .metric-card strong { @apply block text-3xl font-semibold leading-none; color: var(--ink); }
   .table-wrap { @apply overflow-x-auto rounded-md border; border-color: var(--line); background: var(--panel); }
   .data-table { @apply min-w-full border-collapse text-left text-sm; }
@@ -242,16 +245,19 @@ code,
   .resolution-textarea { @apply min-h-32 resize-y; }
   .success-note { @apply rounded-md border px-4 py-3 text-sm; background: var(--ok-bg); border-color: color-mix(in srgb, var(--ok) 35%, var(--line)); color: var(--ink); }
   .narrow-page { @apply mx-auto max-w-2xl; }
-  .login-shell { @apply relative flex min-h-screen items-center justify-center p-4; background: radial-gradient(circle at top left, color-mix(in srgb, var(--blue) 10%, transparent), transparent 34%), var(--bg); color: var(--ink); }
+  .login-shell { @apply relative flex min-h-screen items-center justify-center p-4; background: var(--bg); color: var(--ink); }
   .login-theme-control { @apply absolute right-4 top-4; }
-  .login-panel { @apply grid w-full max-w-5xl gap-6 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-center; }
+  .login-panel { @apply flex w-full max-w-[460px] flex-col items-stretch; }
   .login-intro { @apply hidden lg:flex lg:flex-col lg:gap-5; }
   .login-intro h1 { @apply text-5xl font-semibold leading-tight; letter-spacing: 0; }
   .login-intro p { @apply max-w-xl text-lg; color: var(--muted); }
   .login-proof { @apply flex flex-wrap gap-2; }
   .login-proof span { @apply rounded-[3px] border px-3 py-2 text-sm font-semibold; background: color-mix(in srgb, var(--panel) 82%, transparent); border-color: var(--line); }
-  .login-card { @apply w-full rounded-md border p-6 shadow-sm; background: var(--panel); border-color: var(--line); box-shadow: var(--shadow); }
-  .login-card h2 { @apply text-2xl font-semibold; }
+  .login-card { @apply w-full rounded-md border p-6 shadow-sm sm:p-8; background: var(--panel); border-color: var(--line); box-shadow: var(--shadow); }
+  .login-brand { @apply flex items-center gap-3; }
+  .brand-mark { @apply inline-flex h-11 w-11 items-center justify-center rounded-md; background: color-mix(in srgb, var(--blue) 12%, var(--panel)); color: var(--blue); }
+  .login-card h1 { @apply text-3xl font-semibold leading-tight; letter-spacing: 0; }
+  .login-subtitle { @apply -mt-2 text-sm; color: var(--muted); }
   .password-control { @apply grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]; }
   .password-control .field-input { @apply mt-1; }
   .password-control .secondary-button { @apply mt-1; }
@@ -260,17 +266,24 @@ code,
   .request-card-main { @apply min-w-0 flex-1; }
   .request-card-main strong { @apply block whitespace-normal break-words text-base leading-6; color: var(--ink); }
   .request-card-status { @apply flex flex-col items-start gap-2 text-sm sm:max-w-72 sm:items-end sm:text-right; color: var(--muted); }
+  .request-open { @apply inline-flex items-center gap-1 text-xs font-semibold; color: var(--blue); }
   .request-detail h3 { @apply text-xl font-semibold; }
-  .async-state { @apply rounded-md border px-4 py-6 text-sm shadow-sm; background: var(--panel); border-color: var(--line); color: var(--muted); }
+  .request-progress { @apply grid gap-2 sm:grid-cols-3; }
+  .request-progress li { @apply flex min-h-10 items-center gap-2 rounded-[3px] border px-3 py-2 text-sm font-semibold; background: var(--panel-2); border-color: var(--line); color: var(--muted); }
+  .request-progress li.current { background: color-mix(in srgb, var(--blue) 10%, var(--panel)); border-color: color-mix(in srgb, var(--blue) 28%, var(--line)); color: var(--ink); }
+  .request-progress li.complete { background: color-mix(in srgb, var(--ok) 10%, var(--panel)); color: var(--ink); }
+  .async-state { @apply inline-flex items-center gap-2 rounded-md border px-4 py-6 text-sm shadow-sm; background: var(--panel); border-color: var(--line); color: var(--muted); }
   .error-state { @apply rounded-md border px-4 py-3 text-sm; background: var(--danger-bg); border-color: color-mix(in srgb, var(--danger) 35%, var(--line)); color: var(--ink); }
-  .empty-state { @apply rounded-md border border-dashed px-4 py-8 text-center; background: var(--panel); border-color: var(--line); color: var(--ink); }
+  .error-state > svg { @apply float-left mr-2 mt-0.5; color: var(--danger); }
+  .empty-state { @apply flex flex-col items-center justify-center rounded-md border border-dashed px-4 py-8 text-center; background: var(--panel); border-color: var(--line); color: var(--ink); }
+  .empty-state > svg { @apply mb-2; color: var(--muted); }
   .empty-state p + p { color: var(--muted); }
   .status-badge { @apply inline-flex rounded-[3px] px-2.5 py-1 text-xs font-semibold ring-1; }
   .status-empty { @apply text-sm; color: var(--muted); }
-  .status-neutral { background: color-mix(in srgb, var(--muted) 12%, var(--panel)); color: var(--ink); --tw-ring-color: color-mix(in srgb, var(--muted) 22%, var(--line)); }
-  .status-ok { background: var(--ok-bg); color: var(--ink); --tw-ring-color: color-mix(in srgb, var(--ok) 35%, var(--line)); }
-  .status-warning { background: var(--warning-bg); color: var(--ink); --tw-ring-color: color-mix(in srgb, var(--warning) 35%, var(--line)); }
-  .status-danger { background: var(--danger-bg); color: var(--ink); --tw-ring-color: color-mix(in srgb, var(--danger) 35%, var(--line)); }
+  .status-neutral, .status-workflow { background: color-mix(in srgb, var(--muted) 12%, var(--panel)); color: var(--ink); --tw-ring-color: color-mix(in srgb, var(--muted) 22%, var(--line)); }
+  .status-success, .status-availability { background: var(--ok-bg); color: var(--ink); --tw-ring-color: color-mix(in srgb, var(--ok) 35%, var(--line)); }
+  .status-muted-warning { background: var(--warning-bg); color: var(--ink); --tw-ring-color: color-mix(in srgb, var(--warning) 35%, var(--line)); }
+  .status-error { background: var(--danger-bg); color: var(--ink); --tw-ring-color: color-mix(in srgb, var(--danger) 35%, var(--line)); }
   .status-ai { background: var(--ai-bg); color: var(--ink); --tw-ring-color: color-mix(in srgb, var(--violet) 35%, var(--line)); }
 }
 

@@ -1,4 +1,5 @@
 import { FormEvent, useState } from "react";
+import { Eye, EyeOff, Moon, Sun, Wrench } from "lucide-react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 
 import { isApiError } from "../api/client";
@@ -10,7 +11,7 @@ export function LoginPage() {
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
-  const [email, setEmail] = useState("manager.demo@facilityops.local");
+  const [email, setEmail] = useState(import.meta.env.DEV ? "manager.demo@facilityops.local" : "");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isSigningIn, setIsSigningIn] = useState(false);
@@ -37,26 +38,20 @@ export function LoginPage() {
     <main className="login-shell">
       <div className="login-theme-control">
         <button className="theme-toggle" type="button" onClick={toggleTheme} aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}>
-          {theme === "dark" ? "Light" : "Dark"}
+          {theme === "dark" ? <Sun aria-hidden size={16} /> : <Moon aria-hidden size={16} />}
+          <span>{theme === "dark" ? "Light" : "Dark"}</span>
         </button>
       </div>
       <section className="login-panel" aria-labelledby="login-title">
-        <div className="login-intro">
-          <p className="eyebrow">FacilityOps AI</p>
-          <h1 id="login-title">Sign in to FacilityOps AI</h1>
-          <p>Access your operations workspace securely with your assigned role.</p>
-          <div className="login-proof">
-            <span>Cookie session</span>
-            <span>CSRF-protected changes</span>
-            <span>Role-based workspace</span>
-          </div>
-        </div>
         <form className="login-card stack" onSubmit={submit}>
-          <div>
-            <p className="eyebrow">Welcome back</p>
-            <h2>Operations console</h2>
-            <p className="muted-copy">Use a seeded local demo account or your assigned credentials.</p>
+          <div className="login-brand">
+            <span className="brand-mark" aria-hidden="true"><Wrench size={22} /></span>
+            <div>
+              <p className="eyebrow">FacilityOps AI</p>
+              <h1 id="login-title">Welcome back</h1>
+            </div>
           </div>
+          <p className="login-subtitle">Sign in to your operations workspace.</p>
           <label className="field-label">
             Email
             <input className="field-input" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
@@ -65,12 +60,15 @@ export function LoginPage() {
             Password
             <span className="password-control">
               <input className="field-input" type={showPassword ? "text" : "password"} autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required />
-              <button className="secondary-button" type="button" onClick={() => setShowPassword((current) => !current)}>{showPassword ? "Hide" : "Show"}</button>
+              <button className="secondary-button icon-button" type="button" onClick={() => setShowPassword((current) => !current)}>
+                {showPassword ? <EyeOff aria-hidden size={16} /> : <Eye aria-hidden size={16} />}
+                <span>{showPassword ? "Hide" : "Show"}</span>
+              </button>
             </span>
           </label>
           {error ? <div className="inline-error" role="alert">{error}</div> : null}
           <button className="primary-button" disabled={isSigningIn} type="submit">{isSigningIn ? "Signing in..." : "Sign in"}</button>
-          <p className="demo-note">Local demo users are listed in the project README. This sign-in screen is not production SSO.</p>
+          {import.meta.env.DEV ? <p className="demo-note">Local demo users are listed in the project README. This sign-in screen is not production SSO.</p> : null}
         </form>
       </section>
     </main>

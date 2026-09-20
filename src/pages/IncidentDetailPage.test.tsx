@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -210,6 +210,9 @@ describe("IncidentDetailPage", () => {
     renderWithProviders(<IncidentDetailPage />, { initialEntries: [`/incidents/${incidentId}`], routePath: "/incidents/:incidentId" });
 
     await waitFor(() => expect(screen.getAllByText("Technician being arranged").length).toBeGreaterThanOrEqual(1));
+    const progress = screen.getByRole("list", { name: /request progress/i });
+    expect(within(progress).getByText("Under review")).toBeInTheDocument();
+    expect(within(progress).getByText("Technician being arranged")).toBeInTheDocument();
     expect(screen.getByText(/facility team has reviewed your request and is arranging a technician/i)).toBeInTheDocument();
     expect(screen.queryByText("AI assessment")).not.toBeInTheDocument();
     expect(screen.queryByText("Human-confirmed decision")).not.toBeInTheDocument();

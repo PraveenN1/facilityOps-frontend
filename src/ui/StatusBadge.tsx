@@ -1,24 +1,24 @@
 const toneByStatus: Record<string, string> = {
-  PENDING_TRIAGE: "status-neutral",
-  MANUAL_REVIEW: "status-neutral",
-  AWAITING_ASSIGNMENT: "status-neutral",
-  AWAITING_APPROVAL: "status-neutral",
-  ASSIGNED: "status-neutral",
-  IN_PROGRESS: "status-neutral",
-  RESOLVED: "status-neutral",
+  PENDING_TRIAGE: "status-workflow",
+  MANUAL_REVIEW: "status-workflow",
+  AWAITING_ASSIGNMENT: "status-workflow",
+  AWAITING_APPROVAL: "status-workflow",
+  ASSIGNED: "status-workflow",
+  IN_PROGRESS: "status-workflow",
+  RESOLVED: "status-success",
   CLOSED: "status-neutral",
-  AVAILABLE: "status-ok",
-  UNAVAILABLE: "status-warning",
-  SUCCEEDED: "status-ok",
-  FAILED: "status-danger",
-  INVALID_OUTPUT: "status-danger",
-  TIMEOUT: "status-warning",
-  PENDING: "status-neutral",
+  AVAILABLE: "status-availability",
+  UNAVAILABLE: "status-muted-warning",
+  SUCCEEDED: "status-success",
+  FAILED: "status-error",
+  INVALID_OUTPUT: "status-error",
+  TIMEOUT: "status-muted-warning",
+  PENDING: "status-workflow",
   PROCESSING: "status-ai",
 };
 
 export function StatusBadge({ status, ai = false }: { status: string | null | undefined; ai?: boolean }) {
   if (!status) return <span className="status-empty">Not available</span>;
-  const tone = ai && status === "SUCCEEDED" ? "status-ai" : toneByStatus[status] ?? "status-neutral";
+  const tone = ai && (status === "SUCCEEDED" || status === "PROCESSED") ? "status-ai" : toneByStatus[status] ?? "status-neutral";
   return <span className={`status-badge ${tone}`}>{status.replaceAll("_", " ")}</span>;
 }

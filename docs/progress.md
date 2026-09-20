@@ -2,7 +2,7 @@
 
 ## Current Status
 
-The UI refinement pass is implemented and verified with generated API types, TypeScript checking, unit/component tests, production build, and `git diff --check`. Full browser workflow verification was not performed in this pass.
+Task 012C-VISUAL final UI polish is implemented and verified with generated API types, TypeScript checking, unit/component tests, and production build. Full browser visual verification was not performed in this pass.
 
 ## Completed
 
@@ -45,6 +45,10 @@ The UI refinement pass is implemented and verified with generated API types, Typ
 - Incident detail now renders a reporter-specific request tracking view for reporters, while preserving manager and technician workflow panels for their roles.
 - Fixed contradictory AI/manual status copy: AI processing is presented separately from manager-confirmed manual triage, and the UI no longer says manual review is missing after triage is confirmed.
 - Preserved recent technician workspace behavior while aligning shared styles with the refined light/dark design system.
+- Task 012C-VISUAL replaced the previous two-column login treatment with a centered single-column card and removed visible technical badges for cookie session, CSRF protection, and role routing.
+- Added `lucide-react` and applied restrained icons to sidebar navigation, metric headings, request actions, technician actions, AI/human review headings, theme toggle, logout, empty states, loading states, and success feedback.
+- Added a compact reporter request progress indicator derived only from the current incident status. It does not claim timestamps, ETAs, or a full history.
+- Refined status badge categories for workflow, AI processing, technician availability, success, and error states while keeping AI advisory state visually distinct from human approval.
 
 ## API Contract Notes
 
@@ -85,6 +89,11 @@ The UI refinement pass is implemented and verified with generated API types, Typ
 - UI refinement `npm test` passed: 8 test files and 41 tests passed. React Router future-flag warnings were emitted by the test environment.
 - UI refinement `npm run build` passed: TypeScript project build and Vite production build completed successfully.
 - UI refinement `git diff --check` passed with Git LF-to-CRLF conversion warnings only.
+- Task 012C-VISUAL `npm install lucide-react` completed and added one dependency. npm reported 7 audit findings after install: 5 moderate, 1 high, and 1 critical. No broad dependency upgrades were made in this visual-only task.
+- Task 012C-VISUAL `npm run generate:api` passed.
+- Task 012C-VISUAL `npm run typecheck` passed.
+- Task 012C-VISUAL `npm test` passed: 8 test files and 42 tests passed. React Router future-flag warnings were emitted by the test environment.
+- Task 012C-VISUAL `npm run build` passed.
 
 ## Remaining
 

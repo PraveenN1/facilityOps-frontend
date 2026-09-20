@@ -1,7 +1,7 @@
 import { screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { ComplaintCreatePage, ReporterWorkspacePage, reporterStatusLabel } from "./ReporterWorkspacePage";
+import { ComplaintCreatePage, ReporterWorkspacePage, reporterProgressSteps, reporterStatusLabel } from "./ReporterWorkspacePage";
 import { renderWithProviders } from "../test/test-utils";
 
 const buildingId = "10000000-0000-0000-0000-000000000001";
@@ -67,7 +67,16 @@ describe("ReporterWorkspacePage", () => {
 
   it("maps backend statuses to consistent reporter labels", () => {
     expect(reporterStatusLabel("PENDING_TRIAGE")).toBe("Under review");
+    expect(reporterStatusLabel("MANUAL_REVIEW")).toBe("Under review");
     expect(reporterStatusLabel("AWAITING_ASSIGNMENT")).toBe("Technician being arranged");
     expect(reporterStatusLabel("RESOLVED")).toBe("Work completed, awaiting closure");
+    expect(reporterProgressSteps.map((step) => step.label)).toEqual([
+      "Under review",
+      "Technician being arranged",
+      "Technician assigned",
+      "Work in progress",
+      "Work completed",
+      "Closed",
+    ]);
   });
 });

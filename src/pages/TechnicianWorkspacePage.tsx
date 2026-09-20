@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { CheckCircle2, Wrench } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useRef, useState } from "react";
 
@@ -68,7 +69,7 @@ export function TechnicianWorkspacePage() {
 function ResolutionSuccess({ confirmation }: { confirmation: ResolutionConfirmation }) {
   return (
     <div role="status" className="success-note">
-      <p className="font-semibold">Resolved {compactUuid(confirmation.incidentId)}</p>
+      <p className="font-semibold icon-heading"><CheckCircle2 aria-hidden size={18} />Resolved {compactUuid(confirmation.incidentId)}</p>
       <p>{confirmation.description}</p>
       <p>This job left your active queue after the server confirmed the resolution.</p>
       {confirmation.resolutionNotes ? <p>Resolution notes: {confirmation.resolutionNotes}</p> : null}
@@ -167,7 +168,7 @@ function WorkCard({
       {error ? <ErrorState title={errorTitle(error)} detail={error.message} /> : null}
       {item.status === "ASSIGNED" ? (
         <button
-          className="primary-button work-primary-action"
+          className="primary-button icon-button work-primary-action"
           disabled={pending}
           onClick={() => {
             if (startPendingRef.current) return;
@@ -175,6 +176,7 @@ function WorkCard({
             start.mutate();
           }}
         >
+          <Wrench aria-hidden size={16} />
           Start work
         </button>
       ) : null}
@@ -200,7 +202,8 @@ function WorkCard({
               maxLength={2000}
             />
           </label>
-          <button className="primary-button work-primary-action" disabled={!notes.trim() || pending} type="submit">
+          <button className="primary-button icon-button work-primary-action" disabled={!notes.trim() || pending} type="submit">
+            <CheckCircle2 aria-hidden size={16} />
             Resolve work
           </button>
         </form>

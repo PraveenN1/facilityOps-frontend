@@ -55,6 +55,24 @@ describe("session authentication UI", () => {
     await waitFor(() => expect(window.localStorage.getItem(csrfStorageKey)).toBe("login-csrf"));
   });
 
+  it("renders a single-card login without visible auth mechanism badges", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
+      const url = String(input);
+      if (url.includes("/api/v1/auth/me")) return jsonResponse({ detail: "Not authenticated" }, 401);
+      return jsonResponse({ detail: "unexpected request" }, 500);
+    });
+
+    const { container } = renderAuth(<LoginPage />);
+
+    await waitFor(() => expect(screen.getByRole("heading", { name: /welcome back/i })).toBeInTheDocument());
+    expect(container.querySelectorAll(".login-card")).toHaveLength(1);
+    expect(container.querySelector(".login-intro")).not.toBeInTheDocument();
+    expect(screen.getByText(/sign in to your operations workspace/i)).toBeInTheDocument();
+    expect(screen.queryByText(/cookie session/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/csrf-protected changes/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/role-based workspace/i)).not.toBeInTheDocument();
+  });
+
   it("renders role workspace navigation without development identity controls", async () => {
     vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
       const url = String(input);

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FormEvent, useMemo, useState } from "react";
+import { ArrowRight, Plus } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { createComplaint, listMyComplaints } from "../api/client";
@@ -21,7 +22,7 @@ export function ReporterWorkspacePage() {
   const buildingNameById = new Map(authorizedBuildings.map((building) => [building.id, building.name]));
   return (
     <section className="stack-lg">
-      <div className="section-heading"><div><p className="eyebrow">Request portal</p><h2>My requests</h2><p className="muted-copy">Track maintenance requests submitted from your account.</p></div><Link className="primary-button" to="/complaints/new">New request</Link></div>
+      <div className="section-heading"><div><p className="eyebrow">Request portal</p><h2>My requests</h2><p className="muted-copy">Track maintenance requests submitted from your account.</p></div><Link className="primary-button icon-button" to="/complaints/new"><Plus aria-hidden size={16} />New request</Link></div>
       {complaints.isLoading ? <LoadingState label="Loading requests" /> : null}
       {complaints.isError ? <ErrorState detail={complaints.error.message} /> : null}
       {complaints.data?.items.length === 0 ? <EmptyState title="No requests yet" detail="Submit a maintenance request to start tracking it." /> : null}
@@ -36,6 +37,7 @@ export function ReporterWorkspacePage() {
             <div className="request-card-status">
               <StatusBadge status={reporterStatusLabel(complaint.incident_status)} />
               <span>{nextStepForStatus(complaint.incident_status)}</span>
+              <span className="request-open">Open request <ArrowRight aria-hidden size={14} /></span>
             </div>
           </Link>
         ))}
@@ -80,7 +82,10 @@ export function ComplaintCreatePage() {
         </label>
         <p className="info-note">Include the exact location and symptoms. For urgent hazards or emergencies, contact building security or emergency services immediately.</p>
         {mutation.isError ? <ErrorState title="Request was not submitted" detail={mutation.error.message} /> : null}
-        <button className="primary-button" disabled={!canSubmit || mutation.isPending} type="submit">{mutation.isPending ? "Submitting request..." : "Submit request"}</button>
+        <button className="primary-button icon-button" disabled={!canSubmit || mutation.isPending} type="submit">
+          <Plus aria-hidden size={16} />
+          {mutation.isPending ? "Submitting request..." : "Submit request"}
+        </button>
       </form>
     </section>
   );
@@ -113,6 +118,15 @@ export function nextStepForStatus(status: string) {
   };
   return labels[status] ?? "The request is being processed.";
 }
+
+export const reporterProgressSteps = [
+  { statuses: ["PENDING_TRIAGE", "MANUAL_REVIEW"], label: "Under review" },
+  { statuses: ["AWAITING_ASSIGNMENT"], label: "Technician being arranged" },
+  { statuses: ["ASSIGNED"], label: "Technician assigned" },
+  { statuses: ["IN_PROGRESS"], label: "Work in progress" },
+  { statuses: ["RESOLVED"], label: "Work completed" },
+  { statuses: ["CLOSED"], label: "Closed" },
+];
 
 function requestTitle(complaint: ReporterComplaintListItem) {
   return complaint.description.length > 110 ? `${complaint.description.slice(0, 107)}...` : complaint.description;

@@ -1,4 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
+import { BrainCircuit, ClipboardList, Clock3, Users, Wrench } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { getAiMetrics, getOperationsMetrics } from "../api/client";
@@ -29,14 +31,14 @@ export function ManagerWorkspacePage() {
       {ai.isError ? <ErrorState detail={ai.error.message} /> : null}
       {operations.data && ai.data ? (
         <div className="metrics-grid">
-          <Metric label="Open incidents" value={operations.data.open_incidents} />
-          <Metric label="Pending triage" value={operations.data.pending_triage} />
-          <Metric label="Awaiting assignment" value={operations.data.awaiting_assignment} />
-          <Metric label="Active assignments" value={operations.data.active_technician_assignments} />
-          <Metric label="Available technicians" value={operations.data.available_technicians} />
-          <Metric label="AI processed" value={ai.data.successfully_processed_requests} accent="ai" />
-          <Metric label="AI failures" value={ai.data.failed_requests} accent="ai" />
-          <Metric label="Human-review backlog" value={ai.data.incidents_awaiting_human_review} accent="ai" />
+          <Metric label="Open incidents" value={operations.data.open_incidents} icon={ClipboardList} />
+          <Metric label="Pending triage" value={operations.data.pending_triage} icon={Clock3} />
+          <Metric label="Awaiting assignment" value={operations.data.awaiting_assignment} icon={Wrench} />
+          <Metric label="Active assignments" value={operations.data.active_technician_assignments} icon={Users} />
+          <Metric label="Available technicians" value={operations.data.available_technicians} icon={Users} />
+          <Metric label="AI processed" value={ai.data.successfully_processed_requests} accent="ai" icon={BrainCircuit} />
+          <Metric label="AI failures" value={ai.data.failed_requests} accent="ai" icon={BrainCircuit} />
+          <Metric label="Human-review backlog" value={ai.data.incidents_awaiting_human_review} accent="ai" icon={Clock3} />
         </div>
       ) : null}
       {operations.data && ai.data && operations.data.total_incidents === 0 && ai.data.triage_requests === 0 ? (
@@ -55,10 +57,10 @@ export function ManagerWorkspacePage() {
   );
 }
 
-function Metric({ label, value, accent }: { label: string; value: number; accent?: "ai" }) {
+function Metric({ label, value, accent, icon: Icon }: { label: string; value: number; accent?: "ai"; icon: LucideIcon }) {
   return (
     <div className={`metric-tile ${accent === "ai" ? "ai" : ""}`}>
-      <span className="metric-label">{label}</span>
+      <span className="metric-label"><Icon aria-hidden size={16} />{label}</span>
       <strong className="metric-value">{value.toLocaleString()}</strong>
     </div>
   );

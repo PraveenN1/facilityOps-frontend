@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { FormEvent } from "react";
 import { useMemo, useState } from "react";
+import { BrainCircuit, CheckCircle2, Clock3, Users, Wrench } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 
 import {
@@ -20,7 +21,7 @@ import { useBuildingSelection } from "../state/BuildingContext";
 import { EmptyState, ErrorState, LoadingState } from "../ui/AsyncState";
 import { StatusBadge } from "../ui/StatusBadge";
 import { compactUuid, formatDateTime } from "../utils/format";
-import { nextStepForStatus, reporterStatusLabel } from "./ReporterWorkspacePage";
+import { nextStepForStatus, reporterProgressSteps, reporterStatusLabel } from "./ReporterWorkspacePage";
 
 const triageableStatuses = new Set(["PENDING_TRIAGE", "MANUAL_REVIEW"]);
 const assignmentStatuses = new Set(["ASSIGNED", "IN_PROGRESS"]);
@@ -154,6 +155,7 @@ function ReporterIncidentDetail({
             <h3>{reporterStatusLabel(incident.status)}</h3>
             <p className="body-copy">{nextStepForStatus(incident.status)}</p>
           </div>
+          <ReporterProgress status={incident.status} />
           <dl className="definition-grid">
             <div><dt>Building</dt><dd>{buildingName ?? "Authorized building"}</dd></div>
             <div><dt>Submitted</dt><dd>{formatDateTime(incident.created_at)}</dd></div>
@@ -167,6 +169,24 @@ function ReporterIncidentDetail({
         </article>
       ) : null}
     </section>
+  );
+}
+
+function ReporterProgress({ status }: { status: string }) {
+  const currentIndex = Math.max(0, reporterProgressSteps.findIndex((step) => step.statuses.includes(status)));
+  return (
+    <ol className="request-progress" aria-label="Request progress">
+      {reporterProgressSteps.map((step, index) => {
+        const complete = index < currentIndex;
+        const current = index === currentIndex;
+        return (
+          <li key={step.label} className={current ? "current" : complete ? "complete" : ""} aria-current={current ? "step" : undefined}>
+            <span aria-hidden="true">{complete ? <CheckCircle2 size={16} /> : <Clock3 size={16} />}</span>
+            <span>{step.label}</span>
+          </li>
+        );
+      })}
+    </ol>
   );
 }
 
@@ -225,7 +245,7 @@ function AiAssessment({ incident }: { incident: IncidentDetailResponse }) {
   return (
     <article className="panel stack ai-panel">
       <div className="section-heading compact">
-        <div><p className="eyebrow">AI assessment</p><h3>Advisory recommendation</h3></div>
+        <div><p className="eyebrow">AI assessment</p><h3 className="icon-heading"><BrainCircuit aria-hidden size={18} />Advisory recommendation</h3></div>
         <StatusBadge status={incident.ai_triage_status} ai />
       </div>
       {!incident.ai_triage_status ? <EmptyState title="Awaiting AI signal" detail="No triage result or outbox status is visible yet." /> : null}
@@ -263,7 +283,7 @@ function HumanDecision({ incident, canReview, onChanged }: { incident: IncidentD
   return (
     <article className="panel stack human-panel">
       <div className="section-heading compact">
-        <div><p className="eyebrow">Human-confirmed decision</p><h3>{hasConfirmedDecision ? "Confirmed triage" : "Review required"}</h3></div>
+        <div><p className="eyebrow">Human-confirmed decision</p><h3 className="icon-heading"><CheckCircle2 aria-hidden size={18} />{hasConfirmedDecision ? "Confirmed triage" : "Review required"}</h3></div>
         {hasConfirmedDecision ? <StatusBadge status={incident.status} /> : null}
       </div>
       {hasConfirmedDecision ? (
@@ -375,7 +395,7 @@ function TechnicianAssignment({
     <article className="panel stack">
       <div>
         <p className="eyebrow">Technician dispatch</p>
-        <h3>Qualified candidates</h3>
+        <h3 className="icon-heading"><Users aria-hidden size={18} />Qualified candidates</h3>
         <p className="muted-copy">Availability is derived from active ASSIGNED and IN_PROGRESS assignments.</p>
       </div>
       {techniciansLoading ? <LoadingState label="Loading technicians" /> : null}
@@ -396,7 +416,7 @@ function TechnicianAssignment({
           {unavailable.length > 0 ? <TechnicianGroup title="Unavailable" technicians={unavailable} /> : null}
           {notQualified.length > 0 ? <TechnicianGroup title="Not qualified" technicians={notQualified} /> : null}
           {mutation.isError ? <MutationError title="Assignment failed" error={mutation.error} /> : null}
-          <button className="primary-button" disabled={mutation.isPending || !technicianId} type="submit">Assign technician</button>
+          <button className="primary-button icon-button" disabled={mutation.isPending || !technicianId} type="submit"><Users aria-hidden size={16} />Assign technician</button>
         </form>
       ) : null}
       {availableQualified.length === 0 ? (
@@ -437,13 +457,13 @@ function TechnicianLifecycle({ incident, onChanged }: { incident: IncidentDetail
 
   return (
     <article className="panel stack">
-      <div><p className="eyebrow">Technician workflow</p><h3>Assigned work</h3></div>
+      <div><p className="eyebrow">Technician workflow</p><h3 className="icon-heading"><Wrench aria-hidden size={18} />Assigned work</h3></div>
       {incident.active_assignment ? <p className="info-note">{incident.active_assignment.technician_display_name} is assigned and the assignment is {incident.active_assignment.status.replaceAll("_", " ")}.</p> : <EmptyState title="No active assignment" detail="Start and resolve actions require an active assignment." />}
-      {incident.status === "ASSIGNED" ? <button className="primary-button" disabled={pending} onClick={() => startMutation.mutate()}>Start work</button> : null}
+      {incident.status === "ASSIGNED" ? <button className="primary-button icon-button" disabled={pending} onClick={() => startMutation.mutate()}><Wrench aria-hidden size={16} />Start work</button> : null}
       {incident.status === "IN_PROGRESS" ? (
         <>
           <label className="field-label">Resolution notes<textarea className="field-input" value={resolutionNotes} onChange={(event) => setResolutionNotes(event.target.value)} /></label>
-          <button className="primary-button" disabled={!resolutionNotes.trim() || pending} onClick={() => resolveMutation.mutate()}>Resolve work</button>
+          <button className="primary-button icon-button" disabled={!resolutionNotes.trim() || pending} onClick={() => resolveMutation.mutate()}><CheckCircle2 aria-hidden size={16} />Resolve work</button>
         </>
       ) : null}
       {activeError ? <MutationError title="Lifecycle transition failed" error={activeError} /> : null}
@@ -456,7 +476,7 @@ function ManagerClosure({ incident, onChanged }: { incident: IncidentDetailRespo
   return (
     <article className="panel stack">
       <div><p className="eyebrow">Closure</p><h3>Manager closure</h3><p className="muted-copy">Resolution details are not exposed by the current API contract.</p></div>
-      <button className="secondary-button" disabled={closeMutation.isPending} onClick={() => closeMutation.mutate()}>Close incident</button>
+      <button className="secondary-button icon-button" disabled={closeMutation.isPending} onClick={() => closeMutation.mutate()}><CheckCircle2 aria-hidden size={16} />Close incident</button>
       {closeMutation.isError ? <MutationError title="Close failed" error={closeMutation.error} /> : null}
     </article>
   );
