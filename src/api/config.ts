@@ -13,4 +13,15 @@ export const incidentStatuses = [
 
 export const incidentPriorities = ["LOW", "MEDIUM", "HIGH", "CRITICAL"] as const;
 
+export const triageCategories = [
+  "PLUMBING",
+  "ELECTRICAL",
+  "HVAC",
+  "STRUCTURAL",
+  "CLEANING",
+  "SECURITY",
+  "GENERAL",
+  "UNKNOWN",
+] as const;
+
 export const csrfStorageKey = "facilityops.csrfToken";

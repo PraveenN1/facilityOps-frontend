@@ -2,7 +2,7 @@
 
 ## Current Status
 
-Task 012C-MANAGER final manager workflow correctness and UX fixes are implemented and verified with generated API types, TypeScript checking, unit/component tests, production build, and diff check. Full browser visual verification was not performed in this pass.
+Task 012C-MANAGER final manager workflow correctness and UX fixes are implemented and verified with generated API types, TypeScript checking, unit/component tests, production build, and diff check. The manager triage category input is now constrained to approved category values. Full browser visual verification was not performed in this pass.
 
 ## Completed
 
@@ -56,6 +56,7 @@ Task 012C-MANAGER final manager workflow correctness and UX fixes are implemente
 - Workflow indicators map approved incident states to readable labels with restrained Lucide icons. AI status remains independent from workflow state; `PROCESSED` without a persisted validated result is shown as processed without a recommendation.
 - Queue styling preserves the operations-console light/dark palette, uses stable grid columns on desktop, and stacks summary/status content on narrower screens without exposing routine UUIDs as primary labels.
 - Task 012C-MANAGER aligned frontend technician grouping with backend canonical category-to-skill matching so a `Plumbing` incident category matches a technician skill of `PLUMBING`.
+- The manager manual-triage form now uses an approved category dropdown (`PLUMBING`, `ELECTRICAL`, `HVAC`, `STRUCTURAL`, `CLEANING`, `SECURITY`, `GENERAL`, `UNKNOWN`) instead of free text.
 - Manager overview now labels the embedded section as `Incident queue` and removes developer-facing copy about server pagination and global metric calculation.
 - Manager incident detail hides routine assignment IDs, shows compact no-assignment states for pending/pre-dispatch incidents, and avoids implying that no historical assignment existed after resolution or closure.
 - Safety presentation now uses backend-visible AI assessment hazard/escalation signals only. The frontend no longer classifies danger from complaint keywords and still does not clear hazards client-side.
@@ -118,6 +119,11 @@ Task 012C-MANAGER final manager workflow correctness and UX fixes are implemente
 - Task 012C-MANAGER `npm test` passed: 8 test files and 57 tests passed. React Router future-flag warnings were emitted by the test environment.
 - Task 012C-MANAGER `npm run build` passed: TypeScript project build and Vite production build completed successfully.
 - Task 012C-MANAGER frontend `git diff --check` passed with Git LF-to-CRLF conversion warnings only.
+- Task 012C-MANAGER category-dropdown follow-up focused tests passed: `npx vitest run src/pages/IncidentDetailPage.test.tsx` reported 1 test file and 25 tests passed.
+- Task 012C-MANAGER category-dropdown follow-up `npm run typecheck` passed.
+- Task 012C-MANAGER category-dropdown follow-up `npm test` passed: 8 test files and 58 tests passed. React Router future-flag warnings were emitted by the test environment.
+- Task 012C-MANAGER category-dropdown follow-up `npm run build` passed.
+- Task 012C-MANAGER category-dropdown follow-up `git diff --check` passed with Git LF-to-CRLF conversion warnings only.
 
 ## Remaining
 

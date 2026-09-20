@@ -196,6 +196,33 @@ describe("IncidentDetailPage", () => {
 
     await waitFor(() => expect(screen.getByText(/manual review has not been completed yet/i)).toBeInTheDocument());
     expect(screen.getByRole("button", { name: /confirm triage/i })).toBeInTheDocument();
+    const categorySelect = screen.getByLabelText(/confirmed category/i);
+    expect(categorySelect.tagName).toBe("SELECT");
+    expect(within(categorySelect).getByRole("option", { name: "PLUMBING" })).toBeInTheDocument();
+    expect(within(categorySelect).getByRole("option", { name: "UNKNOWN" })).toBeInTheDocument();
+  });
+
+  it("submits only approved triage category values from the category dropdown", async () => {
+    const user = userEvent.setup();
+    let submittedBody: Record<string, unknown> | null = null;
+    vi.spyOn(globalThis, "fetch").mockImplementation((input, init) => {
+      const url = requestUrl(input);
+      if (url.includes("/api/v1/auth/me")) return jsonResponse(mockSession("FACILITY_MANAGER"));
+      if (url.includes("/api/v1/buildings")) return jsonResponse({ items: [{ id: buildingId, name: "Demo Tower" }] });
+      if (url.includes(`/api/v1/incidents/${incidentId}/manual-triage`) && init?.method === "POST") {
+        submittedBody = JSON.parse(String(init.body));
+        return jsonResponse(incident({ status: "AWAITING_ASSIGNMENT", category: "PLUMBING", priority: "MEDIUM", version: 3, active_assignment: null }));
+      }
+      if (url.includes(`/api/v1/incidents/${incidentId}`)) return jsonResponse(incident({ status: "PENDING_TRIAGE", category: null, priority: "MEDIUM", version: 2, active_assignment: null }));
+      return jsonResponse({ detail: "unexpected request" }, 500);
+    });
+
+    renderWithProviders(<IncidentDetailPage />, { initialEntries: [`/incidents/${incidentId}`], routePath: "/incidents/:incidentId" });
+
+    fireEvent.change(await screen.findByLabelText(/confirmed category/i), { target: { value: "PLUMBING" } });
+    await user.click(screen.getByRole("button", { name: /confirm triage/i }));
+
+    await waitFor(() => expect(submittedBody?.category).toBe("PLUMBING"));
   });
 
   it("shows reporter-friendly request detail without manager workflow controls", async () => {
@@ -301,7 +328,9 @@ describe("IncidentDetailPage", () => {
     renderWithProviders(<IncidentDetailPage />, { initialEntries: [`/incidents/${incidentId}`], routePath: "/incidents/:incidentId" });
 
     await waitFor(() => expect(screen.getByText("Recommended category")).toBeInTheDocument());
-    expect(screen.getByText("HVAC")).toBeInTheDocument();
+    const aiPanel = screen.getByText("AI assessment").closest("article");
+    expect(aiPanel).not.toBeNull();
+    expect(within(aiPanel as HTMLElement).getByText("HVAC")).toBeInTheDocument();
     expect(screen.getByText("Conference room is too warm with weak airflow.")).toBeInTheDocument();
     expect(screen.getByText("groq:openai/gpt-oss-20b")).toBeInTheDocument();
   });

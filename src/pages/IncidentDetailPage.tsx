@@ -14,7 +14,7 @@ import {
   resolveIncident,
   startIncident,
 } from "../api/client";
-import { incidentPriorities } from "../api/config";
+import { incidentPriorities, triageCategories } from "../api/config";
 import type { IncidentDetailResponse, TechnicianListItem } from "../api/types";
 import { useAuth } from "../state/AuthContext";
 import { useBuildingSelection } from "../state/BuildingContext";
@@ -298,7 +298,8 @@ function HumanDecision({ incident, canReview, onChanged }: { incident: IncidentD
 
 function ManualTriageForm({ incident, onChanged }: { incident: IncidentDetailResponse; onChanged: () => void }) {
   const recommendation = incident.latest_triage_result?.validated_result;
-  const [category, setCategory] = useState(recommendation?.category ?? incident.category ?? "");
+  const recommendedCategory = recommendation?.category ?? incident.category;
+  const [category, setCategory] = useState(triageCategories.includes(recommendedCategory as typeof triageCategories[number]) ? recommendedCategory ?? "" : "");
   const [priority, setPriority] = useState(recommendation?.suggested_priority ?? incident.priority);
   const [suspectedHazard, setSuspectedHazard] = useState(false);
   const [notes, setNotes] = useState("");
@@ -311,7 +312,10 @@ function ManualTriageForm({ incident, onChanged }: { incident: IncidentDetailRes
   return (
     <form className="stack subsection" onSubmit={(event: FormEvent<HTMLFormElement>) => { event.preventDefault(); mutation.mutate(); }}>
       <div className="form-grid">
-        <label className="field-label">Confirmed category<input required className="field-input" value={category} onChange={(event) => setCategory(event.target.value)} /></label>
+        <label className="field-label">Confirmed category<select required className="field-input" value={category} onChange={(event) => setCategory(event.target.value)}>
+          <option value="">Select category</option>
+          {triageCategories.map((item) => <option key={item} value={item}>{item}</option>)}
+        </select></label>
         <label className="field-label">Confirmed priority<select className="field-input" value={priority} onChange={(event) => setPriority(event.target.value as typeof priority)}>{incidentPriorities.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
       </div>
       <label className="field-label">Review notes<textarea className="field-input" value={notes} onChange={(event) => setNotes(event.target.value)} /></label>
