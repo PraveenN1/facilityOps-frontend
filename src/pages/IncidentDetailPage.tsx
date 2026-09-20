@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { FormEvent } from "react";
 import { useMemo, useState } from "react";
-import { BrainCircuit, CheckCircle2, Clock3, Users, Wrench } from "lucide-react";
+import { BrainCircuit, CheckCircle2, Clock3, ClipboardCheck, Wrench, Users } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 
 import {
@@ -21,7 +21,7 @@ import { useBuildingSelection } from "../state/BuildingContext";
 import { EmptyState, ErrorState, LoadingState } from "../ui/AsyncState";
 import { StatusBadge } from "../ui/StatusBadge";
 import { formatDateTime } from "../utils/format";
-import { nextStepForStatus, reporterProgressSteps, reporterStatusLabel } from "./ReporterWorkspacePage";
+import { nextStepForStatus, reporterProgressIndex, reporterProgressSteps, reporterStatusLabel } from "./ReporterWorkspacePage";
 
 const triageableStatuses = new Set(["PENDING_TRIAGE", "MANUAL_REVIEW"]);
 const assignmentStatuses = new Set(["ASSIGNED", "IN_PROGRESS"]);
@@ -123,54 +123,93 @@ function ReporterIncidentDetail({
   isLoading: boolean;
   error: Error | null;
 }) {
+  const statusLabel = incident ? reporterStatusLabel(incident.status) : "Loading request";
+  const nextStep = incident ? nextStepForStatus(incident.status) : "Loading the latest request state.";
+  const assignedTechnician = incident?.active_assignment?.technician_display_name;
+
   return (
-    <section className="narrow-page stack-lg">
+    <section className="reporter-detail-page stack-lg">
       <div className="section-heading">
         <div>
           <Link to="/" className="text-link">Back to my requests</Link>
           <p className="eyebrow">Request detail</p>
           <h2>{incident ? incident.complaint_description : "Loading request"}</h2>
-          <p className="muted-copy">{incident ? `Ticket ${incident.public_ticket_id}` : "Loading ticket reference"}</p>
+          <p className="muted-copy">{incident ? `Ticket ${incident.public_ticket_id}` : `Loading request ${incidentId}`}</p>
         </div>
-        {incident ? <StatusBadge status={reporterStatusLabel(incident.status)} /> : null}
+        {incident ? <StatusBadge status={statusLabel} /> : null}
       </div>
 
       {isLoading ? <LoadingState label="Loading request" /> : null}
       {error ? <ErrorState title="Request could not be loaded" detail={error.message} /> : null}
 
       {incident ? (
-        <article className={`panel stack request-detail priority-edge priority-${incident.priority.toLowerCase()}`}>
-          <div>
-            <p className="eyebrow">Current progress</p>
-            <h3>{reporterStatusLabel(incident.status)}</h3>
-            <p className="body-copy">{nextStepForStatus(incident.status)}</p>
-          </div>
-          <ReporterProgress status={incident.status} />
-          <dl className="definition-grid">
-            <div><dt>Building</dt><dd>{buildingName ?? "Authorized building"}</dd></div>
-            <div><dt>Submitted</dt><dd>{formatDateTime(incident.created_at)}</dd></div>
-            <div><dt>Last updated</dt><dd>{formatDateTime(incident.updated_at)}</dd></div>
-            <div><dt>Ticket</dt><dd className="mono-cell">{incident.public_ticket_id}</dd></div>
-          </dl>
-          <div className="subsection">
-            <h3>What you reported</h3>
+        <div className="reporter-detail-grid">
+          <article className={`panel stack request-hero priority-edge priority-${incident.priority.toLowerCase()}`}>
+            <div className="request-hero-topline">
+              <span className="mono-cell">{incident.public_ticket_id}</span>
+              <StatusBadge status={statusLabel} />
+            </div>
+            <div>
+              <p className="eyebrow">Request header</p>
+              <h3>{incident.complaint_description}</h3>
+              <p className="body-copy">{nextStep}</p>
+            </div>
+          </article>
+
+          <article className="panel stack reporter-progress-panel">
+            <div>
+              <p className="eyebrow">Current progress</p>
+              <h3 className="icon-heading"><ClipboardCheck aria-hidden size={18} />{statusLabel}</h3>
+              <p className="muted-copy">This is the current request state, not an audited timeline.</p>
+            </div>
+            <ReporterProgress status={incident.status} />
+          </article>
+
+          <article className="panel stack">
+            <div>
+              <p className="eyebrow">What did I report?</p>
+              <h3>Original request</h3>
+            </div>
             <p className="body-copy complaint-lead">{incident.complaint_description}</p>
-          </div>
-        </article>
+            <dl className="definition-grid">
+              <div><dt>Ticket</dt><dd className="mono-cell">{incident.public_ticket_id}</dd></div>
+              <div><dt>Building</dt><dd>{buildingName ?? "Authorized building"}</dd></div>
+              <div><dt>Submitted</dt><dd>{formatDateTime(incident.created_at)}</dd></div>
+              <div><dt>Last updated</dt><dd>{formatDateTime(incident.updated_at)}</dd></div>
+            </dl>
+          </article>
+
+          <article className="panel stack">
+            <div>
+              <p className="eyebrow">What happens next?</p>
+              <h3>{statusLabel}</h3>
+            </div>
+            <p className="info-note">{nextStep}</p>
+            {assignedTechnician ? <p className="body-copy">Assigned technician: <strong>{assignedTechnician}</strong></p> : null}
+            {incident.status === "RESOLVED" || incident.status === "CLOSED" ? (
+              <p className="muted-copy">The current API does not expose resolution notes or full assignment history.</p>
+            ) : null}
+          </article>
+        </div>
       ) : null}
     </section>
   );
 }
 
-function ReporterProgress({ status }: { status: string }) {
-  const currentIndex = Math.max(0, reporterProgressSteps.findIndex((step) => step.statuses.includes(status)));
+export function ReporterProgress({ status }: { status: string }) {
+  const currentIndex = reporterProgressIndex(status);
   return (
     <ol className="request-progress" aria-label="Request progress">
       {reporterProgressSteps.map((step, index) => {
         const complete = index < currentIndex;
         const current = index === currentIndex;
         return (
-          <li key={step.label} className={current ? "current" : complete ? "complete" : ""} aria-current={current ? "step" : undefined}>
+          <li
+            key={step.label}
+            className={current ? "current" : complete ? "complete" : "upcoming"}
+            aria-current={current ? "step" : undefined}
+            data-state={current ? "current" : complete ? "complete" : "upcoming"}
+          >
             <span aria-hidden="true">{complete ? <CheckCircle2 size={16} /> : <Clock3 size={16} />}</span>
             <span>{step.label}</span>
           </li>
@@ -179,7 +218,6 @@ function ReporterProgress({ status }: { status: string }) {
     </ol>
   );
 }
-
 function OriginalComplaint({ incident, buildingName }: { incident: IncidentDetailResponse; buildingName: string | null | undefined }) {
   const hazardSignal = hasSafetySignal(incident);
   return (

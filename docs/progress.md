@@ -2,7 +2,7 @@
 
 ## Current Status
 
-Task 014D frontend contract integration is implemented. The frontend now consumes backend public ticket references, human-readable display names, reporter display names, and AI terminal states from the regenerated OpenAPI contract. TypeScript checking and the component/unit test suite have passed; production build, backend smoke, and diff check are recorded below. Full browser visual verification was not performed in this pass.
+Task 014E reporter and technician workflow UX corrections are implemented. Reporter screens now emphasize public ticket tracking and plain-language status progression, while technician screens use authenticated display names, state-specific work-order actions, and server-confirmed resolution feedback. TypeScript checking, component/unit tests, production build, backend smoke, and diff check passed; full browser automation was not available in this pass.
 
 ## Completed
 
@@ -65,6 +65,10 @@ Task 014D frontend contract integration is implemented. The frontend now consume
 - Public ticket references from `public_ticket_id` are now the user-facing identifier in reporter request cards/details, manager queue/details, and technician work-order cards/resolution confirmation. Internal UUIDs remain in routes, mutations, and TanStack Query keys.
 - The authenticated shell now displays backend `display_name` as the primary identity label with role as secondary context. Technician dispatch and active assignment views continue to use backend-provided technician display names, and manager incident detail shows `reporter_display_name` when available.
 - AI status rendering now explicitly handles `SKIPPED_OBSOLETE` as skipped after human review and `PROCESSED_NO_RESULT` as processed without a persisted recommendation. The UI does not treat either status as a validated AI recommendation.
+- Task 014E refined reporter request cards, complaint submission confirmation, and reporter incident detail so `public_ticket_id` is the visible tracking reference and retry/idempotency internals stay hidden.
+- Reporter request detail now shows a current-state progress tracker derived only from incident status, next-step copy, original report details, and explicit notes when the backend does not expose assignment or resolution history.
+- Technician workspace now displays the authenticated technician display name, improved work-order cards, public ticket links, original complaint context, and state-specific actions: Start only for `ASSIGNED`, Resolve only for `IN_PROGRESS`.
+- Technician resolution continues to rely on successful server responses before showing confirmation, refetches active work, and preserves the empty active-work state without fabricating completed-work history.
 
 ## API Contract Notes
 
@@ -137,6 +141,12 @@ Task 014D frontend contract integration is implemented. The frontend now consume
 - Task 014D `npm run build` passed: TypeScript project build and Vite production build completed successfully.
 - Task 014D `npm run smoke:backend` passed: `Backend health check passed.` The live backend on port 8000 responded, but its `/openapi.json` did not include `public_ticket_id`, `reporter_display_name`, `SKIPPED_OBSOLETE`, or `PROCESSED_NO_RESULT`, indicating the running backend process is stale relative to the exported source OpenAPI used for type generation.
 - Task 014D `git diff --check` passed with Git LF-to-CRLF conversion warnings only.
+- Task 014E focused reporter/detail/technician checks were covered by the full test suite after a direct `npx vitest` rerun was not approved; `npm test` passed with 8 test files and 63 tests passed.
+- Task 014E `npm run generate:api` passed and regenerated `src/api/generated.ts` from `openapi/facilityops-openapi.json`.
+- Task 014E `npm run typecheck` passed.
+- Task 014E `npm run build` passed: TypeScript project build and Vite production build completed successfully.
+- Task 014E `npm run smoke:backend` passed: `Backend health check passed.`
+- Task 014E `git diff --check` passed with Git LF-to-CRLF conversion warnings only.
 
 ## Remaining
 

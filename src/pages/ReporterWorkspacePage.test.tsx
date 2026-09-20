@@ -1,7 +1,8 @@
 import { screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { ComplaintCreatePage, ReporterWorkspacePage, reporterProgressSteps, reporterStatusLabel } from "./ReporterWorkspacePage";
+import { ComplaintCreatePage, ReporterWorkspacePage, reporterProgressIndex, reporterProgressSteps, reporterStatusLabel } from "./ReporterWorkspacePage";
 import { renderWithProviders } from "../test/test-utils";
 
 const buildingId = "10000000-0000-0000-0000-000000000001";
@@ -13,7 +14,7 @@ function jsonResponse(body: unknown, status = 200) {
 function mockReporterFetch(listBody: unknown = { total: 0, limit: 20, offset: 0, items: [] }) {
   return vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
     const url = input instanceof Request ? input.url : String(input);
-    if (url.includes("/api/v1/auth/me")) return jsonResponse({ id: "reporter-id", email: "reporter.demo@facilityops.local", role: "REPORTER", buildings: [{ id: buildingId, name: "Demo Tower" }] });
+    if (url.includes("/api/v1/auth/me")) return jsonResponse({ id: "reporter-id", email: "reporter.demo@facilityops.local", display_name: "Priya Nair", role: "REPORTER", buildings: [{ id: buildingId, name: "Demo Tower" }] });
     if (url.includes("/api/v1/buildings")) return jsonResponse({ items: [{ id: buildingId, name: "Demo Tower" }] });
     if (url.includes("/api/v1/complaints")) return jsonResponse(listBody);
     return jsonResponse({ detail: "unexpected request" }, 500);
@@ -26,7 +27,7 @@ describe("ReporterWorkspacePage", () => {
     window.localStorage.clear();
   });
 
-  it("renders reporter-friendly request cards", async () => {
+  it("renders reporter-friendly request cards with public ticket IDs", async () => {
     mockReporterFetch({
       total: 1,
       limit: 20,
@@ -48,10 +49,51 @@ describe("ReporterWorkspacePage", () => {
     renderWithProviders(<ReporterWorkspacePage />);
 
     await waitFor(() => expect(screen.getByText("Conference room is too warm with weak airflow")).toBeInTheDocument());
-    expect(screen.getByText(/Ticket FO-2026-000501/i)).toBeInTheDocument();
+    expect(screen.getByText("FO-2026-000501")).toBeInTheDocument();
     expect(screen.getByText(/Demo Tower/i)).toBeInTheDocument();
     expect(screen.getByText("Technician being arranged")).toBeInTheDocument();
-    expect(screen.getByText(/facility team has reviewed your request/i)).toBeInTheDocument();
+    expect(screen.getByText(/Your request has been reviewed/i)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /view details for ticket FO-2026-000501/i })).toHaveAttribute("href", "/incidents/30000000-0000-0000-0000-000000000001");
+  });
+
+  it("shows an empty state with a create request action", async () => {
+    mockReporterFetch();
+
+    renderWithProviders(<ReporterWorkspacePage />);
+
+    await waitFor(() => expect(screen.getByText("No requests yet")).toBeInTheDocument());
+    expect(screen.getByRole("link", { name: /create request/i })).toHaveAttribute("href", "/complaints/new");
+  });
+
+  it("shows server-confirmed request success with public ticket ID", async () => {
+    let created = false;
+    vi.spyOn(globalThis, "fetch").mockImplementation((input, init) => {
+      const url = input instanceof Request ? input.url : String(input);
+      if (url.includes("/api/v1/auth/me")) return jsonResponse({ id: "reporter-id", email: "reporter.demo@facilityops.local", display_name: "Priya Nair", role: "REPORTER", buildings: [{ id: buildingId, name: "Demo Tower" }] });
+      if (url.includes("/api/v1/buildings")) return jsonResponse({ items: [{ id: buildingId, name: "Demo Tower" }] });
+      if (url.includes("/api/v1/complaints") && init?.method === "POST") {
+        created = true;
+        return jsonResponse({ complaint_id: "complaint-id", public_ticket_id: "FO-2026-000777", incident_id: "incident-id", status: "PENDING_TRIAGE" }, 202);
+      }
+      if (url.includes("/api/v1/complaints")) return jsonResponse({ total: 0, limit: 20, offset: 0, items: [] });
+      return jsonResponse({ detail: "unexpected request" }, 500);
+    });
+
+    const user = userEvent.setup();
+    renderWithProviders(<ComplaintCreatePage />);
+
+    await screen.findByRole("option", { name: "Demo Tower" });
+    await user.selectOptions(screen.getByLabelText(/building/i), buildingId);
+    await user.type(screen.getByLabelText(/maintenance request/i), "Water is pooling near the loading dock.");
+    const submit = screen.getByRole("button", { name: /submit request/i });
+    await waitFor(() => expect(submit).toBeEnabled());
+    await user.click(submit);
+
+    await waitFor(() => expect(created).toBe(true));
+    expect(await screen.findByText("Request submitted")).toBeInTheDocument();
+    expect(screen.getByText("FO-2026-000777")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /view request/i })).toHaveAttribute("href", "/incidents/incident-id");
+    expect(screen.queryByText(/idempotency/i)).not.toBeInTheDocument();
   });
 
   it("keeps retry identifiers hidden on the new request form", async () => {
@@ -67,18 +109,22 @@ describe("ReporterWorkspacePage", () => {
     expect(screen.queryByText(/primary incident/i)).not.toBeInTheDocument();
   });
 
-  it("maps backend statuses to consistent reporter labels", () => {
+  it("maps backend statuses to consistent reporter labels and progress positions", () => {
     expect(reporterStatusLabel("PENDING_TRIAGE")).toBe("Under review");
     expect(reporterStatusLabel("MANUAL_REVIEW")).toBe("Under review");
     expect(reporterStatusLabel("AWAITING_ASSIGNMENT")).toBe("Technician being arranged");
-    expect(reporterStatusLabel("RESOLVED")).toBe("Work completed, awaiting closure");
+    expect(reporterStatusLabel("RESOLVED")).toBe("Work completed");
     expect(reporterProgressSteps.map((step) => step.label)).toEqual([
+      "Submitted",
       "Under review",
-      "Technician being arranged",
+      "Awaiting technician",
       "Technician assigned",
       "Work in progress",
       "Work completed",
       "Closed",
     ]);
+    expect(reporterProgressIndex("MANUAL_REVIEW")).toBe(1);
+    expect(reporterProgressIndex("AWAITING_ASSIGNMENT")).toBe(2);
+    expect(reporterProgressIndex("CLOSED")).toBe(6);
   });
 });

@@ -241,13 +241,51 @@ describe("IncidentDetailPage", () => {
     await waitFor(() => expect(screen.getAllByText("Technician being arranged").length).toBeGreaterThanOrEqual(1));
     const progress = screen.getByRole("list", { name: /request progress/i });
     expect(within(progress).getByText("Under review")).toBeInTheDocument();
-    expect(within(progress).getByText("Technician being arranged")).toBeInTheDocument();
-    expect(screen.getByText(/facility team has reviewed your request and is arranging a technician/i)).toBeInTheDocument();
+    expect(within(progress).getByText("Awaiting technician")).toBeInTheDocument();
+    expect(screen.getAllByText(/Your request has been reviewed. A technician is being arranged/i).length).toBeGreaterThanOrEqual(1);
     expect(screen.queryByText("AI assessment")).not.toBeInTheDocument();
     expect(screen.queryByText("Human-confirmed decision")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /confirm triage/i })).not.toBeInTheDocument();
   });
 
+  it("shows reporter public ticket and current-state progress semantics", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
+      const url = requestUrl(input);
+      if (url.includes("/api/v1/auth/me")) return jsonResponse({ id: "reporter-id", email: "reporter.demo@facilityops.local", display_name: "Priya Nair", role: "REPORTER", buildings: [{ id: buildingId, name: "Demo Tower" }] });
+      if (url.includes("/api/v1/buildings")) return jsonResponse({ items: [{ id: buildingId, name: "Demo Tower" }] });
+      if (url.includes(`/api/v1/incidents/${incidentId}`)) return jsonResponse(incident({ status: "MANUAL_REVIEW", ai_triage_status: "SKIPPED_OBSOLETE", active_assignment: null }));
+      return jsonResponse({ detail: "unexpected request" }, 500);
+    });
+
+    renderWithProviders(<IncidentDetailPage />, { initialEntries: [`/incidents/${incidentId}`], routePath: "/incidents/:incidentId" });
+
+    await waitFor(() => expect(screen.getAllByText("FO-2026-000201").length).toBeGreaterThanOrEqual(1));
+    const progress = screen.getByRole("list", { name: /request progress/i });
+    expect(within(progress).getByText("Submitted").closest("li")).toHaveAttribute("data-state", "complete");
+    expect(within(progress).getByText("Under review").closest("li")).toHaveAttribute("data-state", "current");
+    expect(within(progress).getByText("Awaiting technician").closest("li")).toHaveAttribute("data-state", "upcoming");
+    expect(screen.queryByText(/AI assessment/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/\bETA\b/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/arrival/i)).not.toBeInTheDocument();
+  });
+
+  it("shows closed reporter progress without fabricating history", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
+      const url = requestUrl(input);
+      if (url.includes("/api/v1/auth/me")) return jsonResponse({ id: "reporter-id", email: "reporter.demo@facilityops.local", display_name: "Priya Nair", role: "REPORTER", buildings: [{ id: buildingId, name: "Demo Tower" }] });
+      if (url.includes("/api/v1/buildings")) return jsonResponse({ items: [{ id: buildingId, name: "Demo Tower" }] });
+      if (url.includes(`/api/v1/incidents/${incidentId}`)) return jsonResponse(incident({ status: "CLOSED", active_assignment: null }));
+      return jsonResponse({ detail: "unexpected request" }, 500);
+    });
+
+    renderWithProviders(<IncidentDetailPage />, { initialEntries: [`/incidents/${incidentId}`], routePath: "/incidents/:incidentId" });
+
+    await waitFor(() => expect(screen.getAllByText("Closed").length).toBeGreaterThanOrEqual(1));
+    const progress = screen.getByRole("list", { name: /request progress/i });
+    expect(within(progress).getByText("Closed").closest("li")).toHaveAttribute("data-state", "current");
+    expect(screen.getByText(/does not expose resolution notes or full assignment history/i)).toBeInTheDocument();
+    expect(screen.queryByText(/assigned at/i)).not.toBeInTheDocument();
+  });
   it("shows AI timeout history alongside completed manual triage", async () => {
     vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
       const url = requestUrl(input);

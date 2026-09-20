@@ -1,10 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, Wrench } from "lucide-react";
+import { Building2, CalendarClock, CheckCircle2, ClipboardList, Wrench } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useRef, useState } from "react";
 
 import { isApiError, listMyWork, resolveIncident, startIncident } from "../api/client";
 import type { TechnicianWorkItem } from "../api/types";
+import { useAuth } from "../state/AuthContext";
 import { useBuildingSelection } from "../state/BuildingContext";
 import { EmptyState, ErrorState, LoadingState } from "../ui/AsyncState";
 import { StatusBadge } from "../ui/StatusBadge";
@@ -18,6 +19,7 @@ interface ResolutionConfirmation {
 
 export function TechnicianWorkspacePage() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const { buildings } = useBuildingSelection();
   const [resolvedJob, setResolvedJob] = useState<ResolutionConfirmation | null>(null);
   const workQuery = useQuery({ queryKey: ["technician", "my-work"], queryFn: listMyWork });
@@ -36,7 +38,7 @@ export function TechnicianWorkspacePage() {
         <div>
           <p className="eyebrow">Technician workspace</p>
           <h2>My assigned work</h2>
-          <p className="muted-copy">Only active work assigned to your authenticated technician profile.</p>
+          <p className="muted-copy">{user?.display_name ?? user?.email ?? "Technician"} · active assigned and in-progress work only.</p>
         </div>
       </div>
 
@@ -144,23 +146,24 @@ function WorkCard({
           <div>
             <p className="eyebrow">Work order</p>
             <h3>{item.complaint_description}</h3>
+            <Link to={`/incidents/${item.id}`} className="mono-link work-ticket-link" aria-label={`Open ticket ${item.public_ticket_id}`}>
+              {item.public_ticket_id}
+            </Link>
           </div>
-          <StatusBadge status={item.status} />
+          <div className="work-status-stack">
+            <StatusBadge status={item.status} />
+            <StatusBadge status={item.priority} />
+          </div>
+        </div>
+        <div className="work-complaint-block">
+          <p className="eyebrow">Original complaint</p>
+          <p className="body-copy">{item.complaint_description}</p>
         </div>
         <dl className="work-order-meta">
-          <div>
-            <dt>Reference</dt>
-            <dd>
-              <Link to={`/incidents/${item.id}`} className="mono-link" aria-label={`Open ticket ${item.public_ticket_id}`}>
-                {item.public_ticket_id}
-              </Link>
-            </dd>
-          </div>
-          <div><dt>Building</dt><dd>{buildingName}</dd></div>
-          <div><dt>Category</dt><dd>{item.category ?? "Uncategorized"}</dd></div>
-          <div><dt>Priority</dt><dd>{item.priority}</dd></div>
+          <div><dt><Building2 aria-hidden size={14} />Building</dt><dd>{buildingName}</dd></div>
+          <div><dt><ClipboardList aria-hidden size={14} />Category</dt><dd>{item.category ?? "Uncategorized"}</dd></div>
           <div><dt>Status</dt><dd>{item.status.replaceAll("_", " ")}</dd></div>
-          <div><dt>Created</dt><dd>{formatDateTime(item.created_at)}</dd></div>
+          <div><dt><CalendarClock aria-hidden size={14} />Created</dt><dd>{formatDateTime(item.created_at)}</dd></div>
         </dl>
       </div>
 

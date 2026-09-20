@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { ClipboardList, Loader2, TriangleAlert } from "lucide-react";
 
 export function LoadingState({ label = "Loading" }: { label?: string }) {
@@ -19,12 +20,13 @@ export function ErrorState({ title = "Something went wrong", detail }: { title?:
   );
 }
 
-export function EmptyState({ title, detail }: { title: string; detail: string }) {
+export function EmptyState({ title, detail, action }: { title: string; detail: string; action?: ReactNode }) {
   return (
     <div className="empty-state">
       <ClipboardList aria-hidden size={22} />
       <p className="font-semibold">{title}</p>
       <p className="mt-1 text-sm">{detail}</p>
+      {action ? <div className="empty-action">{action}</div> : null}
     </div>
   );
 }
