@@ -71,6 +71,11 @@ describe("IncidentDashboardPage", () => {
     const row = await screen.findByRole("link", { name: /open incident FO-2026-000315/i });
     expect(row).toHaveTextContent("FO-2026-000315");
     expect(screen.queryByText("00000000-0000-0000-0000-000000000010")).not.toBeInTheDocument();
+    expect(within(row).getAllByText("Demo Tower").length).toBeGreaterThanOrEqual(1);
+    expect(row).toHaveTextContent("ELECTRICAL");
+    expect(row).toHaveTextContent("HIGH");
+    expect(row).toHaveTextContent("Open");
+    expect(screen.queryByPlaceholderText(/search/i)).not.toBeInTheDocument();
     expect(screen.getByRole("list", { name: /incident queue/i })).toBeInTheDocument();
     expect(row).toHaveAttribute("href", "/incidents/00000000-0000-0000-0000-000000000010");
   });
@@ -114,7 +119,7 @@ describe("IncidentDashboardPage", () => {
 
     renderWithProviders(<IncidentDashboardPage />);
 
-    fireEvent.change(await screen.findByLabelText(/status filter/i), { target: { value: "IN_PROGRESS" } });
+    fireEvent.click(await screen.findByRole("button", { name: /in progress/i }));
 
     await waitFor(() =>
       expect(fetchMock.mock.calls.some(([input]) => requestUrl(input).includes("status=IN_PROGRESS"))).toBe(true),
@@ -164,13 +169,15 @@ describe("IncidentDashboardPage", () => {
       total: 1,
       limit: 10,
       offset: 0,
-      items: [incident({ status: "SAFETY_ESCALATED", ai_triage_status: "SKIPPED_OBSOLETE" })],
+      items: [incident({ status: "SAFETY_ESCALATED", category: null, priority: "MEDIUM", ai_triage_status: "SKIPPED_OBSOLETE" })],
     });
 
     renderWithProviders(<IncidentDashboardPage />);
 
     const row = await screen.findByRole("link", { name: /open incident/i });
     expect(within(row).getByText("Safety escalated")).toHaveClass("status-badge");
+    expect(within(row).getAllByText("Not confirmed").length).toBeGreaterThanOrEqual(2);
+    expect(row).not.toHaveTextContent("Uncategorized");
     expect(row).toHaveTextContent("AI skipped after human review");
   });
 
@@ -185,7 +192,7 @@ describe("IncidentDashboardPage", () => {
     renderWithProviders(<IncidentDashboardPage />);
 
     await waitFor(() => {
-      expect(screen.getByText("Awaiting assignment")).toBeInTheDocument();
+      expect(screen.getAllByText("Awaiting assignment").length).toBeGreaterThanOrEqual(1);
       expect(screen.getByText("AI pending")).toBeInTheDocument();
     });
     const row = await screen.findByRole("link", { name: /open incident/i });

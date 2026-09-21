@@ -315,7 +315,7 @@ describe("IncidentDetailPage", () => {
     expect(screen.getAllByText(/Your request has been reviewed. A technician is being arranged/i).length).toBeGreaterThanOrEqual(1);
     expect(screen.queryByText(/audited timeline/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/current API/i)).not.toBeInTheDocument();
-    expect(screen.queryByText("AI assessment")).not.toBeInTheDocument();
+    expect(screen.queryByText("AI recommendation")).not.toBeInTheDocument();
     expect(screen.queryByText("Human-confirmed decision")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /confirm maintenance triage/i })).not.toBeInTheDocument();
   });
@@ -337,7 +337,7 @@ describe("IncidentDetailPage", () => {
     expect(within(progress).getByText("Submitted").closest("li")).toHaveAttribute("data-state", "complete");
     expect(within(progress).getByText("Under review").closest("li")).toHaveAttribute("data-state", "current");
     expect(within(progress).getByText("Awaiting technician").closest("li")).toHaveAttribute("data-state", "upcoming");
-    expect(screen.queryByText(/AI assessment/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/AI recommendation/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/\bETA\b/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/arrival/i)).not.toBeInTheDocument();
   });
@@ -443,7 +443,7 @@ describe("IncidentDetailPage", () => {
     renderWithProviders(<IncidentDetailPage />, { initialEntries: [`/incidents/${incidentId}`], routePath: "/incidents/:incidentId" });
 
     await waitFor(() => expect(screen.getByText("AI-suggested category")).toBeInTheDocument());
-    const aiPanel = screen.getByText("AI assessment").closest("article");
+    const aiPanel = screen.getByText("AI recommendation").closest("article");
     expect(aiPanel).not.toBeNull();
     expect(within(aiPanel as HTMLElement).getByText("HVAC")).toBeInTheDocument();
     expect(screen.getByText("Conference room is too warm with weak airflow.")).toBeInTheDocument();
@@ -502,7 +502,7 @@ describe("IncidentDetailPage", () => {
     expect(screen.queryByText("Uncategorized incident")).not.toBeInTheDocument();
     expect(screen.queryByText("Confirmed triage")).not.toBeInTheDocument();
 
-    const aiPanel = screen.getByText("AI assessment").closest("article");
+    const aiPanel = screen.getByText("AI recommendation").closest("article");
     expect(aiPanel).not.toBeNull();
     expect(within(aiPanel as HTMLElement).getByText("AI-suggested category")).toBeInTheDocument();
     expect(within(aiPanel as HTMLElement).getByText("AI-suggested priority")).toBeInTheDocument();
@@ -548,7 +548,9 @@ describe("IncidentDetailPage", () => {
     await waitFor(() => expect(screen.getByText("AI skipped after human review")).toBeInTheDocument());
     expect(screen.getByText("Operational category")).toBeInTheDocument();
     expect(screen.getByText("Operational priority")).toBeInTheDocument();
-    expect(screen.getAllByText("Not confirmed")).toHaveLength(2);
+    const complaintPanel = screen.getByText("Operational category").closest("article");
+    expect(complaintPanel).not.toBeNull();
+    expect(within(complaintPanel as HTMLElement).getAllByText("Not confirmed")).toHaveLength(2);
     expect(screen.queryByText("AI-suggested category")).not.toBeInTheDocument();
     expect(screen.queryByText("Confirmed triage")).not.toBeInTheDocument();
   });

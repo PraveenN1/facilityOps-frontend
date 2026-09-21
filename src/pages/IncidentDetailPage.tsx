@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { FormEvent } from "react";
 import { useMemo, useRef, useState } from "react";
-import { BrainCircuit, CheckCircle2, Clock3, ClipboardCheck, ShieldAlert, Wrench, Users } from "lucide-react";
+import { BrainCircuit, Building2, CheckCircle2, Clock3, ClipboardCheck, Flag, ShieldAlert, Tag, Wrench, Users } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 
 import {
@@ -79,13 +80,15 @@ export function IncidentDetailPage() {
     <section className="stack-lg">
       <div className="section-heading">
         <div>
-          <Link to="/" className="text-link">Back to workspace</Link>
+          <Link to="/incidents" className="text-link">Back to incident queue</Link>
           <p className="eyebrow">Incident detail</p>
           <h2>{incident ? incident.complaint_description : "Loading incident"}</h2>
           <p className="muted-copy">{incident ? `Ticket ${incident.public_ticket_id}` : "Loading ticket reference"}</p>
         </div>
         {incident ? <StatusBadge status={incident.status} /> : null}
       </div>
+
+      {incident ? <IncidentSummaryCards incident={incident} buildingName={buildingName} /> : null}
 
       {incidentQuery.isLoading ? <LoadingState label="Loading incident" /> : null}
       {incidentQuery.isError ? <ErrorState detail={incidentQuery.error.message} /> : null}
@@ -114,6 +117,28 @@ export function IncidentDetailPage() {
   );
 }
 
+function IncidentSummaryCards({ incident, buildingName }: { incident: IncidentDetailResponse; buildingName: string | null | undefined }) {
+  return (
+    <div className="incident-summary-grid" aria-label="Incident summary">
+      <SummaryCard icon={Building2} label="Building" value={buildingName ?? "Authorized building"} />
+      <SummaryCard icon={Clock3} label="Reported" value={formatDateTime(incident.created_at)} />
+      <SummaryCard icon={Tag} label="Category" value={incident.category ?? "Not confirmed"} />
+      <SummaryCard icon={Flag} label="Priority" value={operationalPriorityLabel(incident)} />
+    </div>
+  );
+}
+
+function SummaryCard({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: string }) {
+  return (
+    <article className="summary-card">
+      <Icon aria-hidden size={18} />
+      <div>
+        <span>{label}</span>
+        <strong>{value}</strong>
+      </div>
+    </article>
+  );
+}
 function ReporterIncidentDetail({
   incident,
   incidentId,
@@ -215,10 +240,10 @@ export function ReporterProgress({ status }: { status: string }) {
 }
 function OriginalComplaint({ incident, buildingName }: { incident: IncidentDetailResponse; buildingName: string | null | undefined }) {
   const hazardSignal = hasSafetySignal(incident);
-  const operationalClassificationUnconfirmed = incident.status === "SAFETY_ESCALATED" && !incident.category;
+  const operationalClassificationUnconfirmed = isOperationalClassificationUnconfirmed(incident);
   const detailHeading = incident.category ?? "Complaint details";
   const priorityLabel = operationalClassificationUnconfirmed ? "Operational priority" : "Priority";
-  const priorityValue = operationalClassificationUnconfirmed ? "Not confirmed" : incident.priority;
+  const priorityValue = operationalPriorityLabel(incident);
 
   return (
     <article className={`panel stack priority-edge priority-${incident.priority.toLowerCase()}`}>
@@ -306,7 +331,7 @@ function AiAssessment({ incident }: { incident: IncidentDetailResponse }) {
   return (
     <article className="panel stack ai-panel">
       <div className="section-heading compact">
-        <div><p className="eyebrow">AI assessment</p><h3 className="icon-heading"><BrainCircuit aria-hidden size={18} />Advisory recommendation</h3></div>
+        <div><p className="eyebrow">AI recommendation</p><h3 className="icon-heading"><BrainCircuit aria-hidden size={18} />Advisory recommendation</h3></div>
         <StatusBadge status={incident.ai_triage_status} ai />
       </div>
       {!incident.ai_triage_status ? <EmptyState title="Awaiting AI signal" detail="No triage result or outbox status is visible yet." /> : null}
@@ -333,7 +358,7 @@ function AiAssessment({ incident }: { incident: IncidentDetailResponse }) {
           <div className="wide"><dt>Potential hazards</dt><dd>{recommendation.potential_hazards.length ? recommendation.potential_hazards.join(", ") : "None provided"}</dd></div>
           <div className="wide"><dt>Safety notes</dt><dd>{recommendation.safety_notes.length ? recommendation.safety_notes.join(", ") : "None provided"}</dd></div>
           <div><dt>Needs human review</dt><dd>{recommendation.needs_human_review ? "Yes" : "No"}</dd></div>
-          {/* <div><dt>Model</dt><dd>{triage?.model_version ?? "Not reported"}</dd></div> */}
+          <div><dt>Model</dt><dd>{triage?.model_version ?? "Not reported"}</dd></div>
         </dl>
       ) : null}
     </article>
@@ -693,6 +718,13 @@ function canonicalSkill(value: string) {
   return value.trim().toUpperCase().replaceAll(" ", "_");
 }
 
+function isOperationalClassificationUnconfirmed(incident: Pick<IncidentDetailResponse, "status" | "category">) {
+  return incident.status === "SAFETY_ESCALATED" && !incident.category;
+}
+
+function operationalPriorityLabel(incident: Pick<IncidentDetailResponse, "status" | "category" | "priority">) {
+  return isOperationalClassificationUnconfirmed(incident) ? "Not confirmed" : incident.priority;
+}
 function hasSafetySignal(incident: IncidentDetailResponse) {
   const recommendation = incident.latest_triage_result?.validated_result;
   if (recommendation?.needs_human_review) return true;

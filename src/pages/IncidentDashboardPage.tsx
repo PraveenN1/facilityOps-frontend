@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, BrainCircuit, CheckCircle2, ClipboardList, Clock3, Filter, ShieldAlert, Wrench } from "lucide-react";
+import { ArrowRight, BrainCircuit, Building2, CheckCircle2, ClipboardList, Clock3, Flag, ShieldAlert, Tag, Wrench } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -35,6 +35,10 @@ export function IncidentDashboardPage({ embedded = false }: { embedded?: boolean
   const canGoForward = offset + pageSize < total;
   const authorizedBuildings = buildings.length > 0 ? buildings : user?.buildings ?? [];
   const buildingNameById = new Map(authorizedBuildings.map((building) => [building.id, building.name]));
+  const applyStatusFilter = (nextStatus: IncidentStatusValue | "") => {
+    setStatus(nextStatus);
+    setOffset(0);
+  };
 
   return (
     <section className={embedded ? "stack" : "stack-lg"}>
@@ -48,13 +52,22 @@ export function IncidentDashboardPage({ embedded = false }: { embedded?: boolean
         </div>
       ) : null}
       <div className="queue-toolbar">
-        <label className="field-label compact-field">
-          <span className="toolbar-label"><Filter aria-hidden size={15} />Status filter</span>
-          <select className="field-input" value={status} onChange={(event) => { setStatus(event.target.value as IncidentStatusValue | ""); setOffset(0); }}>
-            <option value="">All statuses</option>
-            {incidentStatuses.map((item) => <option key={item} value={item}>{item.replaceAll("_", " ")}</option>)}
-          </select>
-        </label>
+        <div className="stack-sm">
+          <p className="toolbar-label eyebrow">Status filter</p>
+          <div className="queue-filter-chips" role="group" aria-label="Status filter">
+            {statusFilters.map((item) => (
+              <button
+                key={item.value || "all"}
+                className={`queue-filter-chip ${status === item.value ? "active" : ""}`}
+                type="button"
+                aria-pressed={status === item.value}
+                onClick={() => applyStatusFilter(item.value)}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </div>
         <span className="queue-count">{total.toLocaleString()} incidents</span>
       </div>
       {incidentsQuery.isLoading ? <LoadingState label="Loading incidents" /> : null}
@@ -63,35 +76,43 @@ export function IncidentDashboardPage({ embedded = false }: { embedded?: boolean
       {incidentsQuery.data && incidentsQuery.data.items.length > 0 ? (
         <div className="queue-list">
           <div className="queue-header" aria-hidden="true">
-            <span>Complaint</span>
-            <span>Metadata</span>
+            <span>Incident</span>
+            <span>Building</span>
+            <span>Category</span>
+            <span>Priority</span>
             <span>Workflow</span>
-            <span>AI</span>
+            <span>AI state</span>
             <span></span>
           </div>
           <ul className="queue-items" role="list" aria-label="Incident queue">
-            {incidentsQuery.data.items.map((incident) => (
-              <li key={incident.id} className="queue-item">
-                <Link
-                  className={`queue-row priority-edge priority-${incident.priority.toLowerCase()}`}
-                  to={`/incidents/${incident.id}`}
-                  aria-label={`Open incident ${incident.public_ticket_id}: ${incident.complaint_description}`}
-                >
-                  <div className="queue-summary">
-                    <strong>{incident.complaint_description}</strong>
-                    <span className="queue-refline">Ticket {incident.public_ticket_id} · {buildingNameById.get(incident.building_id) ?? "Authorized building"}</span>
-                  </div>
-                  <div className="queue-meta">
-                    <span>{incident.category ?? "Uncategorized"}</span>
-                    <span>{incident.priority}</span>
-                    <time dateTime={incident.created_at}>{formatDateTime(incident.created_at)}</time>
-                  </div>
-                  <WorkflowIndicator status={incident.status} />
-                  <AiIndicator incident={incident} />
-                  <span className="queue-open" aria-hidden="true"><ArrowRight size={18} /></span>
-                </Link>
-              </li>
-            ))}
+            {incidentsQuery.data.items.map((incident) => {
+              const buildingName = buildingNameById.get(incident.building_id) ?? "Authorized building";
+              const priorityLabel = operationalPriorityLabel(incident);
+              return (
+                <li key={incident.id} className="queue-item">
+                  <Link
+                    className={`queue-row priority-edge priority-${incident.priority.toLowerCase()}`}
+                    to={`/incidents/${incident.id}`}
+                    aria-label={`Open incident ${incident.public_ticket_id}: ${incident.complaint_description}`}
+                  >
+                    <div className="queue-summary">
+                      <div className="queue-titleline">
+                        <span className="queue-ticket">{incident.public_ticket_id}</span>
+                        <time dateTime={incident.created_at}>{formatDateTime(incident.created_at)}</time>
+                      </div>
+                      <strong className="queue-complaint">{incident.complaint_description}</strong>
+                      <span className="queue-refline">{buildingName}</span>
+                    </div>
+                    <QueueCell icon={Building2} label="Building" value={buildingName} />
+                    <QueueCell icon={Tag} label="Category" value={operationalCategoryLabel(incident)} />
+                    <QueueCell icon={Flag} label="Priority" value={priorityLabel} stateClass={priorityLabel === "Not confirmed" ? undefined : incident.priority.toLowerCase()} />
+                    <WorkflowIndicator status={incident.status} />
+                    <AiIndicator incident={incident} />
+                    <span className="queue-open" aria-hidden="true">Open <ArrowRight size={16} /></span>
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
           <div className="pagination-row">
             <span>Showing {offset + 1}-{Math.min(offset + pageSize, total)} of {total}</span>
@@ -100,6 +121,18 @@ export function IncidentDashboardPage({ embedded = false }: { embedded?: boolean
         </div>
       ) : null}
     </section>
+  );
+}
+
+function QueueCell({ icon: Icon, label, value, stateClass }: { icon: LucideIcon; label: string; value: string; stateClass?: string }) {
+  return (
+    <div className="queue-cell">
+      <Icon aria-hidden size={15} />
+      <div>
+        <span>{label}</span>
+        <strong className={stateClass ? `queue-cell-state ${stateClass}` : undefined}>{value}</strong>
+      </div>
+    </div>
   );
 }
 
@@ -115,6 +148,10 @@ const workflowConfig: Record<IncidentStatusValue, { label: string; icon: LucideI
   SAFETY_ESCALATED: { label: "Safety escalated", icon: ShieldAlert, actionable: true },
 };
 
+const statusFilters: { value: IncidentStatusValue | ""; label: string }[] = [
+  { value: "", label: "All statuses" },
+  ...incidentStatuses.map((value) => ({ value, label: workflowLabel(value) })),
+];
 export function workflowLabel(status: IncidentStatusValue) {
   return workflowConfig[status]?.label ?? status.replaceAll("_", " ");
 }
@@ -155,4 +192,12 @@ function AiIndicator({ incident }: { incident: IncidentListItem }) {
       <StatusBadge status={label} ai />
     </div>
   );
+}
+
+function operationalCategoryLabel(incident: Pick<IncidentListItem, "category">) {
+  return incident.category ?? "Not confirmed";
+}
+
+function operationalPriorityLabel(incident: Pick<IncidentListItem, "status" | "category" | "priority">) {
+  return incident.status === "SAFETY_ESCALATED" && !incident.category ? "Not confirmed" : incident.priority;
 }

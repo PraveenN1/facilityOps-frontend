@@ -2,7 +2,7 @@
 
 ## Current Status
 
-Task 015E escalated-incident classification presentation is implemented. Manager incident detail now shows unconfirmed operational category/priority for `SAFETY_ESCALATED` incidents that were escalated without maintenance triage, while preserving persisted AI-suggested category/priority in the separate AI assessment. TypeScript checking, focused and split-suite frontend tests, and production build passed.
+Manager incident queue and detail visual redesign is implemented as a frontend-only presentation change. The manager shell now keeps only the implemented Overview and Incident queue navigation, the queue uses dense operations-console rows with real ticket/building/category/priority/workflow/AI fields, and incident detail shows a reference-style ticket hero plus summary cards while preserving separate Original complaint, AI recommendation, safety escalation, active assignment, and workflow panels.
 
 ## Completed
 
@@ -88,6 +88,13 @@ Task 015E escalated-incident classification presentation is implemented. Manager
 - The Original complaint heading no longer renders `Uncategorized incident`; null operational category now uses a neutral `Complaint details` heading.
 - Persisted AI recommendations remain separate and now use explicit labels `AI-suggested category` and `AI-suggested priority`. The frontend does not copy AI values into operational incident fields or treat them as human-confirmed decisions.
 - Safety escalation presentation remains read-only with the persisted manager, timestamp, and reason when the backend provides them. No triage, dispatch, closure, or safety-clearance actions were added.
+- Manager incident queue and detail visual redesign moved the manager screens closer to the dark operations-console reference without backend contract changes.
+- Manager navigation remains limited to the implemented `Overview` and `Incident queue` sections; `Team`, `AI review`, and `Reports` are not rendered because those pages do not exist.
+- Incident queue rows now render compact full-row links with public ticket ID, complaint summary, authenticated building name, operational category, operational priority, workflow status, independent AI status, and an explicit Open affordance.
+- Queue filtering now uses compact status chips backed by the existing single-status server filter and preserves server-side pagination, totals, building scope, and RBAC behavior. No fake keyword search was added.
+- Safety-escalated incidents with no confirmed operational category show `Not confirmed` operational category/priority in both queue and detail presentations while preserving AI-suggested category/priority separately.
+- Manager incident detail now includes a `Back to incident queue` link and top summary cards for building, reported timestamp, operational category, and operational priority using only existing API fields.
+- The detail view keeps Original complaint, AI recommendation, safety escalation recorded, current active assignment, and workflow action/availability sections separate. No location, team, report, confidence, assignment-history, safety-clearance, or closure data is fabricated.
 ## API Contract Notes
 
 - Authenticated identity comes from backend-owned session cookies and `/api/v1/auth/me`.
@@ -206,6 +213,13 @@ Task 015E escalated-incident classification presentation is implemented. Manager
 - Task 015E `npm run build` passed.
 - Task 015E an initial parallel split-test launch for remaining batches hit a Windows process-start failure (`The system cannot execute the specified program` / empty exit 1); rerunning the same batches sequentially passed.
 - Task 015E split frontend suite passed across all 8 test files: API/client/generated/identity tests reported 3 files and 11 tests passed; manager/dashboard tests reported 2 files and 13 tests passed; reporter/technician tests reported 2 files and 14 tests passed; incident-detail tests reported 1 file and 38 tests passed. Total split verification: 76 tests passed.
+- Manager queue/detail visual redesign focused tests passed: `npx vitest run src/pages/IncidentDashboardPage.test.tsx src/pages/IncidentDetailPage.test.tsx src/pages/ManagerWorkspacePage.test.tsx src/ui/AppLayout.test.tsx --reporter=dot --pool=forks --poolOptions.forks.maxForks=1 --poolOptions.forks.minForks=1` reported 4 files and 52 tests passed. React Router future-flag warnings were emitted by the test environment.
+- Manager queue/detail visual redesign `npm run generate:api` passed and regenerated `src/api/generated.ts` from `openapi/facilityops-openapi.json` with no source contract changes.
+- Manager queue/detail visual redesign `npm run typecheck` passed.
+- Manager queue/detail visual redesign split frontend suite passed across all 9 test files: API/generated/identity/layout tests reported 4 files and 12 tests passed; manager/dashboard tests reported 2 files and 13 tests passed; reporter/technician tests reported 2 files and 14 tests passed; incident-detail tests reported 1 file and 38 tests passed. Total split verification: 77 tests passed.
+- Manager queue/detail visual redesign `npm run build` passed: TypeScript project build and Vite production build completed successfully.
+- Manager queue/detail visual redesign `git diff --check` passed with Git LF-to-CRLF conversion warnings only.
+- Browser-level visual verification was not performed in this task; no browser automation run was requested or executed.
 ## Remaining
 
 - Full browser-level workflow verification still requires an available browser automation surface.
