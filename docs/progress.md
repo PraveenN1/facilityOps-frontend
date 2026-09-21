@@ -2,7 +2,7 @@
 
 ## Current Status
 
-Task 015D routine triage versus safety escalation clarification is implemented. Manager incident detail now presents maintenance triage and safety escalation as separate decisions, safety-rule rejections direct managers to the durable escalation action, and reporter/manager safety states remain separated from AI advisory output. TypeScript checking, API generation, focused and split-suite frontend tests, production build, backend smoke, and diff check passed; the all-in-one `npm test` command is still blocked in this shell by a Vitest/Node worker `spawn UNKNOWN` failure before test collection.
+Task 015E escalated-incident classification presentation is implemented. Manager incident detail now shows unconfirmed operational category/priority for `SAFETY_ESCALATED` incidents that were escalated without maintenance triage, while preserving persisted AI-suggested category/priority in the separate AI assessment. TypeScript checking, focused and split-suite frontend tests, and production build passed.
 
 ## Completed
 
@@ -82,6 +82,12 @@ Task 015D routine triage versus safety escalation clarification is implemented. 
 - Safety escalation now says it records separate safety review, keeps routine technician assignment unavailable, requires an escalation reason, shows emergency-procedure guidance, and uses `Record safety escalation` as the durable action.
 - Safety-rule rejection from routine triage now renders `Safety escalation required`, explains that routine maintenance cannot proceed because safety escalation is required, and instructs the manager to use `Record safety escalation`. Stale-version, authorization, and generic network errors remain distinct.
 - The frontend still does not classify hazards from keywords, clear hazards client-side, automatically escalate incidents, or imply AI output is human approval.
+- Task 015E clarified classification and priority display for safety-escalated incidents that have no confirmed maintenance triage.
+- The incident detail API exposes nullable operational `category`, non-null operational `priority`, and separate `latest_triage_result.validated_result` AI recommendation fields. The backend model defines `Incident.priority` with a `MEDIUM` server default and does not expose a separate priority-confirmed flag.
+- For `SAFETY_ESCALATED` incidents with `category: null`, the frontend now renders `Operational category: Not confirmed` and `Operational priority: Not confirmed` instead of presenting the default `MEDIUM` value as confirmed operational priority.
+- The Original complaint heading no longer renders `Uncategorized incident`; null operational category now uses a neutral `Complaint details` heading.
+- Persisted AI recommendations remain separate and now use explicit labels `AI-suggested category` and `AI-suggested priority`. The frontend does not copy AI values into operational incident fields or treat them as human-confirmed decisions.
+- Safety escalation presentation remains read-only with the persisted manager, timestamp, and reason when the backend provides them. No triage, dispatch, closure, or safety-clearance actions were added.
 ## API Contract Notes
 
 - Authenticated identity comes from backend-owned session cookies and `/api/v1/auth/me`.
@@ -195,6 +201,11 @@ Task 015D routine triage versus safety escalation clarification is implemented. 
 - Task 015D `npm run build` passed.
 - Task 015D `npm run smoke:backend` passed: `Backend health check passed.`
 - Task 015D frontend `git diff --check` passed with Git LF-to-CRLF conversion warnings only.
+- Task 015E focused incident-detail tests passed: `npx vitest run src/pages/IncidentDetailPage.test.tsx --reporter=dot --pool=forks --poolOptions.forks.maxForks=1 --poolOptions.forks.minForks=1` reported 1 file and 38 tests passed.
+- Task 015E `npm run typecheck` passed.
+- Task 015E `npm run build` passed.
+- Task 015E an initial parallel split-test launch for remaining batches hit a Windows process-start failure (`The system cannot execute the specified program` / empty exit 1); rerunning the same batches sequentially passed.
+- Task 015E split frontend suite passed across all 8 test files: API/client/generated/identity tests reported 3 files and 11 tests passed; manager/dashboard tests reported 2 files and 13 tests passed; reporter/technician tests reported 2 files and 14 tests passed; incident-detail tests reported 1 file and 38 tests passed. Total split verification: 76 tests passed.
 ## Remaining
 
 - Full browser-level workflow verification still requires an available browser automation surface.

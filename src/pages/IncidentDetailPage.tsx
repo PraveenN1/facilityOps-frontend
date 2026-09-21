@@ -215,12 +215,17 @@ export function ReporterProgress({ status }: { status: string }) {
 }
 function OriginalComplaint({ incident, buildingName }: { incident: IncidentDetailResponse; buildingName: string | null | undefined }) {
   const hazardSignal = hasSafetySignal(incident);
+  const operationalClassificationUnconfirmed = incident.status === "SAFETY_ESCALATED" && !incident.category;
+  const detailHeading = incident.category ?? "Complaint details";
+  const priorityLabel = operationalClassificationUnconfirmed ? "Operational priority" : "Priority";
+  const priorityValue = operationalClassificationUnconfirmed ? "Not confirmed" : incident.priority;
+
   return (
     <article className={`panel stack priority-edge priority-${incident.priority.toLowerCase()}`}>
       <div className="section-heading compact">
         <div>
           <p className="eyebrow">Original complaint</p>
-          <h3>{incident.category ?? "Uncategorized incident"}</h3>
+          <h3>{detailHeading}</h3>
         </div>
         <span className="mono-cell">v{incident.version}</span>
       </div>
@@ -233,7 +238,8 @@ function OriginalComplaint({ incident, buildingName }: { incident: IncidentDetai
       <dl className="definition-grid">
         <div><dt>Ticket</dt><dd className="mono-cell">{incident.public_ticket_id}</dd></div>
         <div><dt>Reporter</dt><dd>{incident.reporter_display_name ?? "Reporter"}</dd></div>
-        <div><dt>Priority</dt><dd>{incident.priority}</dd></div>
+        {operationalClassificationUnconfirmed ? <div><dt>Operational category</dt><dd>Not confirmed</dd></div> : null}
+        <div><dt>{priorityLabel}</dt><dd>{priorityValue}</dd></div>
         <div><dt>Building</dt><dd>{buildingName ?? "Authorized building"}</dd></div>
         <div><dt>Created</dt><dd>{formatDateTime(incident.created_at)}</dd></div>
         <div><dt>Updated</dt><dd>{formatDateTime(incident.updated_at)}</dd></div>
@@ -320,8 +326,8 @@ function AiAssessment({ incident }: { incident: IncidentDetailResponse }) {
       ) : null}
       {recommendation ? (
         <dl className="definition-grid">
-          <div><dt>Recommended category</dt><dd>{recommendation.category}</dd></div>
-          <div><dt>Suggested priority</dt><dd>{recommendation.suggested_priority}</dd></div>
+          <div><dt>AI-suggested category</dt><dd>{recommendation.category}</dd></div>
+          <div><dt>AI-suggested priority</dt><dd>{recommendation.suggested_priority}</dd></div>
           <div className="wide"><dt>Summary</dt><dd>{recommendation.issue_summary}</dd></div>
           <div className="wide"><dt>Location</dt><dd>{recommendation.location ?? "None provided"}</dd></div>
           <div className="wide"><dt>Potential hazards</dt><dd>{recommendation.potential_hazards.length ? recommendation.potential_hazards.join(", ") : "None provided"}</dd></div>

@@ -442,7 +442,7 @@ describe("IncidentDetailPage", () => {
 
     renderWithProviders(<IncidentDetailPage />, { initialEntries: [`/incidents/${incidentId}`], routePath: "/incidents/:incidentId" });
 
-    await waitFor(() => expect(screen.getByText("Recommended category")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("AI-suggested category")).toBeInTheDocument());
     const aiPanel = screen.getByText("AI assessment").closest("article");
     expect(aiPanel).not.toBeNull();
     expect(within(aiPanel as HTMLElement).getByText("HVAC")).toBeInTheDocument();
@@ -450,6 +450,108 @@ describe("IncidentDetailPage", () => {
     expect(screen.getByText("groq:openai/gpt-oss-20b")).toBeInTheDocument();
   });
 
+  it("shows unconfirmed operational classification on safety-escalated incidents while preserving AI suggestions", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
+      const url = requestUrl(input);
+      if (url.includes("/api/v1/auth/me")) return jsonResponse(mockSession("FACILITY_MANAGER"));
+      if (url.includes("/api/v1/buildings")) return jsonResponse({ items: [{ id: buildingId, name: "Demo Tower" }] });
+      if (url.includes(`/api/v1/incidents/${incidentId}`)) {
+        return jsonResponse(incident({
+          status: "SAFETY_ESCALATED",
+          category: null,
+          priority: "MEDIUM",
+          active_assignment: null,
+          complaint_description: "I smell gas near the cafeteria kitchen, and the pilot light area is making a hissing sound.",
+          latest_triage_result: {
+            id: "40000000-0000-0000-0000-000000000001",
+            status: "SUCCEEDED",
+            model_version: "groq:openai/gpt-oss-20b",
+            validated_result: {
+              category: "ELECTRICAL",
+              location: "Cafeteria kitchen",
+              issue_summary: "Gas smell and hissing near a pilot light area.",
+              symptoms: ["gas smell", "hissing"],
+              potential_hazards: ["possible gas leak"],
+              suggested_priority: "CRITICAL",
+              missing_information: [],
+              needs_human_review: true,
+              safety_notes: ["Escalate before routine assignment"],
+            },
+            created_at: "2026-09-17T10:02:00Z",
+          },
+          safety_escalation: {
+            actor_id: "manager-id",
+            actor_display_name: "Morgan Manager",
+            escalated_at: "2026-09-17T10:05:00Z",
+            reason: "Gas smell and hissing require safety review before routine maintenance.",
+          },
+        }));
+      }
+      return jsonResponse({ detail: "unexpected request" }, 500);
+    });
+
+    renderWithProviders(<IncidentDetailPage />, { initialEntries: [`/incidents/${incidentId}`], routePath: "/incidents/:incidentId" });
+
+    await waitFor(() => expect(screen.getByText("Safety escalation recorded")).toBeInTheDocument());
+    const complaintPanel = screen.getAllByText("I smell gas near the cafeteria kitchen, and the pilot light area is making a hissing sound.").find((element) => element.tagName === "P")?.closest("article") ?? null;
+    expect(complaintPanel).not.toBeNull();
+    expect(within(complaintPanel as HTMLElement).getByText("Complaint details")).toBeInTheDocument();
+    expect(within(complaintPanel as HTMLElement).getByText("Operational category")).toBeInTheDocument();
+    expect(within(complaintPanel as HTMLElement).getByText("Operational priority")).toBeInTheDocument();
+    expect(within(complaintPanel as HTMLElement).getAllByText("Not confirmed")).toHaveLength(2);
+    expect(screen.queryByText("Uncategorized incident")).not.toBeInTheDocument();
+    expect(screen.queryByText("Confirmed triage")).not.toBeInTheDocument();
+
+    const aiPanel = screen.getByText("AI assessment").closest("article");
+    expect(aiPanel).not.toBeNull();
+    expect(within(aiPanel as HTMLElement).getByText("AI-suggested category")).toBeInTheDocument();
+    expect(within(aiPanel as HTMLElement).getByText("AI-suggested priority")).toBeInTheDocument();
+    expect(within(aiPanel as HTMLElement).getByText("ELECTRICAL")).toBeInTheDocument();
+    expect(within(aiPanel as HTMLElement).getByText("CRITICAL")).toBeInTheDocument();
+    expect(screen.getByText("Morgan Manager")).toBeInTheDocument();
+    expect(screen.getByText("Gas smell and hissing require safety review before routine maintenance.")).toBeInTheDocument();
+  });
+
+  it("keeps ordinary confirmed incident classification unchanged", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
+      const url = requestUrl(input);
+      if (url.includes("/api/v1/auth/me")) return jsonResponse(mockSession("FACILITY_MANAGER"));
+      if (url.includes("/api/v1/buildings")) return jsonResponse({ items: [{ id: buildingId, name: "Demo Tower" }] });
+      if (url.includes(`/api/v1/incidents/${incidentId}`)) return jsonResponse(incident({ status: "ASSIGNED", category: "ELECTRICAL", priority: "HIGH" }));
+      return jsonResponse({ detail: "unexpected request" }, 500);
+    });
+
+    renderWithProviders(<IncidentDetailPage />, { initialEntries: [`/incidents/${incidentId}`], routePath: "/incidents/:incidentId" });
+
+    await screen.findByText("Current active assignment");
+    const complaintPanel = screen.getAllByText("Power failure in lobby").find((element) => element.tagName === "P");
+    const article = complaintPanel?.closest("article") ?? null;
+    expect(article).not.toBeNull();
+    expect(within(article as HTMLElement).getByText("ELECTRICAL")).toBeInTheDocument();
+    expect(within(article as HTMLElement).getByText("Priority")).toBeInTheDocument();
+    expect(within(article as HTMLElement).getByText("HIGH")).toBeInTheDocument();
+    expect(screen.queryByText("Operational category")).not.toBeInTheDocument();
+    expect(screen.queryByText("Operational priority")).not.toBeInTheDocument();
+  });
+
+  it("keeps obsolete AI state separate from unconfirmed safety escalation classification", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
+      const url = requestUrl(input);
+      if (url.includes("/api/v1/auth/me")) return jsonResponse(mockSession("FACILITY_MANAGER"));
+      if (url.includes("/api/v1/buildings")) return jsonResponse({ items: [{ id: buildingId, name: "Demo Tower" }] });
+      if (url.includes(`/api/v1/incidents/${incidentId}`)) return jsonResponse(incident({ status: "SAFETY_ESCALATED", category: null, priority: "MEDIUM", ai_triage_status: "SKIPPED_OBSOLETE", latest_triage_result: null, active_assignment: null }));
+      return jsonResponse({ detail: "unexpected request" }, 500);
+    });
+
+    renderWithProviders(<IncidentDetailPage />, { initialEntries: [`/incidents/${incidentId}`], routePath: "/incidents/:incidentId" });
+
+    await waitFor(() => expect(screen.getByText("AI skipped after human review")).toBeInTheDocument());
+    expect(screen.getByText("Operational category")).toBeInTheDocument();
+    expect(screen.getByText("Operational priority")).toBeInTheDocument();
+    expect(screen.getAllByText("Not confirmed")).toHaveLength(2);
+    expect(screen.queryByText("AI-suggested category")).not.toBeInTheDocument();
+    expect(screen.queryByText("Confirmed triage")).not.toBeInTheDocument();
+  });
   it("shows no eligible technician empty state and not-qualified technicians", async () => {
     vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
       const url = requestUrl(input);
