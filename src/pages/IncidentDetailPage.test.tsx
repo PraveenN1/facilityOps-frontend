@@ -166,7 +166,7 @@ describe("IncidentDetailPage", () => {
     renderWithProviders(<IncidentDetailPage />, { initialEntries: [`/incidents/${incidentId}`], routePath: "/incidents/:incidentId" });
 
     await waitFor(() => expect(screen.getByText("Qualified candidates")).toBeInTheDocument());
-    expect(screen.queryByRole("button", { name: /confirm triage/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /confirm maintenance triage/i })).not.toBeInTheDocument();
     expect(await screen.findByRole("button", { name: /assign technician/i })).toBeInTheDocument();
   });
 
@@ -261,7 +261,13 @@ describe("IncidentDetailPage", () => {
     renderWithProviders(<IncidentDetailPage />, { initialEntries: [`/incidents/${incidentId}`], routePath: "/incidents/:incidentId" });
 
     await waitFor(() => expect(screen.getByText(/manual review has not been completed yet/i)).toBeInTheDocument());
-    expect(screen.getByRole("button", { name: /confirm triage/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /confirm maintenance triage/i })).toBeInTheDocument();
+    expect(screen.getByText(/Confirm the category and priority to continue through routine maintenance, subject to safety checks/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /confirm maintenance triage/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /escalate safety incident/i })).toBeInTheDocument();
+    expect(screen.getByText(/Record that this incident requires separate safety review/i)).toBeInTheDocument();
+    expect(screen.getByText(/If there is immediate danger, follow building emergency procedures/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /record safety escalation/i })).toBeDisabled();
     const categorySelect = screen.getByLabelText(/confirmed category/i);
     expect(categorySelect.tagName).toBe("SELECT");
     expect(within(categorySelect).getByRole("option", { name: "PLUMBING" })).toBeInTheDocument();
@@ -286,7 +292,7 @@ describe("IncidentDetailPage", () => {
     renderWithProviders(<IncidentDetailPage />, { initialEntries: [`/incidents/${incidentId}`], routePath: "/incidents/:incidentId" });
 
     fireEvent.change(await screen.findByLabelText(/confirmed category/i), { target: { value: "PLUMBING" } });
-    await user.click(screen.getByRole("button", { name: /confirm triage/i }));
+    await user.click(screen.getByRole("button", { name: /confirm maintenance triage/i }));
 
     await waitFor(() => expect(submittedBody?.category).toBe("PLUMBING"));
   });
@@ -311,7 +317,7 @@ describe("IncidentDetailPage", () => {
     expect(screen.queryByText(/current API/i)).not.toBeInTheDocument();
     expect(screen.queryByText("AI assessment")).not.toBeInTheDocument();
     expect(screen.queryByText("Human-confirmed decision")).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /confirm triage/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /confirm maintenance triage/i })).not.toBeInTheDocument();
   });
 
   it("shows reporter public ticket and current-state progress semantics", async () => {
@@ -368,7 +374,7 @@ describe("IncidentDetailPage", () => {
 
     await waitFor(() => expect(screen.getByText(/AI triage did not produce a usable recommendation/i)).toBeInTheDocument());
     expect(screen.getByText("Confirmed triage")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /confirm triage/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /confirm maintenance triage/i })).not.toBeInTheDocument();
   });
 
   it("does not say manual review is missing after manager-confirmed triage", async () => {
@@ -560,6 +566,7 @@ describe("IncidentDetailPage", () => {
   it("labels hazardous manual triage rejection as safety escalation instead of a generic conflict", async () => {
     const user = userEvent.setup();
     let submittedBody: Record<string, unknown> | null = null;
+    let escalationRequested = false;
     let incidentReads = 0;
     vi.spyOn(globalThis, "fetch").mockImplementation((input, init) => {
       const url = requestUrl(input);
@@ -568,6 +575,10 @@ describe("IncidentDetailPage", () => {
       if (url.includes(`/api/v1/incidents/${incidentId}/manual-triage`) && init?.method === "POST") {
         submittedBody = JSON.parse(String(init.body));
         return jsonResponse({ detail: "Suspected hazards require explicit human escalation and cannot be cleared for assignment" }, 409);
+      }
+      if (url.includes(`/api/v1/incidents/${incidentId}/escalate-safety`) && init?.method === "POST") {
+        escalationRequested = true;
+        return jsonResponse({ detail: "unexpected escalation" }, 500);
       }
       if (url.includes(`/api/v1/incidents/${incidentId}`)) {
         incidentReads += 1;
@@ -602,9 +613,9 @@ describe("IncidentDetailPage", () => {
 
     renderWithProviders(<IncidentDetailPage />, { initialEntries: [`/incidents/${incidentId}`], routePath: "/incidents/:incidentId" });
 
-    await waitFor(() => expect(screen.getByRole("button", { name: /confirm triage/i })).toBeEnabled());
+    await waitFor(() => expect(screen.getByRole("button", { name: /confirm maintenance triage/i })).toBeEnabled());
     await user.click(screen.getByLabelText(/suspected hazard requiring escalation/i));
-    await user.click(screen.getByRole("button", { name: /confirm triage/i }));
+    await user.click(screen.getByRole("button", { name: /confirm maintenance triage/i }));
 
     await waitFor(() => expect(screen.getByText("Safety escalation required")).toBeInTheDocument());
     expect(submittedBody).toMatchObject({
@@ -614,7 +625,9 @@ describe("IncidentDetailPage", () => {
       suspected_hazard: true,
     });
     expect(screen.queryByText("Conflict requires review")).not.toBeInTheDocument();
-    expect(screen.getByText(/does not include a durable hazard-clearance workflow/i)).toBeInTheDocument();
+    expect(screen.getByText(/Routine maintenance cannot proceed because this incident requires safety escalation/i)).toBeInTheDocument();
+    expect(screen.getByText(/Use Record safety escalation to document the manager's decision/i)).toBeInTheDocument();
+    expect(escalationRequested).toBe(false);
     await waitFor(() => expect(incidentReads).toBeGreaterThan(1));
   });
 
@@ -676,11 +689,16 @@ describe("IncidentDetailPage", () => {
   it("records manager safety escalation with expected version and reason", async () => {
     const user = userEvent.setup();
     let submittedBody: Record<string, unknown> | null = null;
+    let manualTriageRequested = false;
     let incidentReads = 0;
     vi.spyOn(globalThis, "fetch").mockImplementation((input, init) => {
       const url = requestUrl(input);
       if (url.includes("/api/v1/auth/me")) return jsonResponse(mockSession("FACILITY_MANAGER"));
       if (url.includes("/api/v1/buildings")) return jsonResponse({ items: [{ id: buildingId, name: "Demo Tower" }] });
+      if (url.includes(`/api/v1/incidents/${incidentId}/manual-triage`) && init?.method === "POST") {
+        manualTriageRequested = true;
+        return jsonResponse({ detail: "unexpected maintenance triage" }, 500);
+      }
       if (url.includes(`/api/v1/incidents/${incidentId}/escalate-safety`) && init?.method === "POST") {
         submittedBody = JSON.parse(String(init.body));
         return jsonResponse(incident({
@@ -732,6 +750,7 @@ describe("IncidentDetailPage", () => {
       expected_version: 3,
       reason: "Water is leaking above electrical equipment with a burning smell.",
     }));
+    expect(manualTriageRequested).toBe(false);
     await waitFor(() => expect(screen.getByText("Safety escalation recorded")).toBeInTheDocument());
     expect(screen.getByText("Morgan Manager")).toBeInTheDocument();
     expect(screen.getAllByText("Water is leaking above electrical equipment with a burning smell.").length).toBeGreaterThanOrEqual(1);
@@ -763,7 +782,7 @@ describe("IncidentDetailPage", () => {
     await waitFor(() => expect(screen.getByText("Safety escalation recorded")).toBeInTheDocument());
     expect(screen.getByText(/Routine assignment is unavailable/i)).toBeInTheDocument();
     expect(screen.getByText("Morgan Manager")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /confirm triage/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /confirm maintenance triage/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /record safety escalation/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /assign technician/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /close incident/i })).not.toBeInTheDocument();

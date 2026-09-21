@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { FormEvent } from "react";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { BrainCircuit, CheckCircle2, Clock3, ClipboardCheck, ShieldAlert, Wrench, Users } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 
@@ -338,11 +338,18 @@ function HumanDecision({ incident, canReview, onChanged }: { incident: IncidentD
   const canEditDecision = canReview && triageableStatuses.has(incident.status);
   const isSafetyEscalated = incident.status === "SAFETY_ESCALATED";
   const hasConfirmedDecision = !isSafetyEscalated && !triageableStatuses.has(incident.status) && Boolean(incident.category);
+  const escalationSectionRef = useRef<HTMLDivElement | null>(null);
+  const focusEscalationSection = () => {
+    window.setTimeout(() => {
+      escalationSectionRef.current?.scrollIntoView?.({ behavior: "smooth", block: "start" });
+      escalationSectionRef.current?.focus({ preventScroll: true });
+    }, 0);
+  };
 
   return (
     <article className="panel stack human-panel">
       <div className="section-heading compact">
-        <div><p className="eyebrow">Human-confirmed decision</p><h3 className="icon-heading"><CheckCircle2 aria-hidden size={18} />{hasConfirmedDecision ? "Confirmed triage" : "Review required"}</h3></div>
+        <div><p className="eyebrow">Manager decision</p><h3 className="icon-heading"><CheckCircle2 aria-hidden size={18} />{hasConfirmedDecision ? "Confirmed triage" : "Review required"}</h3></div>
         {hasConfirmedDecision ? <StatusBadge status={incident.status} /> : null}
       </div>
       {isSafetyEscalated ? (
@@ -355,8 +362,12 @@ function HumanDecision({ incident, canReview, onChanged }: { incident: IncidentD
         </dl>
       ) : null}
       {incident.status === "MANUAL_REVIEW" ? <p className="danger-note">Manual review is required before assignment. Suspected hazards need escalation before dispatch.</p> : null}
-      {canEditDecision ? <ManualTriageForm incident={incident} onChanged={onChanged} /> : null}
-      {canReview && safetyEscalationSourceStatuses.has(incident.status) ? <SafetyEscalationForm incident={incident} onChanged={onChanged} /> : null}
+      {canEditDecision ? <ManualTriageForm incident={incident} onChanged={onChanged} onSafetyRejected={focusEscalationSection} /> : null}
+      {canReview && safetyEscalationSourceStatuses.has(incident.status) ? (
+        <div ref={escalationSectionRef} tabIndex={-1}>
+          <SafetyEscalationForm incident={incident} onChanged={onChanged} />
+        </div>
+      ) : null}
       {!canEditDecision && !hasConfirmedDecision && !isSafetyEscalated ? (
         <p className="info-note">{canReview ? "No triage action is available for this state." : "Only facility managers can confirm triage decisions."}</p>
       ) : null}
@@ -364,7 +375,15 @@ function HumanDecision({ incident, canReview, onChanged }: { incident: IncidentD
   );
 }
 
-function ManualTriageForm({ incident, onChanged }: { incident: IncidentDetailResponse; onChanged: () => void | Promise<void> }) {
+function ManualTriageForm({
+  incident,
+  onChanged,
+  onSafetyRejected,
+}: {
+  incident: IncidentDetailResponse;
+  onChanged: () => void | Promise<void>;
+  onSafetyRejected: () => void;
+}) {
   const recommendation = incident.latest_triage_result?.validated_result;
   const recommendedCategory = recommendation?.category ?? incident.category;
   const queryClient = useQueryClient();
@@ -380,11 +399,20 @@ function ManualTriageForm({ incident, onChanged }: { incident: IncidentDetailRes
       if (isApiError(error) && error.status === 409) {
         void queryClient.invalidateQueries({ queryKey: ["incident", incident.id] });
       }
+      if (isSafetyRuleRejection(error)) {
+        onSafetyRejected();
+      }
     },
   });
 
   return (
-    <form className="stack subsection" onSubmit={(event: FormEvent<HTMLFormElement>) => { event.preventDefault(); mutation.mutate(); }}>
+    <section className="decision-card stack" aria-labelledby="maintenance-triage-heading">
+      <div>
+        <p className="eyebrow">Maintenance triage</p>
+        <h3 id="maintenance-triage-heading">Confirm maintenance triage</h3>
+        <p className="muted-copy">Confirm the category and priority to continue through routine maintenance, subject to safety checks.</p>
+      </div>
+      <form className="stack" onSubmit={(event: FormEvent<HTMLFormElement>) => { event.preventDefault(); mutation.mutate(); }}>
       <div className="form-grid">
         <label className="field-label">Confirmed category<select required className="field-input" value={category} onChange={(event) => setCategory(event.target.value)}>
           <option value="">Select category</option>
@@ -399,8 +427,9 @@ function ManualTriageForm({ incident, onChanged }: { incident: IncidentDetailRes
       </label>
       <p className="muted-copy">Leaving this unchecked does not establish that an incident is safe. Safety checks still decide whether triage can proceed.</p>
       {mutation.isError ? <MutationError title="Manual triage failed" error={mutation.error} /> : null}
-      <button className="primary-button fit" disabled={mutation.isPending || !category.trim()} type="submit">Confirm triage</button>
-    </form>
+      <button className="primary-button fit" disabled={mutation.isPending || !category.trim()} type="submit">Confirm maintenance triage</button>
+      </form>
+    </section>
   );
 }
 
@@ -419,23 +448,27 @@ function SafetyEscalationForm({ incident, onChanged }: { incident: IncidentDetai
   });
 
   return (
-    <form className="stack subsection" onSubmit={(event: FormEvent<HTMLFormElement>) => { event.preventDefault(); if (trimmedReason) mutation.mutate(); }}>
+    <section className="decision-card safety stack" aria-labelledby="safety-escalation-heading">
       <div>
         <p className="eyebrow">Safety escalation</p>
-        <h3 className="icon-heading"><ShieldAlert aria-hidden size={18} />Escalate safety incident</h3>
+        <h3 id="safety-escalation-heading" className="icon-heading"><ShieldAlert aria-hidden size={18} />Escalate safety incident</h3>
+        <p className="muted-copy">Record that this incident requires separate safety review. Routine technician assignment will remain unavailable.</p>
       </div>
+      <form className="stack" onSubmit={(event: FormEvent<HTMLFormElement>) => { event.preventDefault(); if (trimmedReason) mutation.mutate(); }}>
       <dl className="definition-grid">
         <div><dt>Ticket</dt><dd className="mono-cell">{incident.public_ticket_id}</dd></div>
         <div className="wide"><dt>Complaint summary</dt><dd>{incident.complaint_description}</dd></div>
       </dl>
       <p className="danger-note">Routine dispatch is unavailable after safety escalation until a separately approved safety clearance workflow exists.</p>
+      <p className="info-note">If there is immediate danger, follow building emergency procedures and contact the appropriate emergency services.</p>
       <label className="field-label">Escalation reason<textarea required className="field-input" value={reason} onChange={(event) => setReason(event.target.value)} /></label>
       {mutation.isError ? <MutationError title="Safety escalation failed" error={mutation.error} /> : null}
       <button className="primary-button icon-button fit" disabled={mutation.isPending || !trimmedReason} type="submit">
         <ShieldAlert aria-hidden size={16} />
         {mutation.isPending ? "Recording escalation..." : "Record safety escalation"}
       </button>
-    </form>
+      </form>
+    </section>
   );
 }
 
@@ -611,14 +644,23 @@ function ReadOnlyStatePanel({ incident, role }: { incident: IncidentDetailRespon
 
 function MutationError({ title, error }: { title: string; error: Error }) {
   const conflict = isApiError(error) && error.status === 409;
-  const safetyEscalation = conflict && /suspected hazards require/i.test(error.message);
+  const unauthorized = isApiError(error) && (error.status === 401 || error.status === 403);
+  const safetyEscalation = isSafetyRuleRejection(error);
   const staleVersion = conflict && /version conflict/i.test(error.message);
-  const renderedTitle = safetyEscalation ? "Safety escalation required" : staleVersion ? "Incident changed" : conflict ? "Workflow review required" : title;
+  const renderedTitle = safetyEscalation
+    ? "Safety escalation required"
+    : staleVersion
+    ? "Incident changed"
+    : unauthorized
+    ? "Access denied"
+    : conflict
+    ? "Workflow review required"
+    : title;
   const renderedDetail = safetyEscalation
-    ? "Suspected hazards require explicit human escalation and cannot be cleared for assignment by this triage action."
+    ? "Routine maintenance cannot proceed because this incident requires safety escalation."
     : error.message;
   const followUp = safetyEscalation
-    ? "This prototype does not include a durable hazard-clearance workflow, so the incident must remain out of technician dispatch here."
+    ? "Use Record safety escalation to document the manager's decision."
     : "The incident was refetched. Review the latest state and choose again before retrying.";
   return (
     <div className="stack-sm">
@@ -626,6 +668,10 @@ function MutationError({ title, error }: { title: string; error: Error }) {
       {conflict ? <p className={safetyEscalation ? "info-note" : "danger-note"}>{followUp}</p> : null}
     </div>
   );
+}
+
+function isSafetyRuleRejection(error: unknown) {
+  return isApiError(error) && error.status === 409 && /suspected hazards require/i.test(error.message);
 }
 
 function isSelectableTechnician(technician: TechnicianListItem, requiredSkill: string | null | undefined) {

@@ -2,7 +2,7 @@
 
 ## Current Status
 
-Task 015B safety escalation frontend integration is implemented. The frontend is synchronized with the live Task 015A backend contract, manager incident detail supports durable safety escalation for eligible triage states, reporter views show `SAFETY_ESCALATED` as a safety-review path without internal manager notes, and queue/status badges include the new state. TypeScript checking, focused regression tests, production build, backend smoke, and diff check passed; the final all-in-one `npm test` command is currently blocked in this shell by Vitest/Node worker allocation failures after earlier interrupted runs.
+Task 015D routine triage versus safety escalation clarification is implemented. Manager incident detail now presents maintenance triage and safety escalation as separate decisions, safety-rule rejections direct managers to the durable escalation action, and reporter/manager safety states remain separated from AI advisory output. TypeScript checking, API generation, focused and split-suite frontend tests, production build, backend smoke, and diff check passed; the all-in-one `npm test` command is still blocked in this shell by a Vitest/Node worker `spawn UNKNOWN` failure before test collection.
 
 ## Completed
 
@@ -77,6 +77,11 @@ Task 015B safety escalation frontend integration is implemented. The frontend is
 - Closed reporter detail now shows the simple closure message from the current incident status without fabricating resolution or assignment history.
 - Manager safety copy now distinguishes an AI advisory safety signal from a current operational blocker. Safety checks remain authoritative, and the UI does not claim hazard clearance.
 
+- Task 015D split the manager decision area into separate `Maintenance triage` and `Safety escalation` sections without changing backend contracts.
+- Maintenance triage now says it confirms category and priority for routine maintenance, subject to backend safety checks, and its primary action is `Confirm maintenance triage`.
+- Safety escalation now says it records separate safety review, keeps routine technician assignment unavailable, requires an escalation reason, shows emergency-procedure guidance, and uses `Record safety escalation` as the durable action.
+- Safety-rule rejection from routine triage now renders `Safety escalation required`, explains that routine maintenance cannot proceed because safety escalation is required, and instructs the manager to use `Record safety escalation`. Stale-version, authorization, and generic network errors remain distinct.
+- The frontend still does not classify hazards from keywords, clear hazards client-side, automatically escalate incidents, or imply AI output is human approval.
 ## API Contract Notes
 
 - Authenticated identity comes from backend-owned session cookies and `/api/v1/auth/me`.
@@ -182,6 +187,14 @@ Task 015B safety escalation frontend integration is implemented. The frontend is
 - Task 015B `npm run smoke:backend` passed: `Backend health check passed.`
 - Task 015B `git diff --check` passed with Git LF-to-CRLF conversion warnings only.
 
+- Task 015D focused incident-detail tests passed: `npx vitest run src/pages/IncidentDetailPage.test.tsx --reporter=dot --pool=forks --poolOptions.forks.maxForks=1 --poolOptions.forks.minForks=1` reported 1 file and 35 tests passed.
+- Task 015D `npm run generate:api` passed and regenerated `src/api/generated.ts` from `openapi/facilityops-openapi.json` with no source contract changes.
+- Task 015D `npm run typecheck` passed.
+- Task 015D all-in-one `npm test -- --reporter=dot --pool=forks --poolOptions.forks.maxForks=1 --poolOptions.forks.minForks=1` failed before collecting tests with Vitest/Node `spawn UNKNOWN`; no assertions ran in that command.
+- Task 015D split frontend suite passed across all 8 test files: API/client/generated/identity tests reported 3 files and 11 tests passed; manager/dashboard tests reported 2 files and 13 tests passed; reporter/technician tests reported 2 files and 14 tests passed; incident-detail tests reported 1 file and 35 tests passed. Total split verification: 73 tests passed.
+- Task 015D `npm run build` passed.
+- Task 015D `npm run smoke:backend` passed: `Backend health check passed.`
+- Task 015D frontend `git diff --check` passed with Git LF-to-CRLF conversion warnings only.
 ## Remaining
 
 - Full browser-level workflow verification still requires an available browser automation surface.

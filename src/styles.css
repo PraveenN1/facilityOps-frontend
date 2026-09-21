@@ -245,6 +245,8 @@ code,
   .tech-card span, .complaint-row span { @apply mt-1 block; color: var(--muted); }
   .group-heading { @apply text-sm font-semibold; color: var(--ink); }
   .human-panel { border-left: 3px solid var(--blue); }
+  .decision-card { @apply rounded-md border p-4; background: var(--panel-2); border-color: var(--line); }
+  .decision-card.safety { border-color: color-mix(in srgb, var(--warning) 35%, var(--line)); background: color-mix(in srgb, var(--warning) 7%, var(--panel)); }
   .work-card-head, .complaint-row { @apply flex items-start justify-between gap-3; }
   .work-order-card { @apply flex flex-col gap-4 p-4 sm:p-5; overflow-wrap: anywhere; }
   .work-order-main { @apply flex flex-col gap-4; }
