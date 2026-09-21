@@ -297,33 +297,52 @@ code,
   .inline-error { @apply rounded-[3px] border px-3 py-2 text-sm font-semibold; background: var(--danger-bg); border-color: color-mix(in srgb, var(--danger) 35%, var(--line)); color: var(--ink); }
   .demo-note { @apply text-xs leading-5; color: var(--muted); }
   .empty-action { @apply mt-4; }
-  .reporter-workspace { @apply max-w-5xl; }
-  .request-card { @apply grid gap-4 p-4 sm:grid-cols-[minmax(0,1fr)_minmax(220px,auto)] sm:items-center; }
-  .request-card-titleline { @apply flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between; }
-  .request-card-meta { @apply mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs font-semibold; color: var(--muted); }
+  .reporter-workspace { @apply max-w-6xl; }
+  .reporter-workspace .section-heading { @apply items-center; }
+  .request-count { @apply -mt-3 text-sm font-bold; color: var(--muted); }
+  .complaint-list { @apply gap-2; }
+  .complaint-row.request-card { @apply grid min-h-24 gap-4 rounded-md p-4 sm:grid-cols-[minmax(0,1fr)_minmax(190px,auto)] sm:items-center; box-shadow: none; }
+  .complaint-row.request-card:hover { background: color-mix(in srgb, var(--blue) 6%, var(--panel)); transform: none; }
+  .request-card-main { @apply min-w-0 flex-1; }
+  .request-card-titleline { @apply mb-1 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between; }
+  .request-ticket { @apply inline-flex min-h-0 items-center p-0 text-xs font-bold; background: transparent; border: 0; color: var(--muted); }
+  .request-summary { @apply block whitespace-normal break-words text-base font-semibold leading-6; min-height: 3rem; max-height: 3rem; overflow: hidden; color: var(--ink); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .request-card-meta { @apply mt-2 flex flex-wrap gap-x-4 gap-y-2 text-xs font-semibold; color: var(--muted); }
   .request-card-meta span { @apply inline-flex items-center gap-1; }
+  .request-card-status { @apply flex flex-row items-center justify-end gap-3 text-sm sm:max-w-72 sm:text-right; color: var(--muted); }
+  .complaint-row .status-badge { @apply mt-0 inline-flex; }
+  .request-row-arrow { @apply inline-flex min-h-10 w-10 items-center justify-center rounded-[3px]; color: var(--blue); }
+  .complaint-row.request-card:hover .request-row-arrow { background: color-mix(in srgb, var(--blue) 12%, var(--panel)); }
+  .request-open { @apply hidden; }
   .request-success { @apply flex flex-col gap-3; }
-  .reporter-detail-page { @apply mx-auto max-w-5xl; }
-  .reporter-detail-grid { @apply grid gap-4 lg:grid-cols-2; }
-  .request-hero { @apply lg:col-span-2; }
-  .request-hero h3 { @apply text-2xl leading-tight; }
-  .request-hero-topline { @apply flex flex-wrap items-center justify-between gap-2; }
+  .reporter-detail-page { @apply mx-auto max-w-6xl; }
+  .reporter-detail-heading { @apply items-start; }
+  .reporter-detail-grid { @apply grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(340px,0.72fr)]; }
+  .request-status-panel { @apply flex items-start gap-4 p-5 lg:col-span-2; box-shadow: 0 10px 28px rgba(15, 27, 36, 0.06); }
+  .request-status-icon { @apply inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-full; background: color-mix(in srgb, var(--blue) 13%, var(--panel)); color: var(--blue); }
+  .request-status-panel h3 { @apply text-2xl leading-tight; }
   .reporter-progress-panel { @apply lg:col-span-2; }
+  .request-info-panel { @apply p-5; }
+  .request-detail-facts, .request-service-facts { @apply grid gap-4 border-t pt-4 text-sm sm:grid-cols-2; border-color: var(--line); }
+  .request-detail-facts dt, .request-service-facts dt { @apply text-xs font-semibold uppercase; color: var(--muted); }
+  .request-detail-facts dd, .request-service-facts dd { @apply mt-1 font-semibold; color: var(--ink); }
+  .request-next-panel { @apply p-5; }
+  .request-service-panel { @apply flex items-start gap-4 p-5; }
+  .request-service-panel > svg { @apply mt-1 shrink-0; color: var(--blue); }
+  .request-progress { @apply flex gap-0 overflow-x-auto px-1 pb-1 pt-2; }
+  .request-progress li { @apply relative flex min-h-16 min-w-28 flex-1 flex-col items-center justify-start gap-2 p-0 text-center text-xs font-semibold leading-4; color: var(--muted); }
+  .request-progress li:not(:last-child)::after { content: ""; position: absolute; left: calc(50% + 1rem); right: calc(-50% + 1rem); top: 0.875rem; border-top: 2px solid var(--line); }
+  .request-progress li.complete::after { border-top-color: color-mix(in srgb, var(--ok) 70%, var(--line)); }
+  .request-progress li.complete, .request-progress li.current { color: var(--ink); }
+  .request-progress-dot { @apply relative z-[1] inline-flex h-7 w-7 items-center justify-center rounded-full border-2; background: var(--panel); border-color: var(--line); color: var(--muted); }
+  .request-progress li.complete .request-progress-dot { border-color: color-mix(in srgb, var(--ok) 55%, var(--line)); background: var(--ok-bg); color: var(--ok); }
+  .request-progress li.current .request-progress-dot { border-color: var(--blue); background: var(--panel); color: var(--blue); box-shadow: 0 0 0 4px color-mix(in srgb, var(--blue) 14%, transparent); }
   .request-progress li.upcoming { opacity: 0.82; }
   .work-ticket-link { @apply mt-2 inline-flex; }
   .work-status-stack { @apply flex flex-wrap items-center gap-2 sm:justify-end; }
   .work-complaint-block { @apply rounded-[3px] border p-3; background: var(--panel-2); border-color: var(--line); }
   .work-order-meta dt { @apply inline-flex items-center gap-1; }
-  .request-card-main { @apply min-w-0 flex-1; }
-  .request-card-main strong { @apply block whitespace-normal break-words text-base leading-6; color: var(--ink); }
-  .request-card-status { @apply flex flex-col items-start gap-2 text-sm sm:max-w-72 sm:items-end sm:text-right; color: var(--muted); }
-  .complaint-row .status-badge { @apply mt-0 inline-flex; }
-  .request-open { @apply inline-flex items-center gap-1 text-xs font-semibold; color: var(--blue); }
   .request-detail h3 { @apply text-xl font-semibold; }
-  .request-progress { @apply grid gap-2 sm:grid-cols-2 lg:grid-cols-7; }
-  .request-progress li { @apply flex min-h-10 items-center gap-2 rounded-[3px] border px-3 py-2 text-sm font-semibold; background: var(--panel-2); border-color: var(--line); color: var(--muted); }
-  .request-progress li.current { background: color-mix(in srgb, var(--blue) 10%, var(--panel)); border-color: color-mix(in srgb, var(--blue) 28%, var(--line)); color: var(--ink); }
-  .request-progress li.complete { background: color-mix(in srgb, var(--ok) 10%, var(--panel)); color: var(--ink); }
   .async-state { @apply inline-flex items-center gap-2 rounded-md border px-4 py-6 text-sm shadow-sm; background: var(--panel); border-color: var(--line); color: var(--muted); }
   .error-state { @apply rounded-md border px-4 py-3 text-sm; background: var(--danger-bg); border-color: color-mix(in srgb, var(--danger) 35%, var(--line)); color: var(--ink); }
   .error-state > svg { @apply float-left mr-2 mt-0.5; color: var(--danger); }
@@ -337,16 +356,100 @@ code,
   .status-muted-warning { background: var(--warning-bg); color: var(--ink); --tw-ring-color: color-mix(in srgb, var(--warning) 35%, var(--line)); }
   .status-error { background: var(--danger-bg); color: var(--ink); --tw-ring-color: color-mix(in srgb, var(--danger) 35%, var(--line)); }
   .status-ai { background: var(--ai-bg); color: var(--ink); --tw-ring-color: color-mix(in srgb, var(--violet) 35%, var(--line)); }
+
+/* Reporter console refinements: keep existing data/actions, make the request queue and detail views visibly distinct. */
+.brand-lockup {
+  display: inline-flex;
+  min-width: 220px;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.brand-icon {
+  display: inline-flex;
+  height: 2.25rem;
+  width: 2.25rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.375rem;
+  border: 1px solid color-mix(in srgb, var(--blue) 38%, var(--line));
+  background: color-mix(in srgb, var(--blue) 10%, var(--panel));
+  color: var(--blue);
+}
+
+.brand-copy {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.05;
+}
+
+.brand-copy strong {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.brand-copy strong span {
+  color: var(--blue);
+}
+
+.brand-copy small {
+  margin-top: 0.25rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.topbar {
+  min-height: 4rem;
+  padding-block: 0.65rem;
+}
+
 }
 
 @media (max-width: 640px) {
   .request-progress {
-    grid-template-columns: 1fr;
+    flex-direction: column;
+    overflow-x: visible;
+    padding: 0.25rem 0 0;
+  }
+
+  .request-progress li {
+    min-height: 3.25rem;
+    min-width: 0;
+    align-items: flex-start;
+    flex-direction: row;
+    justify-content: flex-start;
+    text-align: left;
+  }
+
+  .request-progress li:not(:last-child)::after {
+    left: 0.8125rem;
+    right: auto;
+    top: 1.75rem;
+    bottom: -0.5rem;
+    border-left: 2px solid var(--line);
+    border-top: 0;
+  }
+
+  .request-progress li.complete::after {
+    border-left-color: color-mix(in srgb, var(--ok) 70%, var(--line));
   }
 
   .request-card {
     grid-template-columns: 1fr;
   }
+
+  .request-card-status {
+    grid-column: 1 / -1;
+    justify-content: space-between;
+    text-align: left;
+  }
+
+  .brand-lockup {
+    min-width: 0;
+  }
+
   .topbar-actions {
     align-items: stretch;
   }

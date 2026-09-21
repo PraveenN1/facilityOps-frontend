@@ -167,6 +167,7 @@ describe("IncidentDetailPage", () => {
 
     await waitFor(() => expect(screen.getByText("Qualified candidates")).toBeInTheDocument());
     expect(screen.queryByRole("button", { name: /confirm maintenance triage/i })).not.toBeInTheDocument();
+    expect(screen.queryByPlaceholderText(/search/i)).not.toBeInTheDocument();
     expect(await screen.findByRole("button", { name: /assign technician/i })).toBeInTheDocument();
   });
 
@@ -318,6 +319,7 @@ describe("IncidentDetailPage", () => {
     expect(screen.queryByText("AI recommendation")).not.toBeInTheDocument();
     expect(screen.queryByText("Human-confirmed decision")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /confirm maintenance triage/i })).not.toBeInTheDocument();
+    expect(screen.queryByPlaceholderText(/search/i)).not.toBeInTheDocument();
   });
 
   it("shows reporter public ticket and current-state progress semantics", async () => {
@@ -332,14 +334,19 @@ describe("IncidentDetailPage", () => {
     renderWithProviders(<IncidentDetailPage />, { initialEntries: [`/incidents/${incidentId}`], routePath: "/incidents/:incidentId" });
 
     await waitFor(() => expect(screen.getByRole("heading", { name: "Request FO-2026-000201" })).toBeInTheDocument());
-    expect(screen.queryByText("FO-2026-000201")).not.toBeInTheDocument();
+    expect(screen.getAllByText("FO-2026-000201").length).toBeGreaterThanOrEqual(1);
     const progress = screen.getByRole("list", { name: /request progress/i });
     expect(within(progress).getByText("Submitted").closest("li")).toHaveAttribute("data-state", "complete");
     expect(within(progress).getByText("Under review").closest("li")).toHaveAttribute("data-state", "current");
     expect(within(progress).getByText("Awaiting technician").closest("li")).toHaveAttribute("data-state", "upcoming");
+    expect(within(progress).getAllByRole("listitem")).toHaveLength(7);
     expect(screen.queryByText(/AI recommendation/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/\bETA\b/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/arrival/i)).not.toBeInTheDocument();
+    expect(screen.getByText("Service details")).toBeInTheDocument();
+    expect(screen.getByText("ELECTRICAL")).toBeInTheDocument();
+    expect(screen.queryByText("Location")).not.toBeInTheDocument();
+    expect(screen.queryByText(/assignment history/i)).not.toBeInTheDocument();
   });
 
   it("shows closed reporter progress without fabricating history", async () => {
@@ -375,6 +382,7 @@ describe("IncidentDetailPage", () => {
     await waitFor(() => expect(screen.getByText(/AI triage did not produce a usable recommendation/i)).toBeInTheDocument());
     expect(screen.getByText("Confirmed triage")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /confirm maintenance triage/i })).not.toBeInTheDocument();
+    expect(screen.queryByPlaceholderText(/search/i)).not.toBeInTheDocument();
   });
 
   it("does not say manual review is missing after manager-confirmed triage", async () => {
@@ -887,6 +895,7 @@ describe("IncidentDetailPage", () => {
     expect(screen.getByText(/Routine assignment is unavailable/i)).toBeInTheDocument();
     expect(screen.getByText("Morgan Manager")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /confirm maintenance triage/i })).not.toBeInTheDocument();
+    expect(screen.queryByPlaceholderText(/search/i)).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /record safety escalation/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /assign technician/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /close incident/i })).not.toBeInTheDocument();
@@ -941,6 +950,10 @@ describe("IncidentDetailPage", () => {
     expect(within(progress).getByText("Report received")).toBeInTheDocument();
     expect(within(progress).getByText("Under review")).toBeInTheDocument();
     expect(within(progress).getByText("Escalated for safety review")).toBeInTheDocument();
+    expect(within(progress).getAllByRole("listitem")).toHaveLength(3);
+    expect(within(progress).queryByText("Awaiting technician")).not.toBeInTheDocument();
+    expect(within(progress).queryByText("Technician assigned")).not.toBeInTheDocument();
+    expect(within(progress).queryByText("Work in progress")).not.toBeInTheDocument();
     expect(screen.queryByText(/Water is leaking above electrical equipment/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/Recorded by/i)).not.toBeInTheDocument();
   });

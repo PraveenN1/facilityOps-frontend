@@ -42,9 +42,12 @@ function AppChrome() {
   return (
     <div className="app-shell">
       <header className="topbar">
-        <div>
-          <p className="eyebrow">FacilityOps AI</p>
-          <h1>Operations console</h1>
+        <div className="brand-lockup" aria-label="FacilityOps AI">
+          <span className="brand-icon"><Building2 aria-hidden size={20} /></span>
+          <div className="brand-copy">
+            <strong>FacilityOps <span>AI</span></strong>
+            <small>Smarter facilities. Safer buildings.</small>
+          </div>
         </div>
         <div className="topbar-actions">
           <BuildingSelector />

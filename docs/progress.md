@@ -2,7 +2,7 @@
 
 ## Current Status
 
-Manager incident queue and detail visual redesign is implemented as a frontend-only presentation change. The manager shell now keeps only the implemented Overview and Incident queue navigation, the queue uses dense operations-console rows with real ticket/building/category/priority/workflow/AI fields, and incident detail shows a reference-style ticket hero plus summary cards while preserving separate Original complaint, AI recommendation, safety escalation, active assignment, and workflow panels.
+Reporter screens visual redesign is implemented as a frontend-only presentation change. Reporter My requests now uses compact functional request rows with prominent public ticket IDs, two-line clamped summaries, real building/date metadata, reporter-safe status badges, request count, and chevron details navigation; reporter detail now uses existing cards/status sections with a timeline-style progress tracker, real request facts, and service category only when present. The shared authenticated shell now uses a compact FacilityOps AI brand lockup instead of the old large page title.
 
 ## Completed
 
@@ -95,6 +95,12 @@ Manager incident queue and detail visual redesign is implemented as a frontend-o
 - Safety-escalated incidents with no confirmed operational category show `Not confirmed` operational category/priority in both queue and detail presentations while preserving AI-suggested category/priority separately.
 - Manager incident detail now includes a `Back to incident queue` link and top summary cards for building, reported timestamp, operational category, and operational priority using only existing API fields.
 - The detail view keeps Original complaint, AI recommendation, safety escalation recorded, current active assignment, and workflow action/availability sections separate. No location, team, report, confidence, assignment-history, safety-clearance, or closure data is fabricated.
+- Reporter My requests was redesigned as a compact request queue without adding non-functional search, filter, or sort controls.
+- Reporter request rows now use the backend `public_ticket_id` as a highlighted ticket chip, clamp long complaint summaries to two lines, show authenticated building names and submitted timestamps, and keep a real details link.
+- Reporter status presentation remains based on existing incident status mappings: safety escalation stays reporter-safe, and awaiting assignment remains `Technician being arranged`.
+- Reporter request detail was restyled around existing fields only: current status, progress tracker, original request, request ID, building, submitted/updated timestamps, next-step guidance, and service category when the backend provides one.
+- Reporter detail still hides manager/AI/internal workflow panels, escalation reasons, fake location data, ETA, assignment history, resolution history, search, filters, and sort controls.
+- Reporter visual follow-up replaced the old authenticated header title with a compact FacilityOps AI brand lockup, tightened reporter request rows, added a real total-count line, changed details affordance to a compact chevron, and restyled reporter progress into a timeline while keeping the same backend data and routes.
 ## API Contract Notes
 
 - Authenticated identity comes from backend-owned session cookies and `/api/v1/auth/me`.
@@ -220,6 +226,13 @@ Manager incident queue and detail visual redesign is implemented as a frontend-o
 - Manager queue/detail visual redesign `npm run build` passed: TypeScript project build and Vite production build completed successfully.
 - Manager queue/detail visual redesign `git diff --check` passed with Git LF-to-CRLF conversion warnings only.
 - Browser-level visual verification was not performed in this task; no browser automation run was requested or executed.
+- Reporter screens visual redesign focused tests passed: `npx vitest run src/pages/ReporterWorkspacePage.test.tsx src/pages/IncidentDetailPage.test.tsx --reporter=dot --pool=forks --poolOptions.forks.maxForks=1 --poolOptions.forks.minForks=1` reported 2 files and 44 tests passed. React Router future-flag warnings were emitted by the test environment.
+- Reporter screens visual redesign `npm run typecheck` passed.
+- Reporter screens visual redesign `npm run build` passed: TypeScript project build and Vite production build completed successfully.
+- Reporter screens visual redesign `git diff --check` passed with Git LF-to-CRLF conversion warnings only.
+- Reporter visual follow-up focused tests initially hit Windows `spawn EPERM` while loading Vite/esbuild; rerunning with normal process permissions passed: `npx vitest run src/pages/ReporterWorkspacePage.test.tsx src/pages/IncidentDetailPage.test.tsx src/ui/AppLayout.test.tsx --reporter=dot --pool=forks --poolOptions.forks.maxForks=1 --poolOptions.forks.minForks=1` reported 3 files and 45 tests passed. React Router future-flag warnings were emitted by the test environment.
+- Reporter visual follow-up `npm run typecheck` passed.
+- Reporter visual follow-up `npm run build` passed: TypeScript project build and Vite production build completed successfully.
 ## Remaining
 
 - Full browser-level workflow verification still requires an available browser automation surface.

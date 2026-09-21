@@ -2,7 +2,7 @@ import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { ComplaintCreatePage, ReporterWorkspacePage, reporterProgressForStatus, reporterProgressIndex, reporterProgressSteps, reporterStatusLabel } from "./ReporterWorkspacePage";
+import { ComplaintCreatePage, ReporterWorkspacePage, reporterProgressForStatus, reporterProgressIndex, reporterProgressSteps, reporterSafetyProgressSteps, reporterStatusLabel } from "./ReporterWorkspacePage";
 import { renderWithProviders } from "../test/test-utils";
 
 const buildingId = "10000000-0000-0000-0000-000000000001";
@@ -36,7 +36,7 @@ describe("ReporterWorkspacePage", () => {
         id: "20000000-0000-0000-0000-000000000001",
         building_id: buildingId,
         public_ticket_id: "FO-2026-000501",
-        description: "Conference room is too warm with weak airflow",
+        description: "Conference room is too warm with weak airflow near the ceiling vents and the temperature is affecting meetings in the space",
         status: "PENDING_TRIAGE",
         created_at: "2026-09-17T10:00:00Z",
         incident_id: "30000000-0000-0000-0000-000000000001",
@@ -48,12 +48,18 @@ describe("ReporterWorkspacePage", () => {
 
     renderWithProviders(<ReporterWorkspacePage />);
 
-    await waitFor(() => expect(screen.getByText("Conference room is too warm with weak airflow")).toBeInTheDocument());
-    expect(screen.getByText("FO-2026-000501")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText("Conference room is too warm with weak airflow near the ceiling vents and the temperature is affecting meetings in the space")).toBeInTheDocument());
+    expect(screen.getByText("1 request")).toBeInTheDocument();
+    expect(screen.getByText("FO-2026-000501")).toHaveClass("request-ticket");
+    expect(screen.getByText("FO-2026-000501")).not.toHaveClass("mono-cell");
+    expect(screen.getByText("Conference room is too warm with weak airflow near the ceiling vents and the temperature is affecting meetings in the space")).toHaveClass("request-summary");
     expect(screen.getByText(/Demo Tower/i)).toBeInTheDocument();
     expect(screen.getByText("Technician being arranged")).toBeInTheDocument();
     expect(screen.queryByText(/Your request has been reviewed/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/A technician is being arranged/i)).not.toBeInTheDocument();
+    expect(screen.queryByPlaceholderText(/search/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /all requests/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /most recent/i })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: /view details for ticket FO-2026-000501/i })).toHaveAttribute("href", "/incidents/30000000-0000-0000-0000-000000000001");
   });
 
@@ -132,12 +138,16 @@ describe("ReporterWorkspacePage", () => {
     expect(reporterProgressIndex("CLOSED")).toBe(6);
     expect(reporterProgressForStatus("SAFETY_ESCALATED")).toEqual({
       currentIndex: 2,
-      steps: [
-        { statuses: [], label: "Report received" },
-        { statuses: ["PENDING_TRIAGE", "MANUAL_REVIEW"], label: "Under review" },
-        { statuses: ["SAFETY_ESCALATED"], label: "Escalated for safety review" },
-      ],
+      steps: reporterSafetyProgressSteps,
     });
+    expect(reporterSafetyProgressSteps.map((step) => step.label)).toEqual([
+      "Report received",
+      "Under review",
+      "Escalated for safety review",
+    ]);
+    expect(reporterSafetyProgressSteps.map((step) => step.label)).not.toContain("Awaiting technician");
+    expect(reporterSafetyProgressSteps.map((step) => step.label)).not.toContain("Technician assigned");
+    expect(reporterSafetyProgressSteps.map((step) => step.label)).not.toContain("Work in progress");
   });
 
   it("shows safety-escalated requests in the reporter list without internal escalation details", async () => {
@@ -164,5 +174,6 @@ describe("ReporterWorkspacePage", () => {
     await waitFor(() => expect(screen.getByText("Escalated for safety review")).toBeInTheDocument());
     expect(screen.queryByText(/escalation reason/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/Recorded by/i)).not.toBeInTheDocument();
+    expect(screen.getByText("FO-2026-000888")).toHaveClass("request-ticket");
   });
 });

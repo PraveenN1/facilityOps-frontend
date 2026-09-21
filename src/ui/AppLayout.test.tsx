@@ -33,6 +33,8 @@ describe("AppLayout", () => {
   it("renders only implemented manager navigation sections", async () => {
     renderWithProviders(<AppLayout />);
 
+    expect(await screen.findByText("FacilityOps")).toBeInTheDocument();
+    expect(screen.getByText("Smarter facilities. Safer buildings.")).toBeInTheDocument();
     const nav = await screen.findByRole("navigation", { name: /workspace/i });
     await waitFor(() => expect(within(nav).getByRole("link", { name: /overview/i })).toBeInTheDocument());
     expect(within(nav).getByRole("link", { name: /incident queue/i })).toBeInTheDocument();

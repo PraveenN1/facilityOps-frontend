@@ -158,7 +158,7 @@ function ReporterIncidentDetail({
 
   return (
     <section className="reporter-detail-page stack-lg">
-      <div className="section-heading">
+      <div className="section-heading reporter-detail-heading">
         <div>
           <Link to="/" className="text-link">Back to my requests</Link>
           <p className="eyebrow">Request detail</p>
@@ -184,32 +184,52 @@ function ReporterIncidentDetail({
           <article className="panel stack reporter-progress-panel">
             <div>
               <p className="eyebrow">Current progress</p>
-              <h3 className="icon-heading"><ClipboardCheck aria-hidden size={18} />{statusLabel}</h3>
             </div>
             <ReporterProgress status={incident.status} />
           </article>
 
-          <article className="panel stack">
-            <div>
-              <p className="eyebrow">What did I report?</p>
-              <h3>Original request</h3>
+          <article className="panel stack request-info-panel">
+            <div className="icon-heading">
+              <ClipboardCheck aria-hidden size={20} />
+              <div>
+                <p className="eyebrow">What did I report?</p>
+                <h3>Original request</h3>
+              </div>
             </div>
             <p className="body-copy complaint-lead">{incident.complaint_description}</p>
-            <dl className="definition-grid">
+            <dl className="request-detail-facts">
               <div><dt>Building</dt><dd>{buildingName ?? "Authorized building"}</dd></div>
-              <div><dt>Submitted</dt><dd>{formatDateTime(incident.created_at)}</dd></div>
+              <div><dt>Request ID</dt><dd className="mono-cell">{incident.public_ticket_id}</dd></div>
               <div><dt>Last updated</dt><dd>{formatDateTime(incident.updated_at)}</dd></div>
+              <div><dt>Submitted</dt><dd>{formatDateTime(incident.created_at)}</dd></div>
             </dl>
           </article>
 
-          <article className="panel stack">
-            <div>
-              <p className="eyebrow">What happens next?</p>
-              <h3>{statusLabel}</h3>
-            </div>
-            <p className={incident.status === "CLOSED" ? "success-note" : "info-note"}>{nextStep}</p>
-            {assignedTechnician ? <p className="body-copy">Assigned technician: <strong>{assignedTechnician}</strong></p> : null}
-          </article>
+          <div className="stack">
+            <article className="panel stack request-next-panel">
+              <div className="icon-heading">
+                <Clock3 aria-hidden size={20} />
+                <div>
+                  <p className="eyebrow">What happens next?</p>
+                  <h3>{statusLabel}</h3>
+                </div>
+              </div>
+              <p className={incident.status === "CLOSED" ? "success-note" : "info-note"}>{nextStep}</p>
+              {assignedTechnician ? <p className="body-copy">Assigned technician: <strong>{assignedTechnician}</strong></p> : null}
+            </article>
+
+            {incident.category ? (
+              <article className="panel request-service-panel">
+                <Wrench aria-hidden size={20} />
+                <div>
+                  <p className="eyebrow">Service details</p>
+                  <dl className="request-service-facts">
+                    <div><dt>Service type</dt><dd>{incident.category}</dd></div>
+                  </dl>
+                </div>
+              </article>
+            ) : null}
+          </div>
         </div>
       ) : null}
     </section>
@@ -230,7 +250,7 @@ export function ReporterProgress({ status }: { status: string }) {
             aria-current={current ? "step" : undefined}
             data-state={current ? "current" : complete ? "complete" : "upcoming"}
           >
-            <span aria-hidden="true">{complete ? <CheckCircle2 size={16} /> : <Clock3 size={16} />}</span>
+            <span className="request-progress-dot" aria-hidden="true">{complete ? <CheckCircle2 size={14} /> : null}</span>
             <span>{step.label}</span>
           </li>
         );
