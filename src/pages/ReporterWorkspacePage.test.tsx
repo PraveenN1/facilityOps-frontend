@@ -94,6 +94,8 @@ describe("ReporterWorkspacePage", () => {
     expect(await screen.findByText("Request submitted")).toBeInTheDocument();
     expect(screen.getByText("FO-2026-000777")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /view request/i })).toHaveAttribute("href", "/incidents/incident-id");
+    expect(screen.queryByRole("button", { name: /submit request/i })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/maintenance request/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/idempotency/i)).not.toBeInTheDocument();
   });
 

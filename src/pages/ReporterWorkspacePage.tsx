@@ -98,23 +98,25 @@ export function ComplaintCreatePage() {
           <Link className="primary-button icon-button fit" to={`/incidents/${createdRequest.incident_id}`}>View request <ArrowRight aria-hidden size={16} /></Link>
         </div>
       ) : null}
-      <form onSubmit={submit} className="panel stack">
-        <label className="field-label">Building
-          <select required className="field-input" value={buildingId} onChange={(event) => setBuildingId(event.target.value)}>
-            <option value="">Select building</option>
-            {buildings.map((building) => <option key={building.id} value={building.id}>{building.name}</option>)}
-          </select>
-        </label>
-        <label className="field-label">Maintenance request
-          <textarea required className="field-input min-h-36" value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Example: Conference room 4B is too warm and airflow seems weak near the ceiling vents." />
-        </label>
-        <p className="info-note">Include the exact location and symptoms. For urgent hazards or emergencies, contact building security or emergency services immediately.</p>
-        {mutation.isError ? <ErrorState title="Request was not submitted" detail={mutation.error.message} /> : null}
-        <button className="primary-button icon-button" disabled={!canSubmit || mutation.isPending} type="submit">
-          <Plus aria-hidden size={16} />
-          {mutation.isPending ? "Submitting request..." : "Submit request"}
-        </button>
-      </form>
+      {!createdRequest ? (
+        <form onSubmit={submit} className="panel stack">
+          <label className="field-label">Building
+            <select required className="field-input" value={buildingId} onChange={(event) => setBuildingId(event.target.value)}>
+              <option value="">Select building</option>
+              {buildings.map((building) => <option key={building.id} value={building.id}>{building.name}</option>)}
+            </select>
+          </label>
+          <label className="field-label">Maintenance request
+            <textarea required className="field-input min-h-36" value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Example: Conference room 4B is too warm and airflow seems weak near the ceiling vents." />
+          </label>
+          <p className="info-note">Include the exact location and symptoms. For urgent hazards or emergencies, contact building security or emergency services immediately.</p>
+          {mutation.isError ? <ErrorState title="Request was not submitted" detail={mutation.error.message} /> : null}
+          <button className="primary-button icon-button" disabled={!canSubmit || mutation.isPending} type="submit">
+            <Plus aria-hidden size={16} />
+            {mutation.isPending ? "Submitting request..." : "Submit request"}
+          </button>
+        </form>
+      ) : null}
     </section>
   );
 }
