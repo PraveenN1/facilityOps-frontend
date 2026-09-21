@@ -170,6 +170,70 @@ describe("IncidentDetailPage", () => {
     expect(await screen.findByRole("button", { name: /assign technician/i })).toBeInTheDocument();
   });
 
+  it("refetches incident detail and shows the actual assigned technician after dispatch", async () => {
+    const user = userEvent.setup();
+    let incidentReads = 0;
+    let assignmentRequested = false;
+    vi.spyOn(globalThis, "fetch").mockImplementation((input, init) => {
+      const url = requestUrl(input);
+      if (url.includes("/api/v1/auth/me")) return jsonResponse(mockSession("FACILITY_MANAGER"));
+      if (url.includes("/api/v1/buildings")) return jsonResponse({ items: [{ id: buildingId, name: "Demo Tower" }] });
+      if (url.includes("/api/v1/technicians")) {
+        return jsonResponse({
+          items: [{
+            id: technicianId,
+            user_id: technicianUserId,
+            display_name: "technician@test.local",
+            skills: ["ELECTRICAL"],
+            status: "ACTIVE",
+            available: true,
+            active_assignment_id: null,
+          }],
+        });
+      }
+      if (url.includes(`/api/v1/incidents/${incidentId}/assign`) && init?.method === "POST") {
+        assignmentRequested = true;
+        return jsonResponse({
+          assignment_id: assignmentId,
+          incident_id: incidentId,
+          technician_id: technicianId,
+          status: "ASSIGNED",
+          incident_status: "ASSIGNED",
+          incident_version: 3,
+        }, 201);
+      }
+      if (url.includes(`/api/v1/incidents/${incidentId}`)) {
+        incidentReads += 1;
+        return jsonResponse(
+          incidentReads === 1
+            ? incident({ status: "AWAITING_ASSIGNMENT", version: 2, active_assignment: null })
+            : incident({
+                status: "ASSIGNED",
+                version: 3,
+                active_assignment: {
+                  assignment_id: assignmentId,
+                  technician_id: technicianId,
+                  technician_display_name: "technician@test.local",
+                  status: "ASSIGNED",
+                },
+              }),
+        );
+      }
+      return jsonResponse({ detail: "unexpected request" }, 500);
+    });
+
+    renderWithProviders(<IncidentDetailPage />, { initialEntries: [`/incidents/${incidentId}`], routePath: "/incidents/:incidentId" });
+
+    fireEvent.change(await screen.findByLabelText(/available and qualified/i), { target: { value: technicianId } });
+    await user.click(screen.getByRole("button", { name: /assign technician/i }));
+
+    await waitFor(() => expect(assignmentRequested).toBe(true));
+    await waitFor(() => expect(screen.getByText("Current active assignment")).toBeInTheDocument());
+    expect(screen.getAllByText("technician@test.local").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("ASSIGNED").length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByText("Ravi Iyer")).not.toBeInTheDocument();
+  });
+
   it("shows manager closure only when resolved", async () => {
     vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
       const url = requestUrl(input);
@@ -243,6 +307,8 @@ describe("IncidentDetailPage", () => {
     expect(within(progress).getByText("Under review")).toBeInTheDocument();
     expect(within(progress).getByText("Awaiting technician")).toBeInTheDocument();
     expect(screen.getAllByText(/Your request has been reviewed. A technician is being arranged/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByText(/audited timeline/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/current API/i)).not.toBeInTheDocument();
     expect(screen.queryByText("AI assessment")).not.toBeInTheDocument();
     expect(screen.queryByText("Human-confirmed decision")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /confirm triage/i })).not.toBeInTheDocument();
@@ -259,7 +325,8 @@ describe("IncidentDetailPage", () => {
 
     renderWithProviders(<IncidentDetailPage />, { initialEntries: [`/incidents/${incidentId}`], routePath: "/incidents/:incidentId" });
 
-    await waitFor(() => expect(screen.getAllByText("FO-2026-000201").length).toBeGreaterThanOrEqual(1));
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Request FO-2026-000201" })).toBeInTheDocument());
+    expect(screen.queryByText("FO-2026-000201")).not.toBeInTheDocument();
     const progress = screen.getByRole("list", { name: /request progress/i });
     expect(within(progress).getByText("Submitted").closest("li")).toHaveAttribute("data-state", "complete");
     expect(within(progress).getByText("Under review").closest("li")).toHaveAttribute("data-state", "current");
@@ -283,7 +350,9 @@ describe("IncidentDetailPage", () => {
     await waitFor(() => expect(screen.getAllByText("Closed").length).toBeGreaterThanOrEqual(1));
     const progress = screen.getByRole("list", { name: /request progress/i });
     expect(within(progress).getByText("Closed").closest("li")).toHaveAttribute("data-state", "current");
-    expect(screen.getByText(/does not expose resolution notes or full assignment history/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Your request has been closed/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByText(/does not expose resolution notes or full assignment history/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/audited timeline/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/assigned at/i)).not.toBeInTheDocument();
   });
   it("shows AI timeout history alongside completed manual triage", async () => {
@@ -329,8 +398,8 @@ describe("IncidentDetailPage", () => {
 
     renderWithProviders(<IncidentDetailPage />, { initialEntries: [`/incidents/${incidentId}`], routePath: "/incidents/:incidentId" });
 
-    await waitFor(() => expect(screen.getByText("No persisted AI recommendation")).toBeInTheDocument());
-    expect(screen.getByText(/processed, but the backend did not persist a validated recommendation/i)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText("No AI recommendation available")).toBeInTheDocument());
+    expect(screen.getByText(/processed, but no validated recommendation was saved/i)).toBeInTheDocument();
   });
 
   it("renders persisted validated AI recommendations when present", async () => {
@@ -484,8 +553,46 @@ describe("IncidentDetailPage", () => {
 
     renderWithProviders(<IncidentDetailPage />, { initialEntries: [`/incidents/${incidentId}`], routePath: "/incidents/:incidentId" });
 
-    await waitFor(() => expect(screen.getByText(/Safety review required by backend-visible AI assessment signals/i)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/AI advisory noted possible safety concerns/i)).toBeInTheDocument());
     expect(screen.getByText(/Leaving this unchecked does not establish that an incident is safe/i)).toBeInTheDocument();
+  });
+
+  it("keeps advisory safety wording visible after closure without presenting a current blocker", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
+      const url = requestUrl(input);
+      if (url.includes("/api/v1/auth/me")) return jsonResponse(mockSession("FACILITY_MANAGER"));
+      if (url.includes("/api/v1/buildings")) return jsonResponse({ items: [{ id: buildingId, name: "Demo Tower" }] });
+      if (url.includes(`/api/v1/incidents/${incidentId}`)) {
+        return jsonResponse(incident({
+          status: "CLOSED",
+          active_assignment: null,
+          latest_triage_result: {
+            id: "40000000-0000-0000-0000-000000000001",
+            status: "SUCCEEDED",
+            model_version: "groq:openai/gpt-oss-20b",
+            validated_result: {
+              category: "ELECTRICAL",
+              location: "Lobby",
+              issue_summary: "Potential electrical concern was mentioned.",
+              symptoms: ["outage"],
+              potential_hazards: ["possible electrical issue"],
+              suggested_priority: "HIGH",
+              missing_information: [],
+              needs_human_review: false,
+              safety_notes: [],
+            },
+            created_at: "2026-09-17T10:02:00Z",
+          },
+        }));
+      }
+      return jsonResponse({ detail: "unexpected request" }, 500);
+    });
+
+    renderWithProviders(<IncidentDetailPage />, { initialEntries: [`/incidents/${incidentId}`], routePath: "/incidents/:incidentId" });
+
+    await waitFor(() => expect(screen.getByText(/AI advisory noted possible safety concerns/i)).toBeInTheDocument());
+    expect(screen.queryByText(/may prevent assignment clearance/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/backend-visible/i)).not.toBeInTheDocument();
   });
 
   it("renders a null active assignment empty state without fabricating history", async () => {
@@ -501,7 +608,8 @@ describe("IncidentDetailPage", () => {
     renderWithProviders(<IncidentDetailPage />, { initialEntries: [`/incidents/${incidentId}`], routePath: "/incidents/:incidentId" });
 
     await waitFor(() => expect(screen.getAllByText("No active assignment").length).toBeGreaterThanOrEqual(1));
-    expect(screen.getByText(/current API does not expose assignment history/i)).toBeInTheDocument();
+    expect(screen.getByText(/Capacity has been released after work completion/i)).toBeInTheDocument();
+    expect(screen.queryByText(/assignment history/i)).not.toBeInTheDocument();
   });
 
   it.each([

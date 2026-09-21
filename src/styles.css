@@ -296,6 +296,7 @@ code,
   .request-card-main { @apply min-w-0 flex-1; }
   .request-card-main strong { @apply block whitespace-normal break-words text-base leading-6; color: var(--ink); }
   .request-card-status { @apply flex flex-col items-start gap-2 text-sm sm:max-w-72 sm:items-end sm:text-right; color: var(--muted); }
+  .complaint-row .status-badge { @apply mt-0 inline-flex; }
   .request-open { @apply inline-flex items-center gap-1 text-xs font-semibold; color: var(--blue); }
   .request-detail h3 { @apply text-xl font-semibold; }
   .request-progress { @apply grid gap-2 sm:grid-cols-2 lg:grid-cols-7; }

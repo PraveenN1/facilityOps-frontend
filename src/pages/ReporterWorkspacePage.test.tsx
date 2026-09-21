@@ -52,7 +52,8 @@ describe("ReporterWorkspacePage", () => {
     expect(screen.getByText("FO-2026-000501")).toBeInTheDocument();
     expect(screen.getByText(/Demo Tower/i)).toBeInTheDocument();
     expect(screen.getByText("Technician being arranged")).toBeInTheDocument();
-    expect(screen.getByText(/Your request has been reviewed/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Your request has been reviewed/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/A technician is being arranged/i)).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: /view details for ticket FO-2026-000501/i })).toHaveAttribute("href", "/incidents/30000000-0000-0000-0000-000000000001");
   });
 

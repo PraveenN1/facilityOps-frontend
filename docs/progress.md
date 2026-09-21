@@ -69,6 +69,13 @@ Task 014E reporter and technician workflow UX corrections are implemented. Repor
 - Reporter request detail now shows a current-state progress tracker derived only from incident status, next-step copy, original report details, and explicit notes when the backend does not expose assignment or resolution history.
 - Technician workspace now displays the authenticated technician display name, improved work-order cards, public ticket links, original complaint context, and state-specific actions: Start only for `ASSIGNED`, Resolve only for `IN_PROGRESS`.
 - Technician resolution continues to rely on successful server responses before showing confirmation, refetches active work, and preserves the empty active-work state without fabricating completed-work history.
+- Task 014F-PATCH final UX corrections were completed without backend contract changes.
+- Manager assignment now explicitly refetches the incident detail after successful dispatch so the current active assignment shows the backend-provided technician identity and assignment status.
+- The assigned technician display uses the backend `technician_display_name` field, including legitimate email fallback for accounts without configured full names. No demo names are hardcoded.
+- Reporter My requests rows were compacted to show complaint summary, public ticket ID, building, submission date, one status badge, and a View details affordance without repeating explanatory status text on every row.
+- Reporter request detail now shows the public ticket once in the page heading, keeps the original complaint in the request-information section, and removes developer-facing API/audited-timeline/assignment-history copy.
+- Closed reporter detail now shows the simple closure message from the current incident status without fabricating resolution or assignment history.
+- Manager safety copy now distinguishes an AI advisory safety signal from a current operational blocker. Safety checks remain authoritative, and the UI does not claim hazard clearance.
 
 ## API Contract Notes
 
@@ -147,6 +154,12 @@ Task 014E reporter and technician workflow UX corrections are implemented. Repor
 - Task 014E `npm run build` passed: TypeScript project build and Vite production build completed successfully.
 - Task 014E `npm run smoke:backend` passed: `Backend health check passed.`
 - Task 014E `git diff --check` passed with Git LF-to-CRLF conversion warnings only.
+- Task 014F-PATCH focused tests passed: `npx vitest run src/pages/ReporterWorkspacePage.test.tsx src/pages/IncidentDetailPage.test.tsx` reported 2 files and 34 tests passed.
+- Task 014F-PATCH `npm run typecheck` passed.
+- Task 014F-PATCH `npm test` passed: 8 files and 65 tests passed. React Router future-flag warnings were emitted by the test environment.
+- Task 014F-PATCH `npm run build` passed.
+- Task 014F-PATCH initial `npm run smoke:backend` failed because no backend was listening on `localhost:8000`; after starting the local backend, `npm run smoke:backend` passed.
+- Task 014F-PATCH browser automation was not performed because CUA reported no available browser surfaces.
 
 ## Remaining
 

@@ -45,13 +45,15 @@ export function IncidentDetailPage() {
     enabled: shouldLoadTechnicians,
   });
 
-  const refreshWorkflow = () => {
-    void queryClient.invalidateQueries({ queryKey: ["incident", incidentId] });
-    void queryClient.invalidateQueries({ queryKey: ["incidents"] });
-    void queryClient.invalidateQueries({ queryKey: ["technicians"] });
-    void queryClient.invalidateQueries({ queryKey: ["technician", "my-work"] });
-    void queryClient.invalidateQueries({ queryKey: ["complaints"] });
-    void queryClient.invalidateQueries({ queryKey: ["metrics"] });
+  const refreshWorkflow = async () => {
+    await queryClient.refetchQueries({ queryKey: ["incident", incidentId], exact: true });
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["incidents"] }),
+      queryClient.invalidateQueries({ queryKey: ["technicians"] }),
+      queryClient.invalidateQueries({ queryKey: ["technician", "my-work"] }),
+      queryClient.invalidateQueries({ queryKey: ["complaints"] }),
+      queryClient.invalidateQueries({ queryKey: ["metrics"] }),
+    ]);
   };
 
   if (!incidentId) return <ErrorState detail="Incident ID is missing from the route." />;
@@ -133,8 +135,8 @@ function ReporterIncidentDetail({
         <div>
           <Link to="/" className="text-link">Back to my requests</Link>
           <p className="eyebrow">Request detail</p>
-          <h2>{incident ? incident.complaint_description : "Loading request"}</h2>
-          <p className="muted-copy">{incident ? `Ticket ${incident.public_ticket_id}` : `Loading request ${incidentId}`}</p>
+          <h2>{incident ? `Request ${incident.public_ticket_id}` : "Loading request"}</h2>
+          <p className="muted-copy">{incident ? buildingName ?? "Authorized building" : `Loading request ${incidentId}`}</p>
         </div>
         {incident ? <StatusBadge status={statusLabel} /> : null}
       </div>
@@ -145,13 +147,9 @@ function ReporterIncidentDetail({
       {incident ? (
         <div className="reporter-detail-grid">
           <article className={`panel stack request-hero priority-edge priority-${incident.priority.toLowerCase()}`}>
-            <div className="request-hero-topline">
-              <span className="mono-cell">{incident.public_ticket_id}</span>
-              <StatusBadge status={statusLabel} />
-            </div>
             <div>
-              <p className="eyebrow">Request header</p>
-              <h3>{incident.complaint_description}</h3>
+              <p className="eyebrow">Current status</p>
+              <h3>{statusLabel}</h3>
               <p className="body-copy">{nextStep}</p>
             </div>
           </article>
@@ -160,7 +158,6 @@ function ReporterIncidentDetail({
             <div>
               <p className="eyebrow">Current progress</p>
               <h3 className="icon-heading"><ClipboardCheck aria-hidden size={18} />{statusLabel}</h3>
-              <p className="muted-copy">This is the current request state, not an audited timeline.</p>
             </div>
             <ReporterProgress status={incident.status} />
           </article>
@@ -172,7 +169,6 @@ function ReporterIncidentDetail({
             </div>
             <p className="body-copy complaint-lead">{incident.complaint_description}</p>
             <dl className="definition-grid">
-              <div><dt>Ticket</dt><dd className="mono-cell">{incident.public_ticket_id}</dd></div>
               <div><dt>Building</dt><dd>{buildingName ?? "Authorized building"}</dd></div>
               <div><dt>Submitted</dt><dd>{formatDateTime(incident.created_at)}</dd></div>
               <div><dt>Last updated</dt><dd>{formatDateTime(incident.updated_at)}</dd></div>
@@ -184,11 +180,8 @@ function ReporterIncidentDetail({
               <p className="eyebrow">What happens next?</p>
               <h3>{statusLabel}</h3>
             </div>
-            <p className="info-note">{nextStep}</p>
+            <p className={incident.status === "CLOSED" ? "success-note" : "info-note"}>{nextStep}</p>
             {assignedTechnician ? <p className="body-copy">Assigned technician: <strong>{assignedTechnician}</strong></p> : null}
-            {incident.status === "RESOLVED" || incident.status === "CLOSED" ? (
-              <p className="muted-copy">The current API does not expose resolution notes or full assignment history.</p>
-            ) : null}
           </article>
         </div>
       ) : null}
@@ -231,7 +224,9 @@ function OriginalComplaint({ incident, buildingName }: { incident: IncidentDetai
       </div>
       <p className="body-copy complaint-lead">{incident.complaint_description}</p>
       {hazardSignal ? (
-        <p className="danger-note">Safety review required by backend-visible AI assessment signals. Backend hazard restrictions remain authoritative and may prevent assignment clearance.</p>
+        <p className={incident.status === "RESOLVED" || incident.status === "CLOSED" ? "info-note" : "danger-note"}>
+          AI advisory noted possible safety concerns. Safety checks remain authoritative for assignment decisions.
+        </p>
       ) : null}
       <dl className="definition-grid">
         <div><dt>Ticket</dt><dd className="mono-cell">{incident.public_ticket_id}</dd></div>
@@ -252,7 +247,7 @@ function ActiveAssignment({ incident }: { incident: IncidentDetailResponse }) {
     ? "No active assignment yet"
     : "No active assignment";
   const emptyDetail = incident.status === "RESOLVED" || incident.status === "CLOSED"
-    ? "Capacity has been released. The current API does not expose assignment history."
+    ? "Capacity has been released after work completion."
     : "A current assignment will appear after dispatch.";
   return (
     <div className="subsection">
@@ -292,12 +287,12 @@ function AiAssessment({ incident }: { incident: IncidentDetailResponse }) {
             : "AI triage is still processing. Manual review has not been completed yet."}
         </p>
       ) : null}
-      {isFailed ? <p className="danger-note">AI triage did not produce a usable recommendation. Manual review can still record a human decision when backend safety checks allow it.</p> : null}
+      {isFailed ? <p className="danger-note">AI triage did not produce a usable recommendation. Manual review can still record a human decision when safety checks allow it.</p> : null}
       {skippedObsolete ? (
         <EmptyState title="AI skipped after human review" detail="The AI triage event became obsolete after a facility manager completed manual review. No AI recommendation was applied." />
       ) : null}
       {processedWithoutRecommendation ? (
-        <EmptyState title="No persisted AI recommendation" detail="The triage event was processed, but the backend did not persist a validated recommendation for this incident." />
+        <EmptyState title="No AI recommendation available" detail="The triage event was processed, but no validated recommendation was saved for this incident." />
       ) : null}
       {recommendation ? (
         <dl className="definition-grid">
@@ -315,7 +310,7 @@ function AiAssessment({ incident }: { incident: IncidentDetailResponse }) {
   );
 }
 
-function HumanDecision({ incident, canReview, onChanged }: { incident: IncidentDetailResponse; canReview: boolean; onChanged: () => void }) {
+function HumanDecision({ incident, canReview, onChanged }: { incident: IncidentDetailResponse; canReview: boolean; onChanged: () => void | Promise<void> }) {
   const canEditDecision = canReview && triageableStatuses.has(incident.status);
   const hasConfirmedDecision = !triageableStatuses.has(incident.status) && Boolean(incident.category);
 
@@ -331,7 +326,7 @@ function HumanDecision({ incident, canReview, onChanged }: { incident: IncidentD
           <div><dt>Confirmed priority</dt><dd>{incident.priority}</dd></div>
         </dl>
       ) : null}
-      {incident.status === "MANUAL_REVIEW" ? <p className="danger-note">Manual review is required before assignment. Suspected hazards cannot be cleared here without backend-approved escalation.</p> : null}
+      {incident.status === "MANUAL_REVIEW" ? <p className="danger-note">Manual review is required before assignment. Suspected hazards need escalation before dispatch.</p> : null}
       {canEditDecision ? <ManualTriageForm incident={incident} onChanged={onChanged} /> : null}
       {!canEditDecision && !hasConfirmedDecision ? (
         <p className="info-note">{canReview ? "No triage action is available for this state." : "Only facility managers can confirm triage decisions."}</p>
@@ -340,7 +335,7 @@ function HumanDecision({ incident, canReview, onChanged }: { incident: IncidentD
   );
 }
 
-function ManualTriageForm({ incident, onChanged }: { incident: IncidentDetailResponse; onChanged: () => void }) {
+function ManualTriageForm({ incident, onChanged }: { incident: IncidentDetailResponse; onChanged: () => void | Promise<void> }) {
   const recommendation = incident.latest_triage_result?.validated_result;
   const recommendedCategory = recommendation?.category ?? incident.category;
   const [category, setCategory] = useState(triageCategories.includes(recommendedCategory as typeof triageCategories[number]) ? recommendedCategory ?? "" : "");
@@ -367,7 +362,7 @@ function ManualTriageForm({ incident, onChanged }: { incident: IncidentDetailRes
         <input type="checkbox" checked={suspectedHazard} onChange={(event) => setSuspectedHazard(event.target.checked)} />
         Suspected hazard requiring escalation
       </label>
-      <p className="muted-copy">Leaving this unchecked does not establish that an incident is safe. Backend safety checks still decide whether triage can proceed.</p>
+      <p className="muted-copy">Leaving this unchecked does not establish that an incident is safe. Safety checks still decide whether triage can proceed.</p>
       {mutation.isError ? <MutationError title="Manual triage failed" error={mutation.error} /> : null}
       <button className="primary-button fit" disabled={mutation.isPending || !category.trim()} type="submit">Confirm triage</button>
     </form>
@@ -381,7 +376,7 @@ function StateActionPanel(props: {
   techniciansLoading: boolean;
   techniciansError: Error | null;
   techniciansLoaded: boolean;
-  onChanged: () => void;
+  onChanged: () => void | Promise<void>;
 }) {
   const { incident, role } = props;
 
@@ -411,7 +406,7 @@ function TechnicianAssignment({
   techniciansLoading: boolean;
   techniciansError: Error | null;
   techniciansLoaded: boolean;
-  onChanged: () => void;
+  onChanged: () => void | Promise<void>;
 }) {
   const [technicianId, setTechnicianId] = useState("");
   const queryClient = useQueryClient();
@@ -439,12 +434,12 @@ function TechnicianAssignment({
       <div>
         <p className="eyebrow">Technician dispatch</p>
         <h3 className="icon-heading"><Users aria-hidden size={18} />Qualified candidates</h3>
-        <p className="muted-copy">Availability is derived from active ASSIGNED and IN_PROGRESS assignments.</p>
+        <p className="muted-copy">Choose an available technician with the required skill.</p>
       </div>
       {techniciansLoading ? <LoadingState label="Loading technicians" /> : null}
       {techniciansError ? <ErrorState detail={techniciansError.message} /> : null}
       {availableQualified.length === 0 && techniciansLoaded ? (
-        <EmptyState title="No qualified technicians are currently available." detail="Backend capacity and qualification rules remain authoritative." />
+        <EmptyState title="No qualified technicians are currently available." detail="All eligible technicians are assigned or do not match this category." />
       ) : null}
       {availableQualified.length > 0 ? (
         <form className="stack" onSubmit={(event) => { event.preventDefault(); mutation.mutate(); }}>
@@ -491,7 +486,7 @@ function TechnicianGroup({ title, technicians }: { title: string; technicians: T
   );
 }
 
-function TechnicianLifecycle({ incident, onChanged }: { incident: IncidentDetailResponse; onChanged: () => void }) {
+function TechnicianLifecycle({ incident, onChanged }: { incident: IncidentDetailResponse; onChanged: () => void | Promise<void> }) {
   const [resolutionNotes, setResolutionNotes] = useState("");
   const startMutation = useMutation({ mutationFn: () => startIncident(incident.id, { expected_version: incident.version }), onSuccess: onChanged });
   const resolveMutation = useMutation({ mutationFn: () => resolveIncident(incident.id, { expected_version: incident.version, resolution_notes: resolutionNotes.trim() }), onSuccess: onChanged });
@@ -514,11 +509,11 @@ function TechnicianLifecycle({ incident, onChanged }: { incident: IncidentDetail
   );
 }
 
-function ManagerClosure({ incident, onChanged }: { incident: IncidentDetailResponse; onChanged: () => void }) {
+function ManagerClosure({ incident, onChanged }: { incident: IncidentDetailResponse; onChanged: () => void | Promise<void> }) {
   const closeMutation = useMutation({ mutationFn: () => closeIncident(incident.id, { expected_version: incident.version }), onSuccess: onChanged });
   return (
     <article className="panel stack">
-      <div><p className="eyebrow">Closure</p><h3>Manager closure</h3><p className="muted-copy">Resolution details are not exposed by the current API contract.</p></div>
+      <div><p className="eyebrow">Closure</p><h3>Manager closure</h3><p className="muted-copy">Close this incident after reviewing the completed work.</p></div>
       <button className="secondary-button icon-button" disabled={closeMutation.isPending} onClick={() => closeMutation.mutate()}><CheckCircle2 aria-hidden size={16} />Close incident</button>
       {closeMutation.isError ? <MutationError title="Close failed" error={closeMutation.error} /> : null}
     </article>

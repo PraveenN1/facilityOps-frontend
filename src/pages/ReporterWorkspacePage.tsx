@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FormEvent, useMemo, useState } from "react";
-import { ArrowRight, Building2, CalendarClock, CheckCircle2, ClipboardList, Plus } from "lucide-react";
+import { ArrowRight, Building2, CalendarClock, CheckCircle2, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { createComplaint, listMyComplaints } from "../api/client";
@@ -47,10 +47,7 @@ export function ReporterWorkspacePage() {
               aria-label={`View details for ticket ${complaint.public_ticket_id}`}
             >
               <div className="request-card-main">
-                <div className="request-card-titleline">
-                  <strong>{requestTitle(complaint)}</strong>
-                  <StatusBadge status={reporterStatusLabel(complaint.incident_status)} />
-                </div>
+                <strong>{requestTitle(complaint)}</strong>
                 <div className="request-card-meta" aria-label="Request summary">
                   <span className="mono-cell">{complaint.public_ticket_id}</span>
                   <span><Building2 aria-hidden size={14} />{buildingNameById.get(complaint.building_id) ?? "Authorized building"}</span>
@@ -58,7 +55,7 @@ export function ReporterWorkspacePage() {
                 </div>
               </div>
               <div className="request-card-status">
-                <span>{nextStepForStatus(complaint.incident_status)}</span>
+                <StatusBadge status={reporterStatusLabel(complaint.incident_status)} />
                 <span className="request-open">View details <ArrowRight aria-hidden size={14} /></span>
               </div>
             </Link>
