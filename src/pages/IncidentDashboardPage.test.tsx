@@ -156,6 +156,22 @@ describe("IncidentDashboardPage", () => {
     expect(workflowLabel("IN_PROGRESS")).toBe("In progress");
     expect(workflowLabel("RESOLVED")).toBe("Resolved");
     expect(workflowLabel("CLOSED")).toBe("Closed");
+    expect(workflowLabel("SAFETY_ESCALATED")).toBe("Safety escalated");
+  });
+
+  it("renders safety-escalated incidents in the queue", async () => {
+    mockManagerFetch({
+      total: 1,
+      limit: 10,
+      offset: 0,
+      items: [incident({ status: "SAFETY_ESCALATED", ai_triage_status: "SKIPPED_OBSOLETE" })],
+    });
+
+    renderWithProviders(<IncidentDashboardPage />);
+
+    const row = await screen.findByRole("link", { name: /open incident/i });
+    expect(within(row).getByText("Safety escalated")).toHaveClass("status-badge");
+    expect(row).toHaveTextContent("AI skipped after human review");
   });
 
   it("keeps AI status independent from workflow state", async () => {

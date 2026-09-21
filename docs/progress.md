@@ -2,7 +2,7 @@
 
 ## Current Status
 
-Task 014E reporter and technician workflow UX corrections are implemented. Reporter screens now emphasize public ticket tracking and plain-language status progression, while technician screens use authenticated display names, state-specific work-order actions, and server-confirmed resolution feedback. TypeScript checking, component/unit tests, production build, backend smoke, and diff check passed; full browser automation was not available in this pass.
+Task 015B safety escalation frontend integration is implemented. The frontend is synchronized with the live Task 015A backend contract, manager incident detail supports durable safety escalation for eligible triage states, reporter views show `SAFETY_ESCALATED` as a safety-review path without internal manager notes, and queue/status badges include the new state. TypeScript checking, focused regression tests, production build, backend smoke, and diff check passed; the final all-in-one `npm test` command is currently blocked in this shell by Vitest/Node worker allocation failures after earlier interrupted runs.
 
 ## Completed
 
@@ -87,6 +87,7 @@ Task 014E reporter and technician workflow UX corrections are implemented. Repor
 - Human-readable identity labels come from backend `display_name`, `reporter_display_name`, and technician display-name fields; names are presentation-only and never used for authorization.
 - Incident listing, technician listing, operations metrics, and AI metrics support optional `building_id`.
 - When `building_id` is omitted, the backend uses all buildings authorized for the authenticated manager.
+- Safety escalation uses `POST /api/v1/incidents/{incident_id}/escalate-safety` with `expected_version` and `reason`. The frontend treats it as a durable manager-recorded workflow state, not as hazard clearance, dispatch, or AI approval.
 
 ## Verification Log
 
@@ -163,10 +164,28 @@ Task 014E reporter and technician workflow UX corrections are implemented. Repor
 - Task 014F-SAFETY corrected manager manual-triage error presentation for hazardous incidents. Safety-rule rejections now render as `Safety escalation required` with an explicit prototype limitation message instead of the generic `Conflict requires review` label.
 - Task 014F-SAFETY preserves stale-version behavior separately: version conflicts still instruct the manager to review the refreshed incident state before retrying, and no mutation is automatically retried.
 - Task 014F-SAFETY focused frontend verification passed: `npx vitest run src/pages/IncidentDetailPage.test.tsx` reported 30 passed, and `npm run typecheck` passed.
+- Task 015B exported the live backend OpenAPI from `http://localhost:8000/openapi.json` after verifying and restarting a stale uvicorn process on port 8000.
+- Task 015B regenerated `src/api/generated.ts` from the live backend OpenAPI. The generated contract includes `POST /api/v1/incidents/{incident_id}/escalate-safety`, `SafetyEscalationRequest`, `IncidentDetailResponse.safety_escalation`, and `SAFETY_ESCALATED` incident statuses.
+- Manager incident detail now renders an explicit `Escalate safety incident` panel for `PENDING_TRIAGE` and `MANUAL_REVIEW`, submits `expected_version` plus a required reason, disables empty/duplicate submission, and refetches workflow data after success or 409 conflicts.
+- `SAFETY_ESCALATED` manager detail now shows a read-only safety escalation state, routine assignment/work/closure unavailable messaging, and persisted escalation actor, timestamp, and reason when the backend provides them.
+- Reporter list and detail views now map `SAFETY_ESCALATED` to `Escalated for safety review` and use the separate progress path `Report received`, `Under review`, `Escalated for safety review`. Reporter UI does not expose internal escalation reasons.
+- The manager incident queue and shared status badges now include `SAFETY_ESCALATED` without conflating the workflow state with AI status or human approval.
+- Task 015B live OpenAPI verification after backend restart confirmed `/api/v1/incidents/{incident_id}/escalate-safety`, `SafetyEscalationRequest`, and `IncidentDetailResponse.safety_escalation`.
+- Task 015B `npm run generate:api` passed and regenerated `src/api/generated.ts`.
+- Task 015B focused incident/reporter tests passed: `npx vitest run src/pages/IncidentDetailPage.test.tsx src/pages/ReporterWorkspacePage.test.tsx` reported 2 files and 41 tests passed. React Router future-flag warnings were emitted by the test environment.
+- Task 015B full `npm test -- --reporter=dot` passed before the final queue-map fix: 8 files and 72 tests passed, with React Router future-flag warnings.
+- Task 015B build then caught the missing `SAFETY_ESCALATED` manager queue workflow mapping; the queue mapping and dashboard regression test were added.
+- Task 015B focused dashboard verification passed after the queue fix: `npx vitest run src/pages/IncidentDashboardPage.test.tsx --reporter=dot --pool=forks --poolOptions.forks.maxForks=1 --poolOptions.forks.minForks=1` reported 1 file and 10 tests passed.
+- Task 015B `npm run typecheck` passed after the queue fix.
+- Task 015B `npm run build` passed after the queue fix.
+- Task 015B repeated all-in-one `npm test` attempts after the queue fix were blocked by local Vitest/Node worker failures before assertions ran: worker out-of-memory, Windows access-violation exit, and `spawn UNKNOWN`. No failing test assertion was reported in those blocked runs.
+- Task 015B `npm run smoke:backend` passed: `Backend health check passed.`
+- Task 015B `git diff --check` passed with Git LF-to-CRLF conversion warnings only.
 
 ## Remaining
 
 - Full browser-level workflow verification still requires an available browser automation surface.
+- A fresh shell or machine restart may be needed before rerunning the final all-in-one `npm test`; after interrupted/OOM runs, Vitest worker startup began failing before test execution in this shell.
 - Real Groq triage behavior depends on the backend worker and configured Groq credentials. Task 012C-D backend verification confirmed one isolated demo triage event was processed successfully with the real Groq provider.
 - SLA risk, latency trend, AI accuracy, assignment history, and resolution history are not available from the current backend contract.
 - Durable backend hazard-clearance state and complete assignment/resolution history remain unavailable from the current API contract.

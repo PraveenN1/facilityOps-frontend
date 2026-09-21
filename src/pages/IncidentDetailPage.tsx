@@ -1,12 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { FormEvent } from "react";
 import { useMemo, useState } from "react";
-import { BrainCircuit, CheckCircle2, Clock3, ClipboardCheck, Wrench, Users } from "lucide-react";
+import { BrainCircuit, CheckCircle2, Clock3, ClipboardCheck, ShieldAlert, Wrench, Users } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 
 import {
   assignTechnician,
   closeIncident,
+  escalateSafetyIncident,
   getIncident,
   isApiError,
   listTechnicians,
@@ -21,9 +22,10 @@ import { useBuildingSelection } from "../state/BuildingContext";
 import { EmptyState, ErrorState, LoadingState } from "../ui/AsyncState";
 import { StatusBadge } from "../ui/StatusBadge";
 import { formatDateTime } from "../utils/format";
-import { nextStepForStatus, reporterProgressIndex, reporterProgressSteps, reporterStatusLabel } from "./ReporterWorkspacePage";
+import { nextStepForStatus, reporterProgressForStatus, reporterStatusLabel } from "./ReporterWorkspacePage";
 
 const triageableStatuses = new Set(["PENDING_TRIAGE", "MANUAL_REVIEW"]);
+const safetyEscalationSourceStatuses = new Set(["PENDING_TRIAGE", "MANUAL_REVIEW"]);
 const assignmentStatuses = new Set(["ASSIGNED", "IN_PROGRESS"]);
 
 export function IncidentDetailPage() {
@@ -190,10 +192,10 @@ function ReporterIncidentDetail({
 }
 
 export function ReporterProgress({ status }: { status: string }) {
-  const currentIndex = reporterProgressIndex(status);
+  const { steps, currentIndex } = reporterProgressForStatus(status);
   return (
     <ol className="request-progress" aria-label="Request progress">
-      {reporterProgressSteps.map((step, index) => {
+      {steps.map((step, index) => {
         const complete = index < currentIndex;
         const current = index === currentIndex;
         return (
@@ -237,16 +239,19 @@ function OriginalComplaint({ incident, buildingName }: { incident: IncidentDetai
         <div><dt>Updated</dt><dd>{formatDateTime(incident.updated_at)}</dd></div>
       </dl>
       <ActiveAssignment incident={incident} />
+      {incident.status === "SAFETY_ESCALATED" ? <SafetyEscalationSummary incident={incident} /> : null}
     </article>
   );
 }
 
 function ActiveAssignment({ incident }: { incident: IncidentDetailResponse }) {
   const assignment = incident.active_assignment;
-  const emptyTitle = incident.status === "PENDING_TRIAGE" || incident.status === "MANUAL_REVIEW" || incident.status === "AWAITING_ASSIGNMENT"
+  const emptyTitle = incident.status === "PENDING_TRIAGE" || incident.status === "MANUAL_REVIEW" || incident.status === "AWAITING_ASSIGNMENT" || incident.status === "SAFETY_ESCALATED"
     ? "No active assignment yet"
     : "No active assignment";
-  const emptyDetail = incident.status === "RESOLVED" || incident.status === "CLOSED"
+  const emptyDetail = incident.status === "SAFETY_ESCALATED"
+    ? "Routine technician dispatch is unavailable while safety escalation is recorded."
+    : incident.status === "RESOLVED" || incident.status === "CLOSED"
     ? "Capacity has been released after work completion."
     : "A current assignment will appear after dispatch.";
   return (
@@ -259,6 +264,25 @@ function ActiveAssignment({ incident }: { incident: IncidentDetailResponse }) {
         </dl>
       ) : (
         <EmptyState title={emptyTitle} detail={emptyDetail} />
+      )}
+    </div>
+  );
+}
+
+function SafetyEscalationSummary({ incident }: { incident: IncidentDetailResponse }) {
+  const escalation = incident.safety_escalation;
+  return (
+    <div className="subsection stack-sm">
+      <h3 className="icon-heading"><ShieldAlert aria-hidden size={18} />Safety escalation recorded</h3>
+      <p className="danger-note">Routine assignment is unavailable while this safety escalation is recorded.</p>
+      {escalation ? (
+        <dl className="definition-grid">
+          <div><dt>Recorded by</dt><dd>{escalation.actor_display_name}</dd></div>
+          <div><dt>Recorded</dt><dd>{formatDateTime(escalation.escalated_at)}</dd></div>
+          <div className="wide"><dt>Reason</dt><dd>{escalation.reason}</dd></div>
+        </dl>
+      ) : (
+        <p className="info-note">Escalation details are available only to authorized facility managers.</p>
       )}
     </div>
   );
@@ -312,7 +336,8 @@ function AiAssessment({ incident }: { incident: IncidentDetailResponse }) {
 
 function HumanDecision({ incident, canReview, onChanged }: { incident: IncidentDetailResponse; canReview: boolean; onChanged: () => void | Promise<void> }) {
   const canEditDecision = canReview && triageableStatuses.has(incident.status);
-  const hasConfirmedDecision = !triageableStatuses.has(incident.status) && Boolean(incident.category);
+  const isSafetyEscalated = incident.status === "SAFETY_ESCALATED";
+  const hasConfirmedDecision = !isSafetyEscalated && !triageableStatuses.has(incident.status) && Boolean(incident.category);
 
   return (
     <article className="panel stack human-panel">
@@ -320,6 +345,9 @@ function HumanDecision({ incident, canReview, onChanged }: { incident: IncidentD
         <div><p className="eyebrow">Human-confirmed decision</p><h3 className="icon-heading"><CheckCircle2 aria-hidden size={18} />{hasConfirmedDecision ? "Confirmed triage" : "Review required"}</h3></div>
         {hasConfirmedDecision ? <StatusBadge status={incident.status} /> : null}
       </div>
+      {isSafetyEscalated ? (
+        <p className="danger-note">Safety escalation has been recorded. Routine triage, assignment, technician workflow, and closure are unavailable for this incident.</p>
+      ) : null}
       {hasConfirmedDecision ? (
         <dl className="definition-grid">
           <div><dt>Confirmed category</dt><dd>{incident.category}</dd></div>
@@ -328,7 +356,8 @@ function HumanDecision({ incident, canReview, onChanged }: { incident: IncidentD
       ) : null}
       {incident.status === "MANUAL_REVIEW" ? <p className="danger-note">Manual review is required before assignment. Suspected hazards need escalation before dispatch.</p> : null}
       {canEditDecision ? <ManualTriageForm incident={incident} onChanged={onChanged} /> : null}
-      {!canEditDecision && !hasConfirmedDecision ? (
+      {canReview && safetyEscalationSourceStatuses.has(incident.status) ? <SafetyEscalationForm incident={incident} onChanged={onChanged} /> : null}
+      {!canEditDecision && !hasConfirmedDecision && !isSafetyEscalated ? (
         <p className="info-note">{canReview ? "No triage action is available for this state." : "Only facility managers can confirm triage decisions."}</p>
       ) : null}
     </article>
@@ -371,6 +400,41 @@ function ManualTriageForm({ incident, onChanged }: { incident: IncidentDetailRes
       <p className="muted-copy">Leaving this unchecked does not establish that an incident is safe. Safety checks still decide whether triage can proceed.</p>
       {mutation.isError ? <MutationError title="Manual triage failed" error={mutation.error} /> : null}
       <button className="primary-button fit" disabled={mutation.isPending || !category.trim()} type="submit">Confirm triage</button>
+    </form>
+  );
+}
+
+function SafetyEscalationForm({ incident, onChanged }: { incident: IncidentDetailResponse; onChanged: () => void | Promise<void> }) {
+  const queryClient = useQueryClient();
+  const [reason, setReason] = useState("");
+  const trimmedReason = reason.trim();
+  const mutation = useMutation({
+    mutationFn: () => escalateSafetyIncident(incident.id, { expected_version: incident.version, reason: trimmedReason }),
+    onSuccess: onChanged,
+    onError: (error) => {
+      if (isApiError(error) && error.status === 409) {
+        void queryClient.invalidateQueries({ queryKey: ["incident", incident.id] });
+      }
+    },
+  });
+
+  return (
+    <form className="stack subsection" onSubmit={(event: FormEvent<HTMLFormElement>) => { event.preventDefault(); if (trimmedReason) mutation.mutate(); }}>
+      <div>
+        <p className="eyebrow">Safety escalation</p>
+        <h3 className="icon-heading"><ShieldAlert aria-hidden size={18} />Escalate safety incident</h3>
+      </div>
+      <dl className="definition-grid">
+        <div><dt>Ticket</dt><dd className="mono-cell">{incident.public_ticket_id}</dd></div>
+        <div className="wide"><dt>Complaint summary</dt><dd>{incident.complaint_description}</dd></div>
+      </dl>
+      <p className="danger-note">Routine dispatch is unavailable after safety escalation until a separately approved safety clearance workflow exists.</p>
+      <label className="field-label">Escalation reason<textarea required className="field-input" value={reason} onChange={(event) => setReason(event.target.value)} /></label>
+      {mutation.isError ? <MutationError title="Safety escalation failed" error={mutation.error} /> : null}
+      <button className="primary-button icon-button fit" disabled={mutation.isPending || !trimmedReason} type="submit">
+        <ShieldAlert aria-hidden size={16} />
+        {mutation.isPending ? "Recording escalation..." : "Record safety escalation"}
+      </button>
     </form>
   );
 }
@@ -532,6 +596,7 @@ function ReadOnlyStatePanel({ incident, role }: { incident: IncidentDetailRespon
     if (incident.status === "MANUAL_REVIEW") return "Manual review is required before dispatch.";
     if (incident.status === "ASSIGNED") return role === "FACILITY_MANAGER" ? "The assigned technician controls start and resolve actions." : "No action is available for this session.";
     if (incident.status === "IN_PROGRESS") return role === "FACILITY_MANAGER" ? "Work is in progress with the assigned technician." : "No action is available for this session.";
+    if (incident.status === "SAFETY_ESCALATED") return "Safety escalation has been recorded. Routine assignment, technician work, and closure are unavailable.";
     if (incident.status === "CLOSED") return "This incident is closed and read-only.";
     return "No action is available for this state.";
   }, [incident.status, role]);

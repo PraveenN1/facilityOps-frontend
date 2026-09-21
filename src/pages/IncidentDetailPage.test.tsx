@@ -673,6 +673,155 @@ describe("IncidentDetailPage", () => {
     expect(screen.queryByText(/assignment history/i)).not.toBeInTheDocument();
   });
 
+  it("records manager safety escalation with expected version and reason", async () => {
+    const user = userEvent.setup();
+    let submittedBody: Record<string, unknown> | null = null;
+    let incidentReads = 0;
+    vi.spyOn(globalThis, "fetch").mockImplementation((input, init) => {
+      const url = requestUrl(input);
+      if (url.includes("/api/v1/auth/me")) return jsonResponse(mockSession("FACILITY_MANAGER"));
+      if (url.includes("/api/v1/buildings")) return jsonResponse({ items: [{ id: buildingId, name: "Demo Tower" }] });
+      if (url.includes(`/api/v1/incidents/${incidentId}/escalate-safety`) && init?.method === "POST") {
+        submittedBody = JSON.parse(String(init.body));
+        return jsonResponse(incident({
+          status: "SAFETY_ESCALATED",
+          version: 4,
+          active_assignment: null,
+          safety_escalation: {
+            actor_id: "manager-id",
+            actor_display_name: "Morgan Manager",
+            escalated_at: "2026-09-17T10:05:00Z",
+            reason: "Water is leaking above electrical equipment with a burning smell.",
+          },
+        }));
+      }
+      if (url.includes(`/api/v1/incidents/${incidentId}`)) {
+        incidentReads += 1;
+        return jsonResponse(incidentReads === 1
+          ? incident({
+              status: "MANUAL_REVIEW",
+              version: 3,
+              complaint_description: "Water is leaking above electrical equipment with a burning smell.",
+              active_assignment: null,
+            })
+          : incident({
+              status: "SAFETY_ESCALATED",
+              version: 4,
+              complaint_description: "Water is leaking above electrical equipment with a burning smell.",
+              active_assignment: null,
+              safety_escalation: {
+                actor_id: "manager-id",
+                actor_display_name: "Morgan Manager",
+                escalated_at: "2026-09-17T10:05:00Z",
+                reason: "Water is leaking above electrical equipment with a burning smell.",
+              },
+            }));
+      }
+      return jsonResponse({ detail: "unexpected request" }, 500);
+    });
+
+    renderWithProviders(<IncidentDetailPage />, { initialEntries: [`/incidents/${incidentId}`], routePath: "/incidents/:incidentId" });
+
+    await waitFor(() => expect(screen.getByText("Escalate safety incident")).toBeInTheDocument());
+    const submit = screen.getByRole("button", { name: /record safety escalation/i });
+    expect(submit).toBeDisabled();
+    await user.type(screen.getByLabelText(/escalation reason/i), "Water is leaking above electrical equipment with a burning smell.");
+    await user.click(submit);
+
+    await waitFor(() => expect(submittedBody).toEqual({
+      expected_version: 3,
+      reason: "Water is leaking above electrical equipment with a burning smell.",
+    }));
+    await waitFor(() => expect(screen.getByText("Safety escalation recorded")).toBeInTheDocument());
+    expect(screen.getByText("Morgan Manager")).toBeInTheDocument();
+    expect(screen.getAllByText("Water is leaking above electrical equipment with a burning smell.").length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("renders safety-escalated incidents as read-only and hides routine workflow actions", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
+      const url = requestUrl(input);
+      if (url.includes("/api/v1/auth/me")) return jsonResponse(mockSession("FACILITY_MANAGER"));
+      if (url.includes("/api/v1/buildings")) return jsonResponse({ items: [{ id: buildingId, name: "Demo Tower" }] });
+      if (url.includes(`/api/v1/incidents/${incidentId}`)) {
+        return jsonResponse(incident({
+          status: "SAFETY_ESCALATED",
+          version: 4,
+          active_assignment: null,
+          safety_escalation: {
+            actor_id: "manager-id",
+            actor_display_name: "Morgan Manager",
+            escalated_at: "2026-09-17T10:05:00Z",
+            reason: "Water is leaking above electrical equipment with a burning smell.",
+          },
+        }));
+      }
+      return jsonResponse({ detail: "unexpected request" }, 500);
+    });
+
+    renderWithProviders(<IncidentDetailPage />, { initialEntries: [`/incidents/${incidentId}`], routePath: "/incidents/:incidentId" });
+
+    await waitFor(() => expect(screen.getByText("Safety escalation recorded")).toBeInTheDocument());
+    expect(screen.getByText(/Routine assignment is unavailable/i)).toBeInTheDocument();
+    expect(screen.getByText("Morgan Manager")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /confirm triage/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /record safety escalation/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /assign technician/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /close incident/i })).not.toBeInTheDocument();
+  });
+
+  it("shows safety escalation conflicts distinctly and refetches stale state", async () => {
+    const user = userEvent.setup();
+    let incidentReads = 0;
+    vi.spyOn(globalThis, "fetch").mockImplementation((input, init) => {
+      const url = requestUrl(input);
+      if (url.includes("/api/v1/auth/me")) return jsonResponse(mockSession("FACILITY_MANAGER"));
+      if (url.includes("/api/v1/buildings")) return jsonResponse({ items: [{ id: buildingId, name: "Demo Tower" }] });
+      if (url.includes(`/api/v1/incidents/${incidentId}/escalate-safety`) && init?.method === "POST") {
+        return jsonResponse({ detail: "Incident version conflict" }, 409);
+      }
+      if (url.includes(`/api/v1/incidents/${incidentId}`)) {
+        incidentReads += 1;
+        return jsonResponse(incident({ status: "PENDING_TRIAGE", version: 3, active_assignment: null }));
+      }
+      return jsonResponse({ detail: "unexpected request" }, 500);
+    });
+
+    renderWithProviders(<IncidentDetailPage />, { initialEntries: [`/incidents/${incidentId}`], routePath: "/incidents/:incidentId" });
+
+    await user.type(await screen.findByLabelText(/escalation reason/i), "Escalate for safety review.");
+    await user.click(screen.getByRole("button", { name: /record safety escalation/i }));
+
+    await waitFor(() => expect(screen.getByText("Incident changed")).toBeInTheDocument());
+    await waitFor(() => expect(incidentReads).toBeGreaterThan(1));
+  });
+
+  it("shows reporter safety escalation status without internal manager reason", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
+      const url = requestUrl(input);
+      if (url.includes("/api/v1/auth/me")) return jsonResponse({ id: "reporter-id", email: "reporter.demo@facilityops.local", display_name: "Priya Nair", role: "REPORTER", buildings: [{ id: buildingId, name: "Demo Tower" }] });
+      if (url.includes("/api/v1/buildings")) return jsonResponse({ items: [{ id: buildingId, name: "Demo Tower" }] });
+      if (url.includes(`/api/v1/incidents/${incidentId}`)) {
+        return jsonResponse(incident({
+          status: "SAFETY_ESCALATED",
+          active_assignment: null,
+          safety_escalation: null,
+        }));
+      }
+      return jsonResponse({ detail: "unexpected request" }, 500);
+    });
+
+    renderWithProviders(<IncidentDetailPage />, { initialEntries: [`/incidents/${incidentId}`], routePath: "/incidents/:incidentId" });
+
+    await waitFor(() => expect(screen.getAllByText("Escalated for safety review").length).toBeGreaterThanOrEqual(1));
+    expect(screen.getAllByText(/Routine maintenance assignment is not proceeding/i).length).toBeGreaterThanOrEqual(1);
+    const progress = screen.getByRole("list", { name: /request progress/i });
+    expect(within(progress).getByText("Report received")).toBeInTheDocument();
+    expect(within(progress).getByText("Under review")).toBeInTheDocument();
+    expect(within(progress).getByText("Escalated for safety review")).toBeInTheDocument();
+    expect(screen.queryByText(/Water is leaking above electrical equipment/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Recorded by/i)).not.toBeInTheDocument();
+  });
+
   it.each([
     ["PENDING_TRIAGE", /Waiting for AI assessment/i],
     ["MANUAL_REVIEW", /Manual review is required before dispatch/i],
@@ -680,6 +829,7 @@ describe("IncidentDetailPage", () => {
     ["ASSIGNED", /assigned technician controls start and resolve actions/i],
     ["IN_PROGRESS", /Work is in progress with the assigned technician/i],
     ["RESOLVED", /Close incident/i],
+    ["SAFETY_ESCALATED", /Routine assignment, technician work, and closure are unavailable\./i],
     ["CLOSED", /This incident is closed and read-only/i],
   ])("renders manager workflow state for %s", async (status, expected) => {
     vi.spyOn(globalThis, "fetch").mockImplementation((input) => {

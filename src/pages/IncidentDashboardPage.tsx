@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, BrainCircuit, CheckCircle2, ClipboardList, Clock3, Filter, Wrench } from "lucide-react";
+import { ArrowRight, BrainCircuit, CheckCircle2, ClipboardList, Clock3, Filter, ShieldAlert, Wrench } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -112,6 +112,7 @@ const workflowConfig: Record<IncidentStatusValue, { label: string; icon: LucideI
   IN_PROGRESS: { label: "In progress", icon: Wrench, actionable: true },
   RESOLVED: { label: "Resolved", icon: CheckCircle2, complete: true },
   CLOSED: { label: "Closed", icon: CheckCircle2, complete: true },
+  SAFETY_ESCALATED: { label: "Safety escalated", icon: ShieldAlert, actionable: true },
 };
 
 export function workflowLabel(status: IncidentStatusValue) {

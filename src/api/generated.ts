@@ -175,6 +175,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/incidents/{incident_id}/escalate-safety": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Escalate Safety Incident */
+        post: operations["escalate_safety_incident_api_v1_incidents__incident_id__escalate_safety_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/incidents/{incident_id}/assign": {
         parameters: {
             query?: never;
@@ -416,7 +433,7 @@ export interface components {
              * Incident Status
              * @enum {string}
              */
-            incident_status: "PENDING_TRIAGE" | "AWAITING_ASSIGNMENT" | "AWAITING_APPROVAL" | "ASSIGNED" | "IN_PROGRESS" | "RESOLVED" | "CLOSED" | "MANUAL_REVIEW";
+            incident_status: "PENDING_TRIAGE" | "AWAITING_ASSIGNMENT" | "AWAITING_APPROVAL" | "ASSIGNED" | "IN_PROGRESS" | "RESOLVED" | "CLOSED" | "MANUAL_REVIEW" | "SAFETY_ESCALATED";
             /** Incident Version */
             incident_version: number;
         };
@@ -612,7 +629,7 @@ export interface components {
              * Status
              * @enum {string}
              */
-            status: "PENDING_TRIAGE" | "AWAITING_ASSIGNMENT" | "AWAITING_APPROVAL" | "ASSIGNED" | "IN_PROGRESS" | "RESOLVED" | "CLOSED" | "MANUAL_REVIEW";
+            status: "PENDING_TRIAGE" | "AWAITING_ASSIGNMENT" | "AWAITING_APPROVAL" | "ASSIGNED" | "IN_PROGRESS" | "RESOLVED" | "CLOSED" | "MANUAL_REVIEW" | "SAFETY_ESCALATED";
             /** Sla Deadline */
             sla_deadline: string | null;
             /** Version */
@@ -631,6 +648,7 @@ export interface components {
             ai_triage_status?: string | null;
             latest_triage_result?: components["schemas"]["LatestTriageResultResponse"] | null;
             active_assignment?: components["schemas"]["ActiveAssignmentSummary"] | null;
+            safety_escalation?: components["schemas"]["SafetyEscalationSummary"] | null;
         };
         /** IncidentLifecycleRequest */
         IncidentLifecycleRequest: {
@@ -669,7 +687,7 @@ export interface components {
              * Status
              * @enum {string}
              */
-            status: "PENDING_TRIAGE" | "AWAITING_ASSIGNMENT" | "AWAITING_APPROVAL" | "ASSIGNED" | "IN_PROGRESS" | "RESOLVED" | "CLOSED" | "MANUAL_REVIEW";
+            status: "PENDING_TRIAGE" | "AWAITING_ASSIGNMENT" | "AWAITING_APPROVAL" | "ASSIGNED" | "IN_PROGRESS" | "RESOLVED" | "CLOSED" | "MANUAL_REVIEW" | "SAFETY_ESCALATED";
             /**
              * Created At
              * Format: date-time
@@ -708,7 +726,7 @@ export interface components {
              * Status
              * @enum {string}
              */
-            status: "PENDING_TRIAGE" | "AWAITING_ASSIGNMENT" | "AWAITING_APPROVAL" | "ASSIGNED" | "IN_PROGRESS" | "RESOLVED" | "CLOSED" | "MANUAL_REVIEW";
+            status: "PENDING_TRIAGE" | "AWAITING_ASSIGNMENT" | "AWAITING_APPROVAL" | "ASSIGNED" | "IN_PROGRESS" | "RESOLVED" | "CLOSED" | "MANUAL_REVIEW" | "SAFETY_ESCALATED";
             /**
              * Priority
              * @enum {string}
@@ -847,7 +865,7 @@ export interface components {
              * Incident Status
              * @enum {string}
              */
-            incident_status: "PENDING_TRIAGE" | "AWAITING_ASSIGNMENT" | "AWAITING_APPROVAL" | "ASSIGNED" | "IN_PROGRESS" | "RESOLVED" | "CLOSED" | "MANUAL_REVIEW";
+            incident_status: "PENDING_TRIAGE" | "AWAITING_ASSIGNMENT" | "AWAITING_APPROVAL" | "ASSIGNED" | "IN_PROGRESS" | "RESOLVED" | "CLOSED" | "MANUAL_REVIEW" | "SAFETY_ESCALATED";
             /** Incident Category */
             incident_category: string | null;
             /**
@@ -866,6 +884,30 @@ export interface components {
             limit: number;
             /** Offset */
             offset: number;
+        };
+        /** SafetyEscalationRequest */
+        SafetyEscalationRequest: {
+            /** Expected Version */
+            expected_version: number;
+            /** Reason */
+            reason: string;
+        };
+        /** SafetyEscalationSummary */
+        SafetyEscalationSummary: {
+            /**
+             * Actor Id
+             * Format: uuid
+             */
+            actor_id: string;
+            /** Actor Display Name */
+            actor_display_name: string;
+            /**
+             * Escalated At
+             * Format: date-time
+             */
+            escalated_at: string;
+            /** Reason */
+            reason: string;
         };
         /** TechnicianListItem */
         TechnicianListItem: {
@@ -930,7 +972,7 @@ export interface components {
              * Status
              * @enum {string}
              */
-            status: "PENDING_TRIAGE" | "AWAITING_ASSIGNMENT" | "AWAITING_APPROVAL" | "ASSIGNED" | "IN_PROGRESS" | "RESOLVED" | "CLOSED" | "MANUAL_REVIEW";
+            status: "PENDING_TRIAGE" | "AWAITING_ASSIGNMENT" | "AWAITING_APPROVAL" | "ASSIGNED" | "IN_PROGRESS" | "RESOLVED" | "CLOSED" | "MANUAL_REVIEW" | "SAFETY_ESCALATED";
             /** Version */
             version: number;
             /**
@@ -1182,7 +1224,7 @@ export interface operations {
             query?: {
                 limit?: number;
                 offset?: number;
-                status?: ("PENDING_TRIAGE" | "AWAITING_ASSIGNMENT" | "AWAITING_APPROVAL" | "ASSIGNED" | "IN_PROGRESS" | "RESOLVED" | "CLOSED" | "MANUAL_REVIEW") | null;
+                status?: ("PENDING_TRIAGE" | "AWAITING_ASSIGNMENT" | "AWAITING_APPROVAL" | "ASSIGNED" | "IN_PROGRESS" | "RESOLVED" | "CLOSED" | "MANUAL_REVIEW" | "SAFETY_ESCALATED") | null;
                 building_id?: string | null;
             };
             header?: never;
@@ -1276,6 +1318,43 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ManualTriageRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IncidentDetailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    escalate_safety_incident_api_v1_incidents__incident_id__escalate_safety_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-CSRF-Token"?: string | null;
+            };
+            path: {
+                incident_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SafetyEscalationRequest"];
             };
         };
         responses: {

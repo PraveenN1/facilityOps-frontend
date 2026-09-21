@@ -7,6 +7,7 @@ const toneByStatus: Record<string, string> = {
   IN_PROGRESS: "status-workflow",
   RESOLVED: "status-success",
   CLOSED: "status-neutral",
+  SAFETY_ESCALATED: "status-muted-warning",
   AVAILABLE: "status-availability",
   UNAVAILABLE: "status-muted-warning",
   SUCCEEDED: "status-success",

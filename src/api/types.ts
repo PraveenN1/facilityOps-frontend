@@ -17,6 +17,7 @@ export type IncidentListResponse = components["schemas"]["IncidentListResponse"]
 export type IncidentListItem = components["schemas"]["IncidentListItem"];
 export type IncidentStatusValue = (typeof incidentStatuses)[number];
 export type ManualTriageRequest = components["schemas"]["ManualTriageRequest"];
+export type SafetyEscalationRequest = components["schemas"]["SafetyEscalationRequest"];
 export type AssignmentCreateRequest = components["schemas"]["AssignmentCreateRequest"];
 export type AssignmentResponse = components["schemas"]["AssignmentResponse"];
 export type IncidentLifecycleRequest = components["schemas"]["IncidentLifecycleRequest"];

@@ -2,7 +2,7 @@ import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { ComplaintCreatePage, ReporterWorkspacePage, reporterProgressIndex, reporterProgressSteps, reporterStatusLabel } from "./ReporterWorkspacePage";
+import { ComplaintCreatePage, ReporterWorkspacePage, reporterProgressForStatus, reporterProgressIndex, reporterProgressSteps, reporterStatusLabel } from "./ReporterWorkspacePage";
 import { renderWithProviders } from "../test/test-utils";
 
 const buildingId = "10000000-0000-0000-0000-000000000001";
@@ -117,6 +117,7 @@ describe("ReporterWorkspacePage", () => {
     expect(reporterStatusLabel("MANUAL_REVIEW")).toBe("Under review");
     expect(reporterStatusLabel("AWAITING_ASSIGNMENT")).toBe("Technician being arranged");
     expect(reporterStatusLabel("RESOLVED")).toBe("Work completed");
+    expect(reporterStatusLabel("SAFETY_ESCALATED")).toBe("Escalated for safety review");
     expect(reporterProgressSteps.map((step) => step.label)).toEqual([
       "Submitted",
       "Under review",
@@ -129,5 +130,39 @@ describe("ReporterWorkspacePage", () => {
     expect(reporterProgressIndex("MANUAL_REVIEW")).toBe(1);
     expect(reporterProgressIndex("AWAITING_ASSIGNMENT")).toBe(2);
     expect(reporterProgressIndex("CLOSED")).toBe(6);
+    expect(reporterProgressForStatus("SAFETY_ESCALATED")).toEqual({
+      currentIndex: 2,
+      steps: [
+        { statuses: [], label: "Report received" },
+        { statuses: ["PENDING_TRIAGE", "MANUAL_REVIEW"], label: "Under review" },
+        { statuses: ["SAFETY_ESCALATED"], label: "Escalated for safety review" },
+      ],
+    });
+  });
+
+  it("shows safety-escalated requests in the reporter list without internal escalation details", async () => {
+    mockReporterFetch({
+      total: 1,
+      limit: 20,
+      offset: 0,
+      items: [{
+        id: "20000000-0000-0000-0000-000000000001",
+        building_id: buildingId,
+        public_ticket_id: "FO-2026-000888",
+        description: "Water is leaking above electrical equipment",
+        status: "PENDING_TRIAGE",
+        created_at: "2026-09-17T10:00:00Z",
+        incident_id: "30000000-0000-0000-0000-000000000001",
+        incident_status: "SAFETY_ESCALATED",
+        incident_category: "ELECTRICAL",
+        incident_priority: "CRITICAL",
+      }],
+    });
+
+    renderWithProviders(<ReporterWorkspacePage />);
+
+    await waitFor(() => expect(screen.getByText("Escalated for safety review")).toBeInTheDocument());
+    expect(screen.queryByText(/escalation reason/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Recorded by/i)).not.toBeInTheDocument();
   });
 });

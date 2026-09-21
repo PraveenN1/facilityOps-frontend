@@ -9,6 +9,7 @@ export const incidentStatuses = [
   "IN_PROGRESS",
   "RESOLVED",
   "CLOSED",
+  "SAFETY_ESCALATED",
 ] as const;
 
 export const incidentPriorities = ["LOW", "MEDIUM", "HIGH", "CRITICAL"] as const;

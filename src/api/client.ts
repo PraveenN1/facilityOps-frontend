@@ -18,6 +18,7 @@ import type {
   ManualTriageRequest,
   OperationsMetricsResponse,
   ReporterComplaintListResponse,
+  SafetyEscalationRequest,
   TechnicianListResponse,
   TechnicianWorkListResponse,
 } from "./types";
@@ -145,6 +146,10 @@ export function getComplaint(complaintId: string) {
 
 export function manualTriage(incidentId: string, payload: ManualTriageRequest) {
   return request<IncidentDetailResponse>(`/api/v1/incidents/${incidentId}/manual-triage`, { method: "POST", body: payload, csrf: true });
+}
+
+export function escalateSafetyIncident(incidentId: string, payload: SafetyEscalationRequest) {
+  return request<IncidentDetailResponse>(`/api/v1/incidents/${incidentId}/escalate-safety`, { method: "POST", body: payload, csrf: true });
 }
 
 export function listTechnicians(params: BuildingScopedParams = {}) {

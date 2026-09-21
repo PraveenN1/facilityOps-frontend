@@ -131,6 +131,7 @@ export function reporterStatusLabel(status: string) {
     IN_PROGRESS: "Work in progress",
     RESOLVED: "Work completed",
     CLOSED: "Closed",
+    SAFETY_ESCALATED: "Escalated for safety review",
   };
   return labels[status] ?? status.replaceAll("_", " ");
 }
@@ -145,6 +146,7 @@ export function nextStepForStatus(status: string) {
     IN_PROGRESS: "Work is currently in progress.",
     RESOLVED: "Work has been marked complete and is awaiting final closure.",
     CLOSED: "Your request has been closed.",
+    SAFETY_ESCALATED: "Your request has been escalated for safety review. Routine maintenance assignment is not proceeding at this stage.",
   };
   return labels[status] ?? "The request is being processed.";
 }
@@ -159,9 +161,22 @@ export const reporterProgressSteps = [
   { statuses: ["CLOSED"], label: "Closed" },
 ];
 
+export const reporterSafetyProgressSteps = [
+  { statuses: [], label: "Report received" },
+  { statuses: ["PENDING_TRIAGE", "MANUAL_REVIEW"], label: "Under review" },
+  { statuses: ["SAFETY_ESCALATED"], label: "Escalated for safety review" },
+];
+
 export function reporterProgressIndex(status: string) {
   const foundIndex = reporterProgressSteps.findIndex((step) => step.statuses.includes(status));
   return foundIndex === -1 ? 1 : foundIndex;
+}
+
+export function reporterProgressForStatus(status: string) {
+  if (status === "SAFETY_ESCALATED") {
+    return { steps: reporterSafetyProgressSteps, currentIndex: 2 };
+  }
+  return { steps: reporterProgressSteps, currentIndex: reporterProgressIndex(status) };
 }
 
 function requestTitle(complaint: ReporterComplaintListItem) {
