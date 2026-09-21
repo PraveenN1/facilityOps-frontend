@@ -557,6 +557,67 @@ describe("IncidentDetailPage", () => {
     expect(screen.getByText(/Leaving this unchecked does not establish that an incident is safe/i)).toBeInTheDocument();
   });
 
+  it("labels hazardous manual triage rejection as safety escalation instead of a generic conflict", async () => {
+    const user = userEvent.setup();
+    let submittedBody: Record<string, unknown> | null = null;
+    let incidentReads = 0;
+    vi.spyOn(globalThis, "fetch").mockImplementation((input, init) => {
+      const url = requestUrl(input);
+      if (url.includes("/api/v1/auth/me")) return jsonResponse(mockSession("FACILITY_MANAGER"));
+      if (url.includes("/api/v1/buildings")) return jsonResponse({ items: [{ id: buildingId, name: "Demo Tower" }] });
+      if (url.includes(`/api/v1/incidents/${incidentId}/manual-triage`) && init?.method === "POST") {
+        submittedBody = JSON.parse(String(init.body));
+        return jsonResponse({ detail: "Suspected hazards require explicit human escalation and cannot be cleared for assignment" }, 409);
+      }
+      if (url.includes(`/api/v1/incidents/${incidentId}`)) {
+        incidentReads += 1;
+        return jsonResponse(incident({
+          status: "PENDING_TRIAGE",
+          version: 3,
+          complaint_description: "Water is leaking above the electrical panel with a burning smell.",
+          category: null,
+          priority: "MEDIUM",
+          active_assignment: null,
+          latest_triage_result: {
+            id: "40000000-0000-0000-0000-000000000001",
+            status: "SUCCEEDED",
+            model_version: "groq:openai/gpt-oss-20b",
+            validated_result: {
+              category: "ELECTRICAL",
+              location: "Basement utility room",
+              issue_summary: "Water leak and burning smell near electrical equipment.",
+              symptoms: ["water leak", "burning smell"],
+              potential_hazards: ["electrical hazard", "possible fire hazard"],
+              suggested_priority: "CRITICAL",
+              missing_information: [],
+              needs_human_review: true,
+              safety_notes: ["Escalate before assignment"],
+            },
+            created_at: "2026-09-17T10:02:00Z",
+          },
+        }));
+      }
+      return jsonResponse({ detail: "unexpected request" }, 500);
+    });
+
+    renderWithProviders(<IncidentDetailPage />, { initialEntries: [`/incidents/${incidentId}`], routePath: "/incidents/:incidentId" });
+
+    await waitFor(() => expect(screen.getByRole("button", { name: /confirm triage/i })).toBeEnabled());
+    await user.click(screen.getByLabelText(/suspected hazard requiring escalation/i));
+    await user.click(screen.getByRole("button", { name: /confirm triage/i }));
+
+    await waitFor(() => expect(screen.getByText("Safety escalation required")).toBeInTheDocument());
+    expect(submittedBody).toMatchObject({
+      category: "ELECTRICAL",
+      priority: "CRITICAL",
+      expected_version: 3,
+      suspected_hazard: true,
+    });
+    expect(screen.queryByText("Conflict requires review")).not.toBeInTheDocument();
+    expect(screen.getByText(/does not include a durable hazard-clearance workflow/i)).toBeInTheDocument();
+    await waitFor(() => expect(incidentReads).toBeGreaterThan(1));
+  });
+
   it("keeps advisory safety wording visible after closure without presenting a current blocker", async () => {
     vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
       const url = requestUrl(input);

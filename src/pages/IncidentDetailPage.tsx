@@ -338,6 +338,7 @@ function HumanDecision({ incident, canReview, onChanged }: { incident: IncidentD
 function ManualTriageForm({ incident, onChanged }: { incident: IncidentDetailResponse; onChanged: () => void | Promise<void> }) {
   const recommendation = incident.latest_triage_result?.validated_result;
   const recommendedCategory = recommendation?.category ?? incident.category;
+  const queryClient = useQueryClient();
   const [category, setCategory] = useState(triageCategories.includes(recommendedCategory as typeof triageCategories[number]) ? recommendedCategory ?? "" : "");
   const [priority, setPriority] = useState(recommendation?.suggested_priority ?? incident.priority);
   const [suspectedHazard, setSuspectedHazard] = useState(false);
@@ -346,6 +347,11 @@ function ManualTriageForm({ incident, onChanged }: { incident: IncidentDetailRes
   const mutation = useMutation({
     mutationFn: () => manualTriage(incident.id, { category, priority, expected_version: incident.version, suspected_hazard: suspectedHazard, notes: notes.trim() || null }),
     onSuccess: onChanged,
+    onError: (error) => {
+      if (isApiError(error) && error.status === 409) {
+        void queryClient.invalidateQueries({ queryKey: ["incident", incident.id] });
+      }
+    },
   });
 
   return (
@@ -540,10 +546,19 @@ function ReadOnlyStatePanel({ incident, role }: { incident: IncidentDetailRespon
 
 function MutationError({ title, error }: { title: string; error: Error }) {
   const conflict = isApiError(error) && error.status === 409;
+  const safetyEscalation = conflict && /suspected hazards require/i.test(error.message);
+  const staleVersion = conflict && /version conflict/i.test(error.message);
+  const renderedTitle = safetyEscalation ? "Safety escalation required" : staleVersion ? "Incident changed" : conflict ? "Workflow review required" : title;
+  const renderedDetail = safetyEscalation
+    ? "Suspected hazards require explicit human escalation and cannot be cleared for assignment by this triage action."
+    : error.message;
+  const followUp = safetyEscalation
+    ? "This prototype does not include a durable hazard-clearance workflow, so the incident must remain out of technician dispatch here."
+    : "The incident was refetched. Review the latest state and choose again before retrying.";
   return (
     <div className="stack-sm">
-      <ErrorState title={conflict ? "Conflict requires review" : title} detail={error.message} />
-      {conflict ? <p className="danger-note">The incident was refetched. Review the latest state and choose again before retrying.</p> : null}
+      <ErrorState title={renderedTitle} detail={renderedDetail} />
+      {conflict ? <p className={safetyEscalation ? "info-note" : "danger-note"}>{followUp}</p> : null}
     </div>
   );
 }

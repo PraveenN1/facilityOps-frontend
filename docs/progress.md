@@ -160,6 +160,9 @@ Task 014E reporter and technician workflow UX corrections are implemented. Repor
 - Task 014F-PATCH `npm run build` passed.
 - Task 014F-PATCH initial `npm run smoke:backend` failed because no backend was listening on `localhost:8000`; after starting the local backend, `npm run smoke:backend` passed.
 - Task 014F-PATCH browser automation was not performed because CUA reported no available browser surfaces.
+- Task 014F-SAFETY corrected manager manual-triage error presentation for hazardous incidents. Safety-rule rejections now render as `Safety escalation required` with an explicit prototype limitation message instead of the generic `Conflict requires review` label.
+- Task 014F-SAFETY preserves stale-version behavior separately: version conflicts still instruct the manager to review the refreshed incident state before retrying, and no mutation is automatically retried.
+- Task 014F-SAFETY focused frontend verification passed: `npx vitest run src/pages/IncidentDetailPage.test.tsx` reported 30 passed, and `npm run typecheck` passed.
 
 ## Remaining
 
