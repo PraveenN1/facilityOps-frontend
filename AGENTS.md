@@ -3,7 +3,7 @@
 ## Scope
 
 - This repository is the React frontend for FacilityOps AI.
-- The backend repository is separate at `D:\Praveen\Development\facilityOps-ai`.
+- The backend repository is separate.
 - Do not modify backend files from this repository.
 - Use the backend OpenAPI contract as the source for API types.
 

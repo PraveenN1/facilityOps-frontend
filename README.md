@@ -53,7 +53,7 @@ The operations console uses the backend authentication contract:
 Seed demo data from the backend before signing in locally:
 
 ```powershell
-cd D:\Praveen\Development\facilityOps-ai
+cd your-working-directory\facilityOps-ai
 $env:APP_ENV = "local"
 $env:DATABASE_URL = "postgresql+psycopg://facilityops:facilityops_dev_password@localhost:5432/facilityops"
 python -m facilityops_ai.demo.seed
