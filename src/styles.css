@@ -323,6 +323,12 @@ code,
   .request-status-panel { @apply flex items-start gap-4 p-5 lg:col-span-2; box-shadow: 0 10px 28px rgba(15, 27, 36, 0.06); }
   .request-status-icon { @apply inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-full; background: color-mix(in srgb, var(--blue) 13%, var(--panel)); color: var(--blue); }
   .request-status-panel h3 { @apply text-2xl leading-tight; }
+  .reporter-safety-advisory { @apply lg:col-span-2; border-color: color-mix(in srgb, var(--warning) 68%, var(--line)); background: color-mix(in srgb, var(--warning) 8%, var(--panel)); }
+  .reporter-safety-advisory h3 { color: var(--ink); }
+  .reporter-safety-advisory svg { color: var(--warning); }
+  .ai-generated-pill { @apply inline-flex min-h-7 items-center rounded-full px-3 text-xs font-bold; background: color-mix(in srgb, var(--warning) 16%, var(--panel)); color: var(--warning); }
+  .reporter-safety-notes { overflow-wrap: anywhere; }
+  .reporter-safety-disclaimer { @apply border-t pt-3; border-color: color-mix(in srgb, var(--warning) 28%, var(--line)); }
   .reporter-progress-panel { @apply lg:col-span-2; }
   .request-info-panel { @apply p-5; }
   .request-detail-facts, .request-service-facts { @apply grid gap-4 border-t pt-4 text-sm sm:grid-cols-2; border-color: var(--line); }

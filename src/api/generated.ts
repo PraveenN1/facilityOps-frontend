@@ -557,6 +557,8 @@ export interface components {
              */
             updated_at: string;
             incident: components["schemas"]["IncidentSummary"];
+            /** Ai Safety Notes */
+            ai_safety_notes?: string[];
         };
         /** ComplaintTriageExtraction */
         ComplaintTriageExtraction: {
@@ -647,6 +649,8 @@ export interface components {
             /** Ai Triage Status */
             ai_triage_status?: string | null;
             latest_triage_result?: components["schemas"]["LatestTriageResultResponse"] | null;
+            /** Ai Safety Notes */
+            ai_safety_notes?: string[];
             active_assignment?: components["schemas"]["ActiveAssignmentSummary"] | null;
             safety_escalation?: components["schemas"]["SafetyEscalationSummary"] | null;
         };

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { FormEvent } from "react";
 import { useMemo, useRef, useState } from "react";
-import { BrainCircuit, Building2, CheckCircle2, Clock3, ClipboardCheck, Flag, ShieldAlert, Tag, Wrench, Users } from "lucide-react";
+import { AlertTriangle, BrainCircuit, Building2, CheckCircle2, Clock3, ClipboardCheck, Flag, ShieldAlert, Tag, Wrench, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 
@@ -181,6 +181,8 @@ function ReporterIncidentDetail({
             </div>
           </article>
 
+          <ReporterSafetyAdvisory notes={incident.ai_safety_notes ?? []} />
+
           <article className="panel stack reporter-progress-panel">
             <div>
               <p className="eyebrow">Current progress</p>
@@ -233,6 +235,28 @@ function ReporterIncidentDetail({
         </div>
       ) : null}
     </section>
+  );
+}
+
+function ReporterSafetyAdvisory({ notes }: { notes: string[] }) {
+  const visibleNotes = notes.map((note) => note.trim()).filter(Boolean);
+  if (visibleNotes.length === 0) return null;
+
+  return (
+    <article className="panel stack reporter-safety-advisory" aria-label="AI-generated safety advisory">
+      <div className="section-heading compact">
+        <h3 className="icon-heading"><AlertTriangle aria-hidden size={18} />Safety Advisory</h3>
+        <span className="ai-generated-pill">AI-generated</span>
+      </div>
+      <div className="stack-sm reporter-safety-notes">
+        {visibleNotes.map((note, index) => (
+          <p key={`${index}-${note}`} className="body-copy">{note}</p>
+        ))}
+      </div>
+      <p className="muted-copy reporter-safety-disclaimer">
+        AI-generated guidance may require human verification. For immediate hazards, contact building security or emergency services.
+      </p>
+    </article>
   );
 }
 

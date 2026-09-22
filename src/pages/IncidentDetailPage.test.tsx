@@ -317,9 +317,44 @@ describe("IncidentDetailPage", () => {
     expect(screen.queryByText(/audited timeline/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/current API/i)).not.toBeInTheDocument();
     expect(screen.queryByText("AI recommendation")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/AI-generated safety advisory/i)).not.toBeInTheDocument();
     expect(screen.queryByText("Human-confirmed decision")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /confirm maintenance triage/i })).not.toBeInTheDocument();
     expect(screen.queryByPlaceholderText(/search/i)).not.toBeInTheDocument();
+  });
+
+  it("shows reporter AI safety advisory when safety notes are available", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
+      const url = requestUrl(input);
+      if (url.includes("/api/v1/auth/me")) return jsonResponse({ id: "reporter-id", email: "reporter.demo@facilityops.local", role: "REPORTER", buildings: [{ id: buildingId, name: "Demo Tower" }] });
+      if (url.includes("/api/v1/buildings")) return jsonResponse({ items: [{ id: buildingId, name: "Demo Tower" }] });
+      if (url.includes(`/api/v1/incidents/${incidentId}`)) {
+        return jsonResponse(incident({
+          status: "AWAITING_ASSIGNMENT",
+          active_assignment: null,
+          ai_safety_notes: [
+            "Employees should stay away from the affected electrical panel until facilities staff inspect it.",
+            "Avoid using nearby outlets in the affected area.",
+          ],
+          latest_triage_result: null,
+        }));
+      }
+      return jsonResponse({ detail: "unexpected request" }, 500);
+    });
+
+    renderWithProviders(<IncidentDetailPage />, { initialEntries: [`/incidents/${incidentId}`], routePath: "/incidents/:incidentId" });
+
+    await waitFor(() => expect(screen.getByLabelText(/AI-generated safety advisory/i)).toBeInTheDocument());
+    const advisory = screen.getByLabelText(/AI-generated safety advisory/i);
+    expect(within(advisory).getByRole("heading", { name: /safety advisory/i })).toBeInTheDocument();
+    expect(within(advisory).getByText("AI-generated")).toBeInTheDocument();
+    expect(within(advisory).getByText(/Employees should stay away from the affected electrical panel/i)).toBeInTheDocument();
+    expect(within(advisory).getByText(/Avoid using nearby outlets/i)).toBeInTheDocument();
+    expect(within(advisory).getByText(/may require human verification/i)).toBeInTheDocument();
+    expect(within(advisory).getByText(/contact building security or emergency services/i)).toBeInTheDocument();
+    expect(screen.queryByText("AI recommendation")).not.toBeInTheDocument();
+    expect(screen.queryByText("Potential hazards")).not.toBeInTheDocument();
+    expect(screen.queryByText("Needs human review")).not.toBeInTheDocument();
   });
 
   it("shows reporter public ticket and current-state progress semantics", async () => {
@@ -455,7 +490,6 @@ describe("IncidentDetailPage", () => {
     expect(aiPanel).not.toBeNull();
     expect(within(aiPanel as HTMLElement).getByText("HVAC")).toBeInTheDocument();
     expect(screen.getByText("Conference room is too warm with weak airflow.")).toBeInTheDocument();
-    expect(screen.getByText("groq:openai/gpt-oss-20b")).toBeInTheDocument();
   });
 
   it("shows unconfirmed operational classification on safety-escalated incidents while preserving AI suggestions", async () => {

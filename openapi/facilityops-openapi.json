@@ -1,1 +1,2669 @@
-{"openapi":"3.1.0","info":{"title":"FacilityOps AI","version":"0.1.0"},"paths":{"/api/v1/auth/login":{"post":{"tags":["auth"],"summary":"Login","operationId":"login_api_v1_auth_login_post","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/LoginRequest"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/LoginResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/auth/logout":{"post":{"tags":["auth"],"summary":"Logout","operationId":"logout_api_v1_auth_logout_post","parameters":[{"name":"X-CSRF-Token","in":"header","required":false,"schema":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"X-Csrf-Token"}}],"responses":{"204":{"description":"Successful Response"},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/auth/me":{"get":{"tags":["auth"],"summary":"Read Me","operationId":"read_me_api_v1_auth_me_get","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/AuthenticatedUserResponse"}}}}}}},"/api/v1/buildings":{"get":{"tags":["buildings"],"summary":"List Buildings","operationId":"list_buildings_api_v1_buildings_get","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/BuildingListResponse"}}}}}}},"/api/v1/complaints":{"post":{"tags":["complaints"],"summary":"Submit Complaint","operationId":"submit_complaint_api_v1_complaints_post","parameters":[{"name":"Idempotency-Key","in":"header","required":true,"schema":{"type":"string","title":"Idempotency-Key"}},{"name":"X-CSRF-Token","in":"header","required":false,"schema":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"X-Csrf-Token"}}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/ComplaintCreateRequest"}}}},"responses":{"202":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ComplaintCreateResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}},"get":{"tags":["complaints"],"summary":"List My Complaints","operationId":"list_my_complaints_api_v1_complaints_get","parameters":[{"name":"limit","in":"query","required":false,"schema":{"type":"integer","maximum":100,"minimum":1,"default":50,"title":"Limit"}},{"name":"offset","in":"query","required":false,"schema":{"type":"integer","minimum":0,"default":0,"title":"Offset"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ReporterComplaintListResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/complaints/{complaint_id}":{"get":{"tags":["complaints"],"summary":"Read Complaint","operationId":"read_complaint_api_v1_complaints__complaint_id__get","parameters":[{"name":"complaint_id","in":"path","required":true,"schema":{"type":"string","format":"uuid","title":"Complaint Id"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ComplaintDetailResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/incidents":{"get":{"tags":["incidents"],"summary":"List Incidents","operationId":"list_incidents_api_v1_incidents_get","parameters":[{"name":"limit","in":"query","required":false,"schema":{"type":"integer","maximum":100,"minimum":1,"default":50,"title":"Limit"}},{"name":"offset","in":"query","required":false,"schema":{"type":"integer","minimum":0,"default":0,"title":"Offset"}},{"name":"status","in":"query","required":false,"schema":{"anyOf":[{"enum":["PENDING_TRIAGE","AWAITING_ASSIGNMENT","AWAITING_APPROVAL","ASSIGNED","IN_PROGRESS","RESOLVED","CLOSED","MANUAL_REVIEW","SAFETY_ESCALATED"],"type":"string"},{"type":"null"}],"title":"Status"}},{"name":"building_id","in":"query","required":false,"schema":{"anyOf":[{"type":"string","format":"uuid"},{"type":"null"}],"title":"Building Id"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/IncidentListResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/incidents/my-work":{"get":{"tags":["incidents"],"summary":"List My Work","operationId":"list_my_work_api_v1_incidents_my_work_get","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/TechnicianWorkListResponse"}}}}}}},"/api/v1/incidents/{incident_id}":{"get":{"tags":["incidents"],"summary":"Read Incident","operationId":"read_incident_api_v1_incidents__incident_id__get","parameters":[{"name":"incident_id","in":"path","required":true,"schema":{"type":"string","format":"uuid","title":"Incident Id"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/IncidentDetailResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/incidents/{incident_id}/manual-triage":{"post":{"tags":["incidents"],"summary":"Manual Triage Incident","operationId":"manual_triage_incident_api_v1_incidents__incident_id__manual_triage_post","parameters":[{"name":"incident_id","in":"path","required":true,"schema":{"type":"string","format":"uuid","title":"Incident Id"}},{"name":"X-CSRF-Token","in":"header","required":false,"schema":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"X-Csrf-Token"}}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/ManualTriageRequest"}}}},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/IncidentDetailResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/incidents/{incident_id}/escalate-safety":{"post":{"tags":["incidents"],"summary":"Escalate Safety Incident","operationId":"escalate_safety_incident_api_v1_incidents__incident_id__escalate_safety_post","parameters":[{"name":"incident_id","in":"path","required":true,"schema":{"type":"string","format":"uuid","title":"Incident Id"}},{"name":"X-CSRF-Token","in":"header","required":false,"schema":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"X-Csrf-Token"}}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/SafetyEscalationRequest"}}}},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/IncidentDetailResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/incidents/{incident_id}/assign":{"post":{"tags":["incidents"],"summary":"Assign Incident Technician","operationId":"assign_incident_technician_api_v1_incidents__incident_id__assign_post","parameters":[{"name":"incident_id","in":"path","required":true,"schema":{"type":"string","format":"uuid","title":"Incident Id"}},{"name":"X-CSRF-Token","in":"header","required":false,"schema":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"X-Csrf-Token"}}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/AssignmentCreateRequest"}}}},"responses":{"201":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/AssignmentResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/incidents/{incident_id}/start":{"post":{"tags":["incidents"],"summary":"Start Incident","operationId":"start_incident_api_v1_incidents__incident_id__start_post","parameters":[{"name":"incident_id","in":"path","required":true,"schema":{"type":"string","format":"uuid","title":"Incident Id"}},{"name":"X-CSRF-Token","in":"header","required":false,"schema":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"X-Csrf-Token"}}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/IncidentLifecycleRequest"}}}},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/IncidentDetailResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/incidents/{incident_id}/resolve":{"post":{"tags":["incidents"],"summary":"Resolve Incident","operationId":"resolve_incident_api_v1_incidents__incident_id__resolve_post","parameters":[{"name":"incident_id","in":"path","required":true,"schema":{"type":"string","format":"uuid","title":"Incident Id"}},{"name":"X-CSRF-Token","in":"header","required":false,"schema":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"X-Csrf-Token"}}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/IncidentResolveRequest"}}}},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/IncidentDetailResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/incidents/{incident_id}/close":{"post":{"tags":["incidents"],"summary":"Close Resolved Incident","operationId":"close_resolved_incident_api_v1_incidents__incident_id__close_post","parameters":[{"name":"incident_id","in":"path","required":true,"schema":{"type":"string","format":"uuid","title":"Incident Id"}},{"name":"X-CSRF-Token","in":"header","required":false,"schema":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"X-Csrf-Token"}}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/IncidentLifecycleRequest"}}}},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/IncidentDetailResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/metrics/operations":{"get":{"tags":["metrics"],"summary":"Read Operations Metrics","operationId":"read_operations_metrics_api_v1_metrics_operations_get","parameters":[{"name":"building_id","in":"query","required":false,"schema":{"anyOf":[{"type":"string","format":"uuid"},{"type":"null"}],"title":"Building Id"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/OperationsMetricsResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/metrics/ai":{"get":{"tags":["metrics"],"summary":"Read Ai Metrics","operationId":"read_ai_metrics_api_v1_metrics_ai_get","parameters":[{"name":"building_id","in":"query","required":false,"schema":{"anyOf":[{"type":"string","format":"uuid"},{"type":"null"}],"title":"Building Id"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/AiMetricsResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/technicians":{"get":{"tags":["technicians"],"summary":"List Technicians","operationId":"list_technicians_api_v1_technicians_get","parameters":[{"name":"building_id","in":"query","required":false,"schema":{"anyOf":[{"type":"string","format":"uuid"},{"type":"null"}],"title":"Building Id"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/TechnicianListResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/health":{"get":{"tags":["health"],"summary":"Health","description":"Liveness check that intentionally avoids database access.","operationId":"health_health_get","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"additionalProperties":{"type":"string"},"type":"object","title":"Response Health Health Get"}}}}}}},"/ready":{"get":{"tags":["health"],"summary":"Ready","description":"Readiness check that verifies database connectivity.","operationId":"ready_ready_get","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}}}}}},"components":{"schemas":{"ActiveAssignmentSummary":{"properties":{"assignment_id":{"type":"string","format":"uuid","title":"Assignment Id"},"technician_id":{"type":"string","format":"uuid","title":"Technician Id"},"technician_display_name":{"type":"string","title":"Technician Display Name"},"status":{"type":"string","enum":["ASSIGNED","IN_PROGRESS","COMPLETED","CANCELLED","DECLINED"],"title":"Status"}},"type":"object","required":["assignment_id","technician_id","technician_display_name","status"],"title":"ActiveAssignmentSummary"},"AiMetricsResponse":{"properties":{"scope":{"$ref":"#/components/schemas/MetricsScope"},"triage_requests":{"type":"integer","title":"Triage Requests"},"successfully_processed_requests":{"type":"integer","title":"Successfully Processed Requests"},"pending_requests":{"type":"integer","title":"Pending Requests"},"failed_requests":{"type":"integer","title":"Failed Requests"},"total_retry_attempts":{"type":"integer","title":"Total Retry Attempts"},"requests_with_retries":{"type":"integer","title":"Requests With Retries"},"persisted_successful_triage_results":{"type":"integer","title":"Persisted Successful Triage Results"},"persisted_failed_triage_results":{"type":"integer","title":"Persisted Failed Triage Results"},"incidents_awaiting_human_review":{"type":"integer","title":"Incidents Awaiting Human Review"}},"type":"object","required":["scope","triage_requests","successfully_processed_requests","pending_requests","failed_requests","total_retry_attempts","requests_with_retries","persisted_successful_triage_results","persisted_failed_triage_results","incidents_awaiting_human_review"],"title":"AiMetricsResponse"},"AssignmentCreateRequest":{"properties":{"technician_id":{"type":"string","format":"uuid","title":"Technician Id"},"expected_version":{"type":"integer","minimum":1.0,"title":"Expected Version"}},"type":"object","required":["technician_id","expected_version"],"title":"AssignmentCreateRequest"},"AssignmentResponse":{"properties":{"assignment_id":{"type":"string","format":"uuid","title":"Assignment Id"},"incident_id":{"type":"string","format":"uuid","title":"Incident Id"},"technician_id":{"type":"string","format":"uuid","title":"Technician Id"},"status":{"type":"string","enum":["ASSIGNED","IN_PROGRESS","COMPLETED","CANCELLED","DECLINED"],"title":"Status"},"incident_status":{"type":"string","enum":["PENDING_TRIAGE","AWAITING_ASSIGNMENT","AWAITING_APPROVAL","ASSIGNED","IN_PROGRESS","RESOLVED","CLOSED","MANUAL_REVIEW","SAFETY_ESCALATED"],"title":"Incident Status"},"incident_version":{"type":"integer","title":"Incident Version"}},"type":"object","required":["assignment_id","incident_id","technician_id","status","incident_status","incident_version"],"title":"AssignmentResponse"},"AuthenticatedUserBuilding":{"properties":{"id":{"type":"string","format":"uuid","title":"Id"},"name":{"type":"string","title":"Name"},"address":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Address"},"timezone":{"type":"string","title":"Timezone"}},"type":"object","required":["id","name","address","timezone"],"title":"AuthenticatedUserBuilding"},"AuthenticatedUserResponse":{"properties":{"id":{"type":"string","format":"uuid","title":"Id"},"email":{"type":"string","title":"Email"},"display_name":{"type":"string","title":"Display Name"},"role":{"type":"string","title":"Role"},"building_ids":{"items":{"type":"string","format":"uuid"},"type":"array","title":"Building Ids"},"buildings":{"items":{"$ref":"#/components/schemas/AuthenticatedUserBuilding"},"type":"array","title":"Buildings"}},"type":"object","required":["id","email","display_name","role","building_ids","buildings"],"title":"AuthenticatedUserResponse"},"BuildingListItem":{"properties":{"id":{"type":"string","format":"uuid","title":"Id"},"name":{"type":"string","title":"Name"},"address":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Address"},"timezone":{"type":"string","title":"Timezone"}},"type":"object","required":["id","name","address","timezone"],"title":"BuildingListItem"},"BuildingListResponse":{"properties":{"items":{"items":{"$ref":"#/components/schemas/BuildingListItem"},"type":"array","title":"Items"}},"type":"object","required":["items"],"title":"BuildingListResponse"},"ComplaintCreateRequest":{"properties":{"building_id":{"type":"string","format":"uuid","title":"Building Id"},"description":{"type":"string","maxLength":5000,"minLength":1,"title":"Description"}},"type":"object","required":["building_id","description"],"title":"ComplaintCreateRequest"},"ComplaintCreateResponse":{"properties":{"complaint_id":{"type":"string","format":"uuid","title":"Complaint Id"},"public_ticket_id":{"type":"string","title":"Public Ticket Id"},"incident_id":{"type":"string","format":"uuid","title":"Incident Id"},"status":{"type":"string","const":"PENDING_TRIAGE","title":"Status"}},"type":"object","required":["complaint_id","public_ticket_id","incident_id","status"],"title":"ComplaintCreateResponse"},"ComplaintDetailResponse":{"properties":{"id":{"type":"string","format":"uuid","title":"Id"},"public_ticket_id":{"type":"string","title":"Public Ticket Id"},"building_id":{"type":"string","format":"uuid","title":"Building Id"},"reporter_id":{"type":"string","format":"uuid","title":"Reporter Id"},"reporter_display_name":{"type":"string","title":"Reporter Display Name"},"description":{"type":"string","title":"Description"},"status":{"type":"string","enum":["PENDING_TRIAGE","MANUAL_REVIEW","CLOSED"],"title":"Status"},"created_at":{"type":"string","format":"date-time","title":"Created At"},"updated_at":{"type":"string","format":"date-time","title":"Updated At"},"incident":{"$ref":"#/components/schemas/IncidentSummary"}},"type":"object","required":["id","public_ticket_id","building_id","reporter_id","reporter_display_name","description","status","created_at","updated_at","incident"],"title":"ComplaintDetailResponse"},"ComplaintTriageExtraction":{"properties":{"category":{"type":"string","enum":["PLUMBING","ELECTRICAL","HVAC","STRUCTURAL","CLEANING","SECURITY","GENERAL","UNKNOWN"],"title":"Category"},"location":{"anyOf":[{"type":"string","maxLength":200},{"type":"null"}],"title":"Location"},"issue_summary":{"type":"string","maxLength":500,"minLength":1,"title":"Issue Summary"},"symptoms":{"items":{"type":"string"},"type":"array","maxItems":20,"title":"Symptoms"},"potential_hazards":{"items":{"type":"string"},"type":"array","maxItems":20,"title":"Potential Hazards"},"suggested_priority":{"type":"string","enum":["LOW","MEDIUM","HIGH","CRITICAL"],"title":"Suggested Priority"},"missing_information":{"items":{"type":"string"},"type":"array","maxItems":20,"title":"Missing Information"},"needs_human_review":{"type":"boolean","title":"Needs Human Review"},"safety_notes":{"items":{"type":"string"},"type":"array","maxItems":20,"title":"Safety Notes"}},"additionalProperties":false,"type":"object","required":["category","location","issue_summary","symptoms","potential_hazards","suggested_priority","missing_information","needs_human_review","safety_notes"],"title":"ComplaintTriageExtraction"},"HTTPValidationError":{"properties":{"detail":{"items":{"$ref":"#/components/schemas/ValidationError"},"type":"array","title":"Detail"}},"type":"object","title":"HTTPValidationError"},"IncidentDetailResponse":{"properties":{"id":{"type":"string","format":"uuid","title":"Id"},"complaint_id":{"type":"string","format":"uuid","title":"Complaint Id"},"public_ticket_id":{"type":"string","title":"Public Ticket Id"},"building_id":{"type":"string","format":"uuid","title":"Building Id"},"reporter_id":{"type":"string","format":"uuid","title":"Reporter Id"},"reporter_display_name":{"type":"string","title":"Reporter Display Name"},"complaint_description":{"type":"string","title":"Complaint Description"},"category":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Category"},"priority":{"type":"string","enum":["LOW","MEDIUM","HIGH","CRITICAL"],"title":"Priority"},"status":{"type":"string","enum":["PENDING_TRIAGE","AWAITING_ASSIGNMENT","AWAITING_APPROVAL","ASSIGNED","IN_PROGRESS","RESOLVED","CLOSED","MANUAL_REVIEW","SAFETY_ESCALATED"],"title":"Status"},"sla_deadline":{"anyOf":[{"type":"string","format":"date-time"},{"type":"null"}],"title":"Sla Deadline"},"version":{"type":"integer","title":"Version"},"created_at":{"type":"string","format":"date-time","title":"Created At"},"updated_at":{"type":"string","format":"date-time","title":"Updated At"},"ai_triage_status":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Ai Triage Status"},"latest_triage_result":{"anyOf":[{"$ref":"#/components/schemas/LatestTriageResultResponse"},{"type":"null"}]},"active_assignment":{"anyOf":[{"$ref":"#/components/schemas/ActiveAssignmentSummary"},{"type":"null"}]},"safety_escalation":{"anyOf":[{"$ref":"#/components/schemas/SafetyEscalationSummary"},{"type":"null"}]}},"type":"object","required":["id","complaint_id","public_ticket_id","building_id","reporter_id","reporter_display_name","complaint_description","category","priority","status","sla_deadline","version","created_at","updated_at"],"title":"IncidentDetailResponse"},"IncidentLifecycleRequest":{"properties":{"expected_version":{"type":"integer","minimum":1.0,"title":"Expected Version"}},"type":"object","required":["expected_version"],"title":"IncidentLifecycleRequest"},"IncidentListItem":{"properties":{"id":{"type":"string","format":"uuid","title":"Id"},"complaint_id":{"type":"string","format":"uuid","title":"Complaint Id"},"public_ticket_id":{"type":"string","title":"Public Ticket Id"},"building_id":{"type":"string","format":"uuid","title":"Building Id"},"complaint_description":{"type":"string","title":"Complaint Description"},"category":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Category"},"priority":{"type":"string","enum":["LOW","MEDIUM","HIGH","CRITICAL"],"title":"Priority"},"status":{"type":"string","enum":["PENDING_TRIAGE","AWAITING_ASSIGNMENT","AWAITING_APPROVAL","ASSIGNED","IN_PROGRESS","RESOLVED","CLOSED","MANUAL_REVIEW","SAFETY_ESCALATED"],"title":"Status"},"created_at":{"type":"string","format":"date-time","title":"Created At"},"ai_triage_status":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Ai Triage Status"},"latest_triage_result":{"anyOf":[{"$ref":"#/components/schemas/LatestTriageResultResponse"},{"type":"null"}]}},"type":"object","required":["id","complaint_id","public_ticket_id","building_id","complaint_description","category","priority","status","created_at"],"title":"IncidentListItem"},"IncidentListResponse":{"properties":{"items":{"items":{"$ref":"#/components/schemas/IncidentListItem"},"type":"array","title":"Items"},"total":{"type":"integer","title":"Total"},"limit":{"type":"integer","title":"Limit"},"offset":{"type":"integer","title":"Offset"}},"type":"object","required":["items","total","limit","offset"],"title":"IncidentListResponse"},"IncidentResolveRequest":{"properties":{"expected_version":{"type":"integer","minimum":1.0,"title":"Expected Version"},"resolution_notes":{"type":"string","maxLength":2000,"minLength":1,"title":"Resolution Notes"}},"type":"object","required":["expected_version","resolution_notes"],"title":"IncidentResolveRequest"},"IncidentSummary":{"properties":{"id":{"type":"string","format":"uuid","title":"Id"},"status":{"type":"string","enum":["PENDING_TRIAGE","AWAITING_ASSIGNMENT","AWAITING_APPROVAL","ASSIGNED","IN_PROGRESS","RESOLVED","CLOSED","MANUAL_REVIEW","SAFETY_ESCALATED"],"title":"Status"},"priority":{"type":"string","enum":["LOW","MEDIUM","HIGH","CRITICAL"],"title":"Priority"},"category":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Category"},"sla_deadline":{"anyOf":[{"type":"string","format":"date-time"},{"type":"null"}],"title":"Sla Deadline"},"version":{"type":"integer","title":"Version"}},"type":"object","required":["id","status","priority","category","sla_deadline","version"],"title":"IncidentSummary"},"LatestTriageResultResponse":{"properties":{"id":{"type":"string","format":"uuid","title":"Id"},"status":{"type":"string","title":"Status"},"model_version":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Model Version"},"validated_result":{"anyOf":[{"$ref":"#/components/schemas/ComplaintTriageExtraction"},{"type":"null"}]},"created_at":{"type":"string","format":"date-time","title":"Created At"}},"type":"object","required":["id","status","model_version","validated_result","created_at"],"title":"LatestTriageResultResponse"},"LoginRequest":{"properties":{"email":{"type":"string","maxLength":320,"minLength":3,"title":"Email"},"password":{"type":"string","maxLength":1024,"minLength":1,"title":"Password"}},"type":"object","required":["email","password"],"title":"LoginRequest"},"LoginResponse":{"properties":{"user":{"$ref":"#/components/schemas/AuthenticatedUserResponse"},"csrf_token":{"type":"string","title":"Csrf Token"},"token_type":{"type":"string","title":"Token Type","default":"cookie"},"expires_at":{"type":"string","format":"date-time","title":"Expires At"}},"type":"object","required":["user","csrf_token","expires_at"],"title":"LoginResponse"},"ManualTriageRequest":{"properties":{"category":{"type":"string","maxLength":100,"minLength":1,"title":"Category"},"priority":{"type":"string","enum":["LOW","MEDIUM","HIGH","CRITICAL"],"title":"Priority"},"expected_version":{"type":"integer","minimum":1.0,"title":"Expected Version"},"suspected_hazard":{"type":"boolean","title":"Suspected Hazard","default":false},"notes":{"anyOf":[{"type":"string","maxLength":1000},{"type":"null"}],"title":"Notes"}},"type":"object","required":["category","priority","expected_version"],"title":"ManualTriageRequest"},"MetricsScope":{"properties":{"building_id":{"anyOf":[{"type":"string","format":"uuid"},{"type":"null"}],"title":"Building Id"},"building_ids":{"items":{"type":"string","format":"uuid"},"type":"array","title":"Building Ids"}},"type":"object","required":["building_id","building_ids"],"title":"MetricsScope"},"OperationsMetricsResponse":{"properties":{"scope":{"$ref":"#/components/schemas/MetricsScope"},"total_incidents":{"type":"integer","title":"Total Incidents"},"open_incidents":{"type":"integer","title":"Open Incidents"},"pending_triage":{"type":"integer","title":"Pending Triage"},"awaiting_assignment":{"type":"integer","title":"Awaiting Assignment"},"assigned":{"type":"integer","title":"Assigned"},"in_progress":{"type":"integer","title":"In Progress"},"resolved":{"type":"integer","title":"Resolved"},"closed":{"type":"integer","title":"Closed"},"active_technician_assignments":{"type":"integer","title":"Active Technician Assignments"},"available_technicians":{"type":"integer","title":"Available Technicians"}},"type":"object","required":["scope","total_incidents","open_incidents","pending_triage","awaiting_assignment","assigned","in_progress","resolved","closed","active_technician_assignments","available_technicians"],"title":"OperationsMetricsResponse"},"ReporterComplaintListItem":{"properties":{"id":{"type":"string","format":"uuid","title":"Id"},"public_ticket_id":{"type":"string","title":"Public Ticket Id"},"building_id":{"type":"string","format":"uuid","title":"Building Id"},"description":{"type":"string","title":"Description"},"status":{"type":"string","enum":["PENDING_TRIAGE","MANUAL_REVIEW","CLOSED"],"title":"Status"},"created_at":{"type":"string","format":"date-time","title":"Created At"},"incident_id":{"type":"string","format":"uuid","title":"Incident Id"},"incident_status":{"type":"string","enum":["PENDING_TRIAGE","AWAITING_ASSIGNMENT","AWAITING_APPROVAL","ASSIGNED","IN_PROGRESS","RESOLVED","CLOSED","MANUAL_REVIEW","SAFETY_ESCALATED"],"title":"Incident Status"},"incident_category":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Incident Category"},"incident_priority":{"type":"string","enum":["LOW","MEDIUM","HIGH","CRITICAL"],"title":"Incident Priority"}},"type":"object","required":["id","public_ticket_id","building_id","description","status","created_at","incident_id","incident_status","incident_category","incident_priority"],"title":"ReporterComplaintListItem"},"ReporterComplaintListResponse":{"properties":{"items":{"items":{"$ref":"#/components/schemas/ReporterComplaintListItem"},"type":"array","title":"Items"},"total":{"type":"integer","title":"Total"},"limit":{"type":"integer","title":"Limit"},"offset":{"type":"integer","title":"Offset"}},"type":"object","required":["items","total","limit","offset"],"title":"ReporterComplaintListResponse"},"SafetyEscalationRequest":{"properties":{"expected_version":{"type":"integer","minimum":1.0,"title":"Expected Version"},"reason":{"type":"string","maxLength":1000,"minLength":1,"title":"Reason"}},"type":"object","required":["expected_version","reason"],"title":"SafetyEscalationRequest"},"SafetyEscalationSummary":{"properties":{"actor_id":{"type":"string","format":"uuid","title":"Actor Id"},"actor_display_name":{"type":"string","title":"Actor Display Name"},"escalated_at":{"type":"string","format":"date-time","title":"Escalated At"},"reason":{"type":"string","title":"Reason"}},"type":"object","required":["actor_id","actor_display_name","escalated_at","reason"],"title":"SafetyEscalationSummary"},"TechnicianListItem":{"properties":{"id":{"type":"string","format":"uuid","title":"Id"},"user_id":{"type":"string","format":"uuid","title":"User Id"},"display_name":{"type":"string","title":"Display Name"},"skills":{"items":{"type":"string"},"type":"array","title":"Skills"},"status":{"type":"string","enum":["ACTIVE","INACTIVE"],"title":"Status"},"available":{"type":"boolean","title":"Available"},"active_assignment_id":{"anyOf":[{"type":"string","format":"uuid"},{"type":"null"}],"title":"Active Assignment Id"}},"type":"object","required":["id","user_id","display_name","skills","status","available"],"title":"TechnicianListItem"},"TechnicianListResponse":{"properties":{"items":{"items":{"$ref":"#/components/schemas/TechnicianListItem"},"type":"array","title":"Items"}},"type":"object","required":["items"],"title":"TechnicianListResponse"},"TechnicianWorkItem":{"properties":{"id":{"type":"string","format":"uuid","title":"Id"},"complaint_id":{"type":"string","format":"uuid","title":"Complaint Id"},"public_ticket_id":{"type":"string","title":"Public Ticket Id"},"building_id":{"type":"string","format":"uuid","title":"Building Id"},"complaint_description":{"type":"string","title":"Complaint Description"},"category":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Category"},"priority":{"type":"string","enum":["LOW","MEDIUM","HIGH","CRITICAL"],"title":"Priority"},"status":{"type":"string","enum":["PENDING_TRIAGE","AWAITING_ASSIGNMENT","AWAITING_APPROVAL","ASSIGNED","IN_PROGRESS","RESOLVED","CLOSED","MANUAL_REVIEW","SAFETY_ESCALATED"],"title":"Status"},"version":{"type":"integer","title":"Version"},"created_at":{"type":"string","format":"date-time","title":"Created At"},"assignment_id":{"type":"string","format":"uuid","title":"Assignment Id"},"assignment_status":{"type":"string","enum":["ASSIGNED","IN_PROGRESS","COMPLETED","CANCELLED","DECLINED"],"title":"Assignment Status"}},"type":"object","required":["id","complaint_id","public_ticket_id","building_id","complaint_description","category","priority","status","version","created_at","assignment_id","assignment_status"],"title":"TechnicianWorkItem"},"TechnicianWorkListResponse":{"properties":{"items":{"items":{"$ref":"#/components/schemas/TechnicianWorkItem"},"type":"array","title":"Items"}},"type":"object","required":["items"],"title":"TechnicianWorkListResponse"},"ValidationError":{"properties":{"loc":{"items":{"anyOf":[{"type":"string"},{"type":"integer"}]},"type":"array","title":"Location"},"msg":{"type":"string","title":"Message"},"type":{"type":"string","title":"Error Type"},"input":{"title":"Input"},"ctx":{"type":"object","title":"Context"}},"type":"object","required":["loc","msg","type"],"title":"ValidationError"}}}}
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "FacilityOps AI",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/v1/auth/login": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Login",
+        "operationId": "login_api_v1_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Logout",
+        "operationId": "logout_api_v1_auth_logout_post",
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Csrf-Token"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Read Me",
+        "operationId": "read_me_api_v1_auth_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedUserResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/buildings": {
+      "get": {
+        "tags": [
+          "buildings"
+        ],
+        "summary": "List Buildings",
+        "operationId": "list_buildings_api_v1_buildings_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BuildingListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/complaints": {
+      "post": {
+        "tags": [
+          "complaints"
+        ],
+        "summary": "Submit Complaint",
+        "operationId": "submit_complaint_api_v1_complaints_post",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Idempotency-Key"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Csrf-Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ComplaintCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComplaintCreateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "complaints"
+        ],
+        "summary": "List My Complaints",
+        "operationId": "list_my_complaints_api_v1_complaints_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReporterComplaintListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/complaints/{complaint_id}": {
+      "get": {
+        "tags": [
+          "complaints"
+        ],
+        "summary": "Read Complaint",
+        "operationId": "read_complaint_api_v1_complaints__complaint_id__get",
+        "parameters": [
+          {
+            "name": "complaint_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Complaint Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComplaintDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/incidents": {
+      "get": {
+        "tags": [
+          "incidents"
+        ],
+        "summary": "List Incidents",
+        "operationId": "list_incidents_api_v1_incidents_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "PENDING_TRIAGE",
+                    "AWAITING_ASSIGNMENT",
+                    "AWAITING_APPROVAL",
+                    "ASSIGNED",
+                    "IN_PROGRESS",
+                    "RESOLVED",
+                    "CLOSED",
+                    "MANUAL_REVIEW",
+                    "SAFETY_ESCALATED"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "building_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Building Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/incidents/my-work": {
+      "get": {
+        "tags": [
+          "incidents"
+        ],
+        "summary": "List My Work",
+        "operationId": "list_my_work_api_v1_incidents_my_work_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TechnicianWorkListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/incidents/{incident_id}": {
+      "get": {
+        "tags": [
+          "incidents"
+        ],
+        "summary": "Read Incident",
+        "operationId": "read_incident_api_v1_incidents__incident_id__get",
+        "parameters": [
+          {
+            "name": "incident_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Incident Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/incidents/{incident_id}/manual-triage": {
+      "post": {
+        "tags": [
+          "incidents"
+        ],
+        "summary": "Manual Triage Incident",
+        "operationId": "manual_triage_incident_api_v1_incidents__incident_id__manual_triage_post",
+        "parameters": [
+          {
+            "name": "incident_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Incident Id"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Csrf-Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ManualTriageRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/incidents/{incident_id}/escalate-safety": {
+      "post": {
+        "tags": [
+          "incidents"
+        ],
+        "summary": "Escalate Safety Incident",
+        "operationId": "escalate_safety_incident_api_v1_incidents__incident_id__escalate_safety_post",
+        "parameters": [
+          {
+            "name": "incident_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Incident Id"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Csrf-Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SafetyEscalationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/incidents/{incident_id}/assign": {
+      "post": {
+        "tags": [
+          "incidents"
+        ],
+        "summary": "Assign Incident Technician",
+        "operationId": "assign_incident_technician_api_v1_incidents__incident_id__assign_post",
+        "parameters": [
+          {
+            "name": "incident_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Incident Id"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Csrf-Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignmentCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssignmentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/incidents/{incident_id}/start": {
+      "post": {
+        "tags": [
+          "incidents"
+        ],
+        "summary": "Start Incident",
+        "operationId": "start_incident_api_v1_incidents__incident_id__start_post",
+        "parameters": [
+          {
+            "name": "incident_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Incident Id"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Csrf-Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IncidentLifecycleRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/incidents/{incident_id}/resolve": {
+      "post": {
+        "tags": [
+          "incidents"
+        ],
+        "summary": "Resolve Incident",
+        "operationId": "resolve_incident_api_v1_incidents__incident_id__resolve_post",
+        "parameters": [
+          {
+            "name": "incident_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Incident Id"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Csrf-Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IncidentResolveRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/incidents/{incident_id}/close": {
+      "post": {
+        "tags": [
+          "incidents"
+        ],
+        "summary": "Close Resolved Incident",
+        "operationId": "close_resolved_incident_api_v1_incidents__incident_id__close_post",
+        "parameters": [
+          {
+            "name": "incident_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Incident Id"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Csrf-Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IncidentLifecycleRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/metrics/operations": {
+      "get": {
+        "tags": [
+          "metrics"
+        ],
+        "summary": "Read Operations Metrics",
+        "operationId": "read_operations_metrics_api_v1_metrics_operations_get",
+        "parameters": [
+          {
+            "name": "building_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Building Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationsMetricsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/metrics/ai": {
+      "get": {
+        "tags": [
+          "metrics"
+        ],
+        "summary": "Read Ai Metrics",
+        "operationId": "read_ai_metrics_api_v1_metrics_ai_get",
+        "parameters": [
+          {
+            "name": "building_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Building Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiMetricsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/technicians": {
+      "get": {
+        "tags": [
+          "technicians"
+        ],
+        "summary": "List Technicians",
+        "operationId": "list_technicians_api_v1_technicians_get",
+        "parameters": [
+          {
+            "name": "building_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Building Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TechnicianListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Health",
+        "description": "Liveness check that intentionally avoids database access.",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Health Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ready": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Ready",
+        "description": "Readiness check that verifies database connectivity.",
+        "operationId": "ready_ready_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ActiveAssignmentSummary": {
+        "properties": {
+          "assignment_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Assignment Id"
+          },
+          "technician_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Technician Id"
+          },
+          "technician_display_name": {
+            "type": "string",
+            "title": "Technician Display Name"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ASSIGNED",
+              "IN_PROGRESS",
+              "COMPLETED",
+              "CANCELLED",
+              "DECLINED"
+            ],
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "assignment_id",
+          "technician_id",
+          "technician_display_name",
+          "status"
+        ],
+        "title": "ActiveAssignmentSummary"
+      },
+      "AiMetricsResponse": {
+        "properties": {
+          "scope": {
+            "$ref": "#/components/schemas/MetricsScope"
+          },
+          "triage_requests": {
+            "type": "integer",
+            "title": "Triage Requests"
+          },
+          "successfully_processed_requests": {
+            "type": "integer",
+            "title": "Successfully Processed Requests"
+          },
+          "pending_requests": {
+            "type": "integer",
+            "title": "Pending Requests"
+          },
+          "failed_requests": {
+            "type": "integer",
+            "title": "Failed Requests"
+          },
+          "total_retry_attempts": {
+            "type": "integer",
+            "title": "Total Retry Attempts"
+          },
+          "requests_with_retries": {
+            "type": "integer",
+            "title": "Requests With Retries"
+          },
+          "persisted_successful_triage_results": {
+            "type": "integer",
+            "title": "Persisted Successful Triage Results"
+          },
+          "persisted_failed_triage_results": {
+            "type": "integer",
+            "title": "Persisted Failed Triage Results"
+          },
+          "incidents_awaiting_human_review": {
+            "type": "integer",
+            "title": "Incidents Awaiting Human Review"
+          }
+        },
+        "type": "object",
+        "required": [
+          "scope",
+          "triage_requests",
+          "successfully_processed_requests",
+          "pending_requests",
+          "failed_requests",
+          "total_retry_attempts",
+          "requests_with_retries",
+          "persisted_successful_triage_results",
+          "persisted_failed_triage_results",
+          "incidents_awaiting_human_review"
+        ],
+        "title": "AiMetricsResponse"
+      },
+      "AssignmentCreateRequest": {
+        "properties": {
+          "technician_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Technician Id"
+          },
+          "expected_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "technician_id",
+          "expected_version"
+        ],
+        "title": "AssignmentCreateRequest"
+      },
+      "AssignmentResponse": {
+        "properties": {
+          "assignment_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Assignment Id"
+          },
+          "incident_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Incident Id"
+          },
+          "technician_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Technician Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ASSIGNED",
+              "IN_PROGRESS",
+              "COMPLETED",
+              "CANCELLED",
+              "DECLINED"
+            ],
+            "title": "Status"
+          },
+          "incident_status": {
+            "type": "string",
+            "enum": [
+              "PENDING_TRIAGE",
+              "AWAITING_ASSIGNMENT",
+              "AWAITING_APPROVAL",
+              "ASSIGNED",
+              "IN_PROGRESS",
+              "RESOLVED",
+              "CLOSED",
+              "MANUAL_REVIEW",
+              "SAFETY_ESCALATED"
+            ],
+            "title": "Incident Status"
+          },
+          "incident_version": {
+            "type": "integer",
+            "title": "Incident Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "assignment_id",
+          "incident_id",
+          "technician_id",
+          "status",
+          "incident_status",
+          "incident_version"
+        ],
+        "title": "AssignmentResponse"
+      },
+      "AuthenticatedUserBuilding": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "timezone": {
+            "type": "string",
+            "title": "Timezone"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "address",
+          "timezone"
+        ],
+        "title": "AuthenticatedUserBuilding"
+      },
+      "AuthenticatedUserResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "display_name": {
+            "type": "string",
+            "title": "Display Name"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role"
+          },
+          "building_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Building Ids"
+          },
+          "buildings": {
+            "items": {
+              "$ref": "#/components/schemas/AuthenticatedUserBuilding"
+            },
+            "type": "array",
+            "title": "Buildings"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "email",
+          "display_name",
+          "role",
+          "building_ids",
+          "buildings"
+        ],
+        "title": "AuthenticatedUserResponse"
+      },
+      "BuildingListItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "timezone": {
+            "type": "string",
+            "title": "Timezone"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "address",
+          "timezone"
+        ],
+        "title": "BuildingListItem"
+      },
+      "BuildingListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BuildingListItem"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "BuildingListResponse"
+      },
+      "ComplaintCreateRequest": {
+        "properties": {
+          "building_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Building Id"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 5000,
+            "minLength": 1,
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "building_id",
+          "description"
+        ],
+        "title": "ComplaintCreateRequest"
+      },
+      "ComplaintCreateResponse": {
+        "properties": {
+          "complaint_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Complaint Id"
+          },
+          "public_ticket_id": {
+            "type": "string",
+            "title": "Public Ticket Id"
+          },
+          "incident_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Incident Id"
+          },
+          "status": {
+            "type": "string",
+            "const": "PENDING_TRIAGE",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "complaint_id",
+          "public_ticket_id",
+          "incident_id",
+          "status"
+        ],
+        "title": "ComplaintCreateResponse"
+      },
+      "ComplaintDetailResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "public_ticket_id": {
+            "type": "string",
+            "title": "Public Ticket Id"
+          },
+          "building_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Building Id"
+          },
+          "reporter_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Reporter Id"
+          },
+          "reporter_display_name": {
+            "type": "string",
+            "title": "Reporter Display Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING_TRIAGE",
+              "MANUAL_REVIEW",
+              "CLOSED"
+            ],
+            "title": "Status"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "incident": {
+            "$ref": "#/components/schemas/IncidentSummary"
+          },
+          "ai_safety_notes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Ai Safety Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "public_ticket_id",
+          "building_id",
+          "reporter_id",
+          "reporter_display_name",
+          "description",
+          "status",
+          "created_at",
+          "updated_at",
+          "incident"
+        ],
+        "title": "ComplaintDetailResponse"
+      },
+      "ComplaintTriageExtraction": {
+        "properties": {
+          "category": {
+            "type": "string",
+            "enum": [
+              "PLUMBING",
+              "ELECTRICAL",
+              "HVAC",
+              "STRUCTURAL",
+              "CLEANING",
+              "SECURITY",
+              "GENERAL",
+              "UNKNOWN"
+            ],
+            "title": "Category"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "issue_summary": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Issue Summary"
+          },
+          "symptoms": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "Symptoms"
+          },
+          "potential_hazards": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "Potential Hazards"
+          },
+          "suggested_priority": {
+            "type": "string",
+            "enum": [
+              "LOW",
+              "MEDIUM",
+              "HIGH",
+              "CRITICAL"
+            ],
+            "title": "Suggested Priority"
+          },
+          "missing_information": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "Missing Information"
+          },
+          "needs_human_review": {
+            "type": "boolean",
+            "title": "Needs Human Review"
+          },
+          "safety_notes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "Safety Notes"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "category",
+          "location",
+          "issue_summary",
+          "symptoms",
+          "potential_hazards",
+          "suggested_priority",
+          "missing_information",
+          "needs_human_review",
+          "safety_notes"
+        ],
+        "title": "ComplaintTriageExtraction"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "IncidentDetailResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "complaint_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Complaint Id"
+          },
+          "public_ticket_id": {
+            "type": "string",
+            "title": "Public Ticket Id"
+          },
+          "building_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Building Id"
+          },
+          "reporter_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Reporter Id"
+          },
+          "reporter_display_name": {
+            "type": "string",
+            "title": "Reporter Display Name"
+          },
+          "complaint_description": {
+            "type": "string",
+            "title": "Complaint Description"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "LOW",
+              "MEDIUM",
+              "HIGH",
+              "CRITICAL"
+            ],
+            "title": "Priority"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING_TRIAGE",
+              "AWAITING_ASSIGNMENT",
+              "AWAITING_APPROVAL",
+              "ASSIGNED",
+              "IN_PROGRESS",
+              "RESOLVED",
+              "CLOSED",
+              "MANUAL_REVIEW",
+              "SAFETY_ESCALATED"
+            ],
+            "title": "Status"
+          },
+          "sla_deadline": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sla Deadline"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "ai_triage_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ai Triage Status"
+          },
+          "latest_triage_result": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LatestTriageResultResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ai_safety_notes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Ai Safety Notes"
+          },
+          "active_assignment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ActiveAssignmentSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "safety_escalation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SafetyEscalationSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "complaint_id",
+          "public_ticket_id",
+          "building_id",
+          "reporter_id",
+          "reporter_display_name",
+          "complaint_description",
+          "category",
+          "priority",
+          "status",
+          "sla_deadline",
+          "version",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "IncidentDetailResponse"
+      },
+      "IncidentLifecycleRequest": {
+        "properties": {
+          "expected_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "expected_version"
+        ],
+        "title": "IncidentLifecycleRequest"
+      },
+      "IncidentListItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "complaint_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Complaint Id"
+          },
+          "public_ticket_id": {
+            "type": "string",
+            "title": "Public Ticket Id"
+          },
+          "building_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Building Id"
+          },
+          "complaint_description": {
+            "type": "string",
+            "title": "Complaint Description"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "LOW",
+              "MEDIUM",
+              "HIGH",
+              "CRITICAL"
+            ],
+            "title": "Priority"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING_TRIAGE",
+              "AWAITING_ASSIGNMENT",
+              "AWAITING_APPROVAL",
+              "ASSIGNED",
+              "IN_PROGRESS",
+              "RESOLVED",
+              "CLOSED",
+              "MANUAL_REVIEW",
+              "SAFETY_ESCALATED"
+            ],
+            "title": "Status"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "ai_triage_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ai Triage Status"
+          },
+          "latest_triage_result": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LatestTriageResultResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "complaint_id",
+          "public_ticket_id",
+          "building_id",
+          "complaint_description",
+          "category",
+          "priority",
+          "status",
+          "created_at"
+        ],
+        "title": "IncidentListItem"
+      },
+      "IncidentListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/IncidentListItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "IncidentListResponse"
+      },
+      "IncidentResolveRequest": {
+        "properties": {
+          "expected_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Version"
+          },
+          "resolution_notes": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Resolution Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "expected_version",
+          "resolution_notes"
+        ],
+        "title": "IncidentResolveRequest"
+      },
+      "IncidentSummary": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING_TRIAGE",
+              "AWAITING_ASSIGNMENT",
+              "AWAITING_APPROVAL",
+              "ASSIGNED",
+              "IN_PROGRESS",
+              "RESOLVED",
+              "CLOSED",
+              "MANUAL_REVIEW",
+              "SAFETY_ESCALATED"
+            ],
+            "title": "Status"
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "LOW",
+              "MEDIUM",
+              "HIGH",
+              "CRITICAL"
+            ],
+            "title": "Priority"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "sla_deadline": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sla Deadline"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "status",
+          "priority",
+          "category",
+          "sla_deadline",
+          "version"
+        ],
+        "title": "IncidentSummary"
+      },
+      "LatestTriageResultResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "model_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Version"
+          },
+          "validated_result": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ComplaintTriageExtraction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "status",
+          "model_version",
+          "validated_result",
+          "created_at"
+        ],
+        "title": "LatestTriageResultResponse"
+      },
+      "LoginRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "maxLength": 320,
+            "minLength": 3,
+            "title": "Email"
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 1024,
+            "minLength": 1,
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "LoginRequest"
+      },
+      "LoginResponse": {
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/AuthenticatedUserResponse"
+          },
+          "csrf_token": {
+            "type": "string",
+            "title": "Csrf Token"
+          },
+          "token_type": {
+            "type": "string",
+            "title": "Token Type",
+            "default": "cookie"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user",
+          "csrf_token",
+          "expires_at"
+        ],
+        "title": "LoginResponse"
+      },
+      "ManualTriageRequest": {
+        "properties": {
+          "category": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Category"
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "LOW",
+              "MEDIUM",
+              "HIGH",
+              "CRITICAL"
+            ],
+            "title": "Priority"
+          },
+          "expected_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Version"
+          },
+          "suspected_hazard": {
+            "type": "boolean",
+            "title": "Suspected Hazard",
+            "default": false
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "category",
+          "priority",
+          "expected_version"
+        ],
+        "title": "ManualTriageRequest"
+      },
+      "MetricsScope": {
+        "properties": {
+          "building_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Building Id"
+          },
+          "building_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Building Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "building_id",
+          "building_ids"
+        ],
+        "title": "MetricsScope"
+      },
+      "OperationsMetricsResponse": {
+        "properties": {
+          "scope": {
+            "$ref": "#/components/schemas/MetricsScope"
+          },
+          "total_incidents": {
+            "type": "integer",
+            "title": "Total Incidents"
+          },
+          "open_incidents": {
+            "type": "integer",
+            "title": "Open Incidents"
+          },
+          "pending_triage": {
+            "type": "integer",
+            "title": "Pending Triage"
+          },
+          "awaiting_assignment": {
+            "type": "integer",
+            "title": "Awaiting Assignment"
+          },
+          "assigned": {
+            "type": "integer",
+            "title": "Assigned"
+          },
+          "in_progress": {
+            "type": "integer",
+            "title": "In Progress"
+          },
+          "resolved": {
+            "type": "integer",
+            "title": "Resolved"
+          },
+          "closed": {
+            "type": "integer",
+            "title": "Closed"
+          },
+          "active_technician_assignments": {
+            "type": "integer",
+            "title": "Active Technician Assignments"
+          },
+          "available_technicians": {
+            "type": "integer",
+            "title": "Available Technicians"
+          }
+        },
+        "type": "object",
+        "required": [
+          "scope",
+          "total_incidents",
+          "open_incidents",
+          "pending_triage",
+          "awaiting_assignment",
+          "assigned",
+          "in_progress",
+          "resolved",
+          "closed",
+          "active_technician_assignments",
+          "available_technicians"
+        ],
+        "title": "OperationsMetricsResponse"
+      },
+      "ReporterComplaintListItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "public_ticket_id": {
+            "type": "string",
+            "title": "Public Ticket Id"
+          },
+          "building_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Building Id"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING_TRIAGE",
+              "MANUAL_REVIEW",
+              "CLOSED"
+            ],
+            "title": "Status"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "incident_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Incident Id"
+          },
+          "incident_status": {
+            "type": "string",
+            "enum": [
+              "PENDING_TRIAGE",
+              "AWAITING_ASSIGNMENT",
+              "AWAITING_APPROVAL",
+              "ASSIGNED",
+              "IN_PROGRESS",
+              "RESOLVED",
+              "CLOSED",
+              "MANUAL_REVIEW",
+              "SAFETY_ESCALATED"
+            ],
+            "title": "Incident Status"
+          },
+          "incident_category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Incident Category"
+          },
+          "incident_priority": {
+            "type": "string",
+            "enum": [
+              "LOW",
+              "MEDIUM",
+              "HIGH",
+              "CRITICAL"
+            ],
+            "title": "Incident Priority"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "public_ticket_id",
+          "building_id",
+          "description",
+          "status",
+          "created_at",
+          "incident_id",
+          "incident_status",
+          "incident_category",
+          "incident_priority"
+        ],
+        "title": "ReporterComplaintListItem"
+      },
+      "ReporterComplaintListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ReporterComplaintListItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "ReporterComplaintListResponse"
+      },
+      "SafetyEscalationRequest": {
+        "properties": {
+          "expected_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Version"
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "expected_version",
+          "reason"
+        ],
+        "title": "SafetyEscalationRequest"
+      },
+      "SafetyEscalationSummary": {
+        "properties": {
+          "actor_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Actor Id"
+          },
+          "actor_display_name": {
+            "type": "string",
+            "title": "Actor Display Name"
+          },
+          "escalated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Escalated At"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "actor_id",
+          "actor_display_name",
+          "escalated_at",
+          "reason"
+        ],
+        "title": "SafetyEscalationSummary"
+      },
+      "TechnicianListItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          },
+          "display_name": {
+            "type": "string",
+            "title": "Display Name"
+          },
+          "skills": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Skills"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "INACTIVE"
+            ],
+            "title": "Status"
+          },
+          "available": {
+            "type": "boolean",
+            "title": "Available"
+          },
+          "active_assignment_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Assignment Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "user_id",
+          "display_name",
+          "skills",
+          "status",
+          "available"
+        ],
+        "title": "TechnicianListItem"
+      },
+      "TechnicianListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/TechnicianListItem"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "TechnicianListResponse"
+      },
+      "TechnicianWorkItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "complaint_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Complaint Id"
+          },
+          "public_ticket_id": {
+            "type": "string",
+            "title": "Public Ticket Id"
+          },
+          "building_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Building Id"
+          },
+          "complaint_description": {
+            "type": "string",
+            "title": "Complaint Description"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "LOW",
+              "MEDIUM",
+              "HIGH",
+              "CRITICAL"
+            ],
+            "title": "Priority"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING_TRIAGE",
+              "AWAITING_ASSIGNMENT",
+              "AWAITING_APPROVAL",
+              "ASSIGNED",
+              "IN_PROGRESS",
+              "RESOLVED",
+              "CLOSED",
+              "MANUAL_REVIEW",
+              "SAFETY_ESCALATED"
+            ],
+            "title": "Status"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "assignment_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Assignment Id"
+          },
+          "assignment_status": {
+            "type": "string",
+            "enum": [
+              "ASSIGNED",
+              "IN_PROGRESS",
+              "COMPLETED",
+              "CANCELLED",
+              "DECLINED"
+            ],
+            "title": "Assignment Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "complaint_id",
+          "public_ticket_id",
+          "building_id",
+          "complaint_description",
+          "category",
+          "priority",
+          "status",
+          "version",
+          "created_at",
+          "assignment_id",
+          "assignment_status"
+        ],
+        "title": "TechnicianWorkItem"
+      },
+      "TechnicianWorkListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/TechnicianWorkItem"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "TechnicianWorkListResponse"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}
