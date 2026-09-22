@@ -28,13 +28,6 @@ npm install
 
 Export the backend OpenAPI contract from the backend repository when contracts change, then regenerate frontend types:
 
-```powershell
-cd D:\Praveen\Development\facilityOps-ai
-python -c "import json; from pathlib import Path; from facilityops_ai.main import create_app; Path(r'D:\Praveen\Development\facilityOps-frontend\openapi\facilityops-openapi.json').write_text(json.dumps(create_app().openapi(), indent=2), encoding='utf-8')"
-
-cd D:\Praveen\Development\facilityOps-frontend
-npm run generate:api
-```
 
 Run the frontend:
 
@@ -54,7 +47,6 @@ The operations console uses the backend authentication contract:
 - State-changing requests send `X-CSRF-Token` using the CSRF token returned by login.
 - Browser requests use `credentials: "include"` so the backend-owned HttpOnly auth cookie is sent.
 
-The frontend does not read JWTs, store bearer tokens, or send development identity headers.
 
 ## Local Demo Accounts
 
