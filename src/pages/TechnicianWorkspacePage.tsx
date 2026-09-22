@@ -73,7 +73,6 @@ function ResolutionSuccess({ confirmation }: { confirmation: ResolutionConfirmat
     <div role="status" className="success-note">
       <p className="font-semibold icon-heading"><CheckCircle2 aria-hidden size={18} />Resolved {confirmation.publicTicketId}</p>
       <p>{confirmation.description}</p>
-      <p>This job left your active queue after the server confirmed the resolution.</p>
       {confirmation.resolutionNotes ? <p>Resolution notes: {confirmation.resolutionNotes}</p> : null}
     </div>
   );
@@ -143,14 +142,14 @@ function WorkCard({
     <article className={`work-card work-order-card priority-edge priority-${item.priority.toLowerCase()}`}>
       <div className="work-order-main">
         <div className="work-order-head">
-          <div>
+          <div className="work-order-title-group">
             <p className="eyebrow">Work order</p>
-            <h3>{item.complaint_description}</h3>
+            <h3 className="work-order-title">{item.complaint_description}</h3>
             <Link to={`/incidents/${item.id}`} className="mono-link work-ticket-link" aria-label={`Open ticket ${item.public_ticket_id}`}>
               {item.public_ticket_id}
             </Link>
           </div>
-          <div className="work-status-stack">
+          <div className="work-status-stack" aria-label="Work order status and priority">
             <StatusBadge status={item.status} />
             <StatusBadge status={item.priority} />
           </div>

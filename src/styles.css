@@ -256,7 +256,7 @@ code,
   .pagination-row { @apply flex flex-col gap-3 border-t px-4 py-3 text-sm font-semibold sm:flex-row sm:items-center sm:justify-between; border-color: var(--line); color: var(--muted); }
   .pager-actions { @apply flex flex-wrap gap-2; }
   .tech-list, .work-list, .complaint-list { @apply flex flex-col gap-3; }
-  .work-list { @apply max-w-3xl; }
+  .work-list { @apply max-w-4xl; }
   .tech-card, .work-card, .complaint-row { @apply rounded-md border p-3 text-sm no-underline transition; background: var(--panel); color: var(--ink); border-color: var(--line); }
   .complaint-row { @apply flex-col sm:flex-row; }
   .complaint-row:hover { border-color: color-mix(in srgb, var(--blue) 35%, var(--line)); transform: translateY(-1px); }
@@ -267,11 +267,13 @@ code,
   .decision-card { @apply rounded-md border p-4; background: var(--panel-2); border-color: var(--line); }
   .decision-card.safety { border-color: color-mix(in srgb, var(--warning) 35%, var(--line)); background: color-mix(in srgb, var(--warning) 7%, var(--panel)); }
   .work-card-head, .complaint-row { @apply flex items-start justify-between gap-3; }
-  .work-order-card { @apply flex flex-col gap-4 p-4 sm:p-5; overflow-wrap: anywhere; }
-  .work-order-main { @apply flex flex-col gap-4; }
-  .work-order-head { @apply flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between; }
-  .work-order-head h3 { @apply text-lg font-semibold leading-snug; color: var(--ink); }
-  .work-order-meta { @apply grid grid-cols-1 gap-3 text-sm sm:grid-cols-2; }
+  .work-order-card { @apply flex flex-col gap-4 p-4 sm:gap-5 sm:p-5; overflow-wrap: anywhere; }
+  .work-order-main { @apply flex flex-col gap-4 sm:gap-5; }
+  .work-order-head { @apply grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start sm:gap-5; }
+  .work-order-title-group { @apply min-w-0; }
+  .work-order-head h3 { @apply text-base font-semibold leading-snug sm:text-lg; color: var(--ink); }
+  .work-order-title { min-height: 3.25rem; max-height: 4.875rem; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+  .work-order-meta { @apply grid grid-cols-1 gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4; }
   .work-order-meta dt { @apply text-xs font-semibold uppercase; color: var(--muted); }
   .work-order-meta dd { @apply mt-1 font-medium; color: var(--ink); }
   .work-primary-action { @apply w-full; min-height: 44px; }
@@ -339,8 +341,8 @@ code,
   .request-progress li.current .request-progress-dot { border-color: var(--blue); background: var(--panel); color: var(--blue); box-shadow: 0 0 0 4px color-mix(in srgb, var(--blue) 14%, transparent); }
   .request-progress li.upcoming { opacity: 0.82; }
   .work-ticket-link { @apply mt-2 inline-flex; }
-  .work-status-stack { @apply flex flex-wrap items-center gap-2 sm:justify-end; }
-  .work-complaint-block { @apply rounded-[3px] border p-3; background: var(--panel-2); border-color: var(--line); }
+  .work-status-stack { @apply flex w-full flex-row flex-wrap items-center gap-2 sm:w-auto sm:flex-col sm:items-end; }
+  .work-complaint-block { @apply rounded-[3px] border p-3 sm:p-4; background: var(--panel-2); border-color: var(--line); }
   .work-order-meta dt { @apply inline-flex items-center gap-1; }
   .request-detail h3 { @apply text-xl font-semibold; }
   .async-state { @apply inline-flex items-center gap-2 rounded-md border px-4 py-6 text-sm shadow-sm; background: var(--panel); border-color: var(--line); color: var(--muted); }
@@ -349,12 +351,17 @@ code,
   .empty-state { @apply flex flex-col items-center justify-center rounded-md border border-dashed px-4 py-8 text-center; background: var(--panel); border-color: var(--line); color: var(--ink); }
   .empty-state > svg { @apply mb-2; color: var(--muted); }
   .empty-state p + p { color: var(--muted); }
-  .status-badge { @apply inline-flex rounded-[3px] px-2.5 py-1 text-xs font-semibold ring-1; }
+  .status-badge { @apply inline-flex whitespace-nowrap rounded-[3px] px-2.5 py-1 text-xs font-semibold leading-none ring-1; }
   .status-empty { @apply text-sm; color: var(--muted); }
-  .status-neutral, .status-workflow { background: color-mix(in srgb, var(--muted) 12%, var(--panel)); color: var(--ink); --tw-ring-color: color-mix(in srgb, var(--muted) 22%, var(--line)); }
+  .status-neutral { background: color-mix(in srgb, var(--muted) 12%, var(--panel)); color: var(--ink); --tw-ring-color: color-mix(in srgb, var(--muted) 22%, var(--line)); }
+  .status-workflow { background: color-mix(in srgb, var(--blue) 11%, var(--panel)); color: var(--ink); --tw-ring-color: color-mix(in srgb, var(--blue) 34%, var(--line)); }
   .status-success, .status-availability { background: var(--ok-bg); color: var(--ink); --tw-ring-color: color-mix(in srgb, var(--ok) 35%, var(--line)); }
   .status-muted-warning { background: var(--warning-bg); color: var(--ink); --tw-ring-color: color-mix(in srgb, var(--warning) 35%, var(--line)); }
   .status-error { background: var(--danger-bg); color: var(--ink); --tw-ring-color: color-mix(in srgb, var(--danger) 35%, var(--line)); }
+  .status-priority-low { background: var(--ok-bg); color: var(--ink); --tw-ring-color: color-mix(in srgb, var(--ok) 35%, var(--line)); }
+  .status-priority-medium { background: color-mix(in srgb, var(--blue) 11%, var(--panel)); color: var(--ink); --tw-ring-color: color-mix(in srgb, var(--blue) 34%, var(--line)); }
+  .status-priority-high { background: var(--warning-bg); color: var(--ink); --tw-ring-color: color-mix(in srgb, var(--warning) 35%, var(--line)); }
+  .status-priority-critical { background: var(--danger-bg); color: var(--ink); --tw-ring-color: color-mix(in srgb, var(--danger) 35%, var(--line)); }
   .status-ai { background: var(--ai-bg); color: var(--ink); --tw-ring-color: color-mix(in srgb, var(--violet) 35%, var(--line)); }
 
 /* Reporter console refinements: keep existing data/actions, make the request queue and detail views visibly distinct. */

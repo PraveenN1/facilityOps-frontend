@@ -378,7 +378,6 @@ function AiAssessment({ incident }: { incident: IncidentDetailResponse }) {
           <div className="wide"><dt>Potential hazards</dt><dd>{recommendation.potential_hazards.length ? recommendation.potential_hazards.join(", ") : "None provided"}</dd></div>
           <div className="wide"><dt>Safety notes</dt><dd>{recommendation.safety_notes.length ? recommendation.safety_notes.join(", ") : "None provided"}</dd></div>
           <div><dt>Needs human review</dt><dd>{recommendation.needs_human_review ? "Yes" : "No"}</dd></div>
-          <div><dt>Model</dt><dd>{triage?.model_version ?? "Not reported"}</dd></div>
         </dl>
       ) : null}
     </article>
