@@ -2589,6 +2589,27 @@
               "DECLINED"
             ],
             "title": "Assignment Status"
+          },
+          "ai_triage_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ai Triage Status"
+          },
+          "latest_triage_result": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LatestTriageResultResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",

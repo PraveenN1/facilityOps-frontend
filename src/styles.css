@@ -349,6 +349,13 @@ code,
   .work-ticket-link { @apply mt-2 inline-flex; }
   .work-status-stack { @apply flex w-full flex-row flex-wrap items-center gap-2 sm:w-auto sm:flex-col sm:items-end; }
   .work-complaint-block { @apply rounded-[3px] border p-3 sm:p-4; background: var(--panel-2); border-color: var(--line); }
+  .work-ai-panel { @apply rounded-[3px] border p-3 sm:p-4; background: var(--ai-bg); border-color: color-mix(in srgb, var(--violet) 38%, var(--line)); overflow-wrap: anywhere; }
+  .work-ai-panel h4 { @apply text-base font-semibold; color: var(--ink); }
+  .work-ai-panel svg { color: var(--violet); }
+  .work-ai-grid { @apply grid gap-3 text-sm sm:grid-cols-2; }
+  .work-ai-grid dt { @apply text-xs font-semibold; color: var(--muted); }
+  .work-ai-grid dd { @apply mt-1 font-semibold leading-5; color: var(--ink); }
+  .work-ai-grid .wide { @apply sm:col-span-2; }
   .work-order-meta dt { @apply inline-flex items-center gap-1; }
   .request-detail h3 { @apply text-xl font-semibold; }
   .async-state { @apply inline-flex items-center gap-2 rounded-md border px-4 py-6 text-sm shadow-sm; background: var(--panel); border-color: var(--line); color: var(--muted); }

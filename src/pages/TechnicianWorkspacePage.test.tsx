@@ -94,6 +94,54 @@ describe("TechnicianWorkspacePage", () => {
     expect(screen.queryByText(assignedIncidentId)).not.toBeInTheDocument();
   });
 
+  it("shows AI recommendation details for assigned technician work", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
+      const url = requestUrl(input);
+      if (url.includes("/api/v1/auth/me")) return jsonResponse(authResponse());
+      if (url.includes("/api/v1/buildings")) return jsonResponse({ items: [{ id: buildingId, name: "Demo Tower" }] });
+      if (url.includes("/api/v1/incidents/my-work")) {
+        return jsonResponse({
+          items: [workItem({
+            latest_triage_result: {
+              id: "40000000-0000-0000-0000-000000000001",
+              status: "SUCCEEDED",
+              model_version: "groq:openai/gpt-oss-20b",
+              validated_result: {
+                category: "HVAC",
+                location: "Training room ceiling vents",
+                issue_summary: "Air conditioning is not cooling properly and airflow is weak.",
+                symptoms: ["warm air", "weak airflow"],
+                potential_hazards: [],
+                suggested_priority: "HIGH",
+                missing_information: [],
+                needs_human_review: false,
+                safety_notes: ["Avoid blocking the ceiling vents until inspection is complete."],
+              },
+              created_at: "2026-09-18T10:05:00Z",
+            },
+          })],
+        });
+      }
+      return jsonResponse({ detail: "unexpected request" }, 500);
+    });
+
+    renderWithProviders(<TechnicianWorkspacePage />);
+
+    await waitFor(() => expect(screen.getByLabelText(/AI recommendation/i)).toBeInTheDocument());
+    const panel = screen.getByLabelText(/AI recommendation/i);
+    expect(panel).toHaveTextContent("Advisory recommendation");
+    expect(panel).toHaveTextContent("AI-suggested category");
+    expect(panel).toHaveTextContent("HVAC");
+    expect(panel).toHaveTextContent("AI-suggested priority");
+    expect(panel).toHaveTextContent("HIGH");
+    expect(panel).toHaveTextContent("Air conditioning is not cooling properly and airflow is weak.");
+    expect(panel).toHaveTextContent("Training room ceiling vents");
+    expect(panel).toHaveTextContent("Avoid blocking the ceiling vents until inspection is complete.");
+    expect(panel).toHaveTextContent(/may require human verification/i);
+    expect(screen.queryByText("groq:openai/gpt-oss-20b")).not.toBeInTheDocument();
+    expect(screen.queryByText("potential_hazards")).not.toBeInTheDocument();
+  });
+
   it("shows resolve only for in-progress work and validates notes", async () => {
     vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
       const url = requestUrl(input);

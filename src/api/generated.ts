@@ -994,6 +994,9 @@ export interface components {
              * @enum {string}
              */
             assignment_status: "ASSIGNED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED" | "DECLINED";
+            /** Ai Triage Status */
+            ai_triage_status?: string | null;
+            latest_triage_result?: components["schemas"]["LatestTriageResultResponse"] | null;
         };
         /** TechnicianWorkListResponse */
         TechnicianWorkListResponse: {

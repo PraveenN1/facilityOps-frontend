@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Building2, CalendarClock, CheckCircle2, ClipboardList, Wrench } from "lucide-react";
+import { BrainCircuit, Building2, CalendarClock, CheckCircle2, ClipboardList, Wrench } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useRef, useState } from "react";
 
@@ -158,6 +158,7 @@ function WorkCard({
           <p className="eyebrow">Original complaint</p>
           <p className="body-copy">{item.complaint_description}</p>
         </div>
+        <TechnicianAiRecommendation item={item} />
         <dl className="work-order-meta">
           <div><dt><Building2 aria-hidden size={14} />Building</dt><dd>{buildingName}</dd></div>
           <div><dt><ClipboardList aria-hidden size={14} />Category</dt><dd>{item.category ?? "Uncategorized"}</dd></div>
@@ -211,6 +212,27 @@ function WorkCard({
         </form>
       ) : null}
     </article>
+  );
+}
+
+function TechnicianAiRecommendation({ item }: { item: TechnicianWorkItem }) {
+  const recommendation = item.latest_triage_result?.validated_result;
+  if (!recommendation) return null;
+
+  return (
+    <section className="work-ai-panel stack-sm" aria-label="AI recommendation">
+      <div>
+        <p className="eyebrow">AI recommendation</p>
+        <h4 className="icon-heading"><BrainCircuit aria-hidden size={17} />Advisory recommendation</h4>
+      </div>
+      <dl className="work-ai-grid">
+        <div><dt>AI-suggested category</dt><dd>{recommendation.category}</dd></div>
+        <div><dt>AI-suggested priority</dt><dd>{recommendation.suggested_priority}</dd></div>
+        <div className="wide"><dt>Summary</dt><dd>{recommendation.issue_summary}</dd></div>
+        {recommendation.location ? <div className="wide"><dt>Location</dt><dd>{recommendation.location}</dd></div> : null}
+      </dl>
+      <p className="muted-copy">AI-generated guidance may require human verification. Follow facility safety procedures for immediate hazards.</p>
+    </section>
   );
 }
 
